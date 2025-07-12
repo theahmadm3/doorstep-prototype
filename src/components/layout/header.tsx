@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, ShoppingCart, UtensilsCrossed } from "lucide-react";
+import { Menu, ShoppingCart, Utensils } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
@@ -19,7 +19,7 @@ const navLinks = [
 
 export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
-  const { cart } from useCart();
+  const { cart } = useCart();
   const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   return (
@@ -27,7 +27,7 @@ export default function Header() {
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <UtensilsCrossed className="h-6 w-6 text-primary" />
+            <Utensils className="h-6 w-6 text-primary" />
             <span className="font-bold font-headline">Doorstep</span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -60,7 +60,7 @@ export default function Header() {
               className="flex items-center space-x-2 mb-6"
               onClick={() => setMenuOpen(false)}
             >
-              <UtensilsCrossed className="h-6 w-6 text-primary" />
+              <Utensils className="h-6 w-6 text-primary" />
               <span className="font-bold font-headline">Doorstep</span>
             </Link>
             <div className="flex flex-col space-y-3">
@@ -78,7 +78,7 @@ export default function Header() {
           </SheetContent>
         </Sheet>
         <Link href="/" className="flex items-center space-x-2 md:hidden">
-            <UtensilsCrossed className="h-6 w-6 text-primary" />
+            <Utensils className="h-6 w-6 text-primary" />
             <span className="font-bold font-headline">Doorstep</span>
         </Link>
 
