@@ -50,7 +50,7 @@ export default function LoginForm() {
     } else if (values.email.includes("vendor")) {
         router.push("/vendor/dashboard");
     } else {
-        router.push("/customer/orders");
+        router.push("/menu");
     }
   }
 

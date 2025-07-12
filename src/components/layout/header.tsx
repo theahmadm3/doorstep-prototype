@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, ShoppingCart, Utensils } from "lucide-react";
+import { Menu, ShoppingCart, Utensils, User } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
@@ -17,6 +17,7 @@ const userRole: "admin" | "vendor" | "customer" | "guest" = "guest";
 const allNavLinks = [
   { href: "/menu", label: "Menu", roles: ["admin", "vendor", "customer", "guest"] },
   { href: "/customer/orders", label: "My Orders", roles: ["customer"] },
+  { href: "/customer/profile", label: "Profile", roles: ["customer"] },
   { href: "/vendor/dashboard", label: "Vendor Dashboard", roles: ["vendor"] },
   { href: "/admin/dashboard", label: "Admin", roles: ["admin"] },
 ];
@@ -29,6 +30,9 @@ export default function Header() {
 
   const navLinks = allNavLinks.filter(link => link.roles.includes(userRole));
 
+  const customerNavLinks = allNavLinks.filter(link => link.roles.includes("customer"));
+  const guestNavLinks = allNavLinks.filter(link => link.roles.includes("guest"));
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
@@ -38,7 +42,7 @@ export default function Header() {
             <span className="font-bold font-headline">Doorstep</span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
-            {navLinks.map((link) => (
+            {(userRole === 'customer' ? customerNavLinks : guestNavLinks).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -71,7 +75,7 @@ export default function Header() {
               <span className="font-bold font-headline">Doorstep</span>
             </Link>
             <div className="flex flex-col space-y-3">
-              {navLinks.map((link) => (
+              {(userRole === 'customer' ? customerNavLinks : guestNavLinks).map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -135,14 +139,23 @@ export default function Header() {
                 )}
             </SheetContent>
           </Sheet>
-          <div className="hidden sm:flex items-center gap-2">
-            <Button variant="ghost" asChild>
-              <Link href="/login">Login</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/signup">Sign Up</Link>
-            </Button>
-          </div>
+          {userRole === 'guest' ? (
+             <div className="hidden sm:flex items-center gap-2">
+                <Button variant="ghost" asChild>
+                <Link href="/login">Login</Link>
+                </Button>
+                <Button asChild>
+                <Link href="/signup">Sign Up</Link>
+                </Button>
+            </div>
+          ) : userRole === 'customer' ? (
+            <Link href="/customer/profile">
+                <Button variant="ghost" size="icon">
+                    <User className="h-5 w-5" />
+                    <span className="sr-only">Profile</span>
+                </Button>
+            </Link>
+          ) : null}
         </div>
       </div>
     </header>
