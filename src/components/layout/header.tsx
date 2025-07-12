@@ -4,7 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Menu, ShoppingCart, Utensils } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
@@ -125,9 +125,11 @@ export default function Header() {
                                 <span>Total</span>
                                 <span>${cart.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)}</span>
                             </div>
-                            <Button className="w-full" asChild>
-                                <Link href="/checkout">Go to Checkout</Link>
-                            </Button>
+                            <SheetClose asChild>
+                                <Button className="w-full" asChild>
+                                    <Link href="/checkout">Go to Checkout</Link>
+                                </Button>
+                            </SheetClose>
                         </div>
                     </div>
                 )}
