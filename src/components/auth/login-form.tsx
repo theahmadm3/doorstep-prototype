@@ -49,6 +49,8 @@ export default function LoginForm() {
         router.push("/admin/dashboard");
     } else if (values.email.includes("vendor")) {
         router.push("/vendor/dashboard");
+    } else if (values.email.includes("rider")) {
+        router.push("/rider/dashboard");
     } else {
         router.push("/menu");
     }
