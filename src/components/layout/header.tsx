@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -10,17 +11,23 @@ import { useCart } from "@/hooks/use-cart";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
 
-const navLinks = [
-  { href: "/menu", label: "Menu" },
-  { href: "/customer/orders", label: "My Orders" },
-  { href: "/vendor/dashboard", label: "Vendor Dashboard" },
-  { href: "/admin/dashboard", label: "Admin" },
+// Mock user role. In a real app, this would come from an auth context.
+const userRole: "admin" | "vendor" | "customer" | "guest" = "customer";
+
+const allNavLinks = [
+  { href: "/menu", label: "Menu", roles: ["admin", "vendor", "customer", "guest"] },
+  { href: "/customer/orders", label: "My Orders", roles: ["customer"] },
+  { href: "/vendor/dashboard", label: "Vendor Dashboard", roles: ["vendor"] },
+  { href: "/admin/dashboard", label: "Admin", roles: ["admin"] },
 ];
+
 
 export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const { cart } = useCart();
   const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
+
+  const navLinks = allNavLinks.filter(link => link.roles.includes(userRole));
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
