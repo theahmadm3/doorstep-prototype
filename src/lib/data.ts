@@ -57,6 +57,39 @@ export const orders = [
       { ...foodItems[5], quantity: 1 },
     ],
   },
+   {
+    id: "ORD004",
+    customerId: 3,
+    restaurantId: 1,
+    date: "2023-10-28",
+    total: 12.99,
+    status: "Order Placed" as OrderStatus,
+    items: [
+      { ...foodItems[0], quantity: 1 },
+    ],
+  },
+   {
+    id: "ORD005",
+    customerId: 4,
+    restaurantId: 4,
+    date: "2023-10-28",
+    total: 9.50,
+    status: "Order Ready" as OrderStatus,
+    items: [
+      { ...foodItems[6], quantity: 1 },
+    ],
+  },
+  {
+    id: "ORD006",
+    customerId: 2,
+    restaurantId: 4,
+    date: "2023-10-28",
+    total: 11.50,
+    status: "Rider Assigned" as OrderStatus,
+    items: [
+      { ...foodItems[7], quantity: 1 },
+    ],
+  },
 ];
 
 export const users = [

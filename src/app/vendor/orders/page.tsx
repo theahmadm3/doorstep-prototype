@@ -6,8 +6,8 @@ import { orders } from "@/lib/data";
 import { CheckCircle, Clock } from "lucide-react";
 
 export default function VendorOrdersPage() {
-  const ongoingOrders = orders.filter(o => o.status !== "Delivered" && o.status !== "Cancelled");
-  const pastOrders = orders.filter(o => o.status === "Delivered" || o.status === "Cancelled");
+  const ongoingOrders = orders.filter(o => o.status !== "Delivered" && o.status !== "Cancelled" && o.status !== "Order Ready" && o.status !== "Rider Assigned" && o.status !== "Rider on the Way");
+  const pastOrders = orders.filter(o => o.status === "Delivered" || o.status === "Cancelled" || o.status === "Order Ready" || o.status === "Rider Assigned" || o.status === "Rider on the Way");
 
   return (
     <div className="space-y-8">

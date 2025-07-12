@@ -6,7 +6,7 @@ import { orders, restaurants } from "@/lib/data";
 import { CheckCircle, Package, ThumbsUp } from "lucide-react";
 
 export default function RiderOrdersPage() {
-  const ongoingOrders = orders.filter(o => o.status === "Rider Assigned" || o.status === "Rider on the Way");
+  const ongoingOrders = orders.filter(o => o.status === "Rider Assigned" || o.status === "Rider on the Way" || o.status === "Order Ready");
   const pastOrders = orders.filter(o => o.status === "Delivered");
 
   return (
@@ -41,7 +41,7 @@ export default function RiderOrdersPage() {
                       <Badge variant="secondary">{order.status}</Badge>
                     </TableCell>
                     <TableCell className="space-x-2">
-                        {order.status === 'Rider Assigned' && (
+                        {(order.status === 'Rider Assigned' || order.status === 'Order Ready') && (
                             <Button variant="outline" size="sm">
                                 <Package className="mr-2 h-4 w-4" />
                                 Mark as Picked Up
