@@ -12,7 +12,7 @@ import Image from "next/image";
 import { Separator } from "../ui/separator";
 
 // Mock user role. In a real app, this would come from an auth context.
-const userRole: "admin" | "vendor" | "customer" | "guest" = "customer";
+const userRole: "admin" | "vendor" | "customer" | "guest" = "guest";
 
 const allNavLinks = [
   { href: "/menu", label: "Menu", roles: ["admin", "vendor", "customer", "guest"] },
