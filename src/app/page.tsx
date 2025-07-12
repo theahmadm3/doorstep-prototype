@@ -3,10 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Utensils, Bike, CircleCheckBig } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
+      <Header />
       <main className="flex-1">
         <section className="w-full py-12 md:py-24 lg:py-32 bg-primary text-primary-foreground">
           <div className="container px-4 md:px-6">
@@ -116,6 +119,7 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <Footer />
     </div>
   );
 }

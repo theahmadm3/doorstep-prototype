@@ -68,10 +68,10 @@ export const users = [
 
 export const analyticsData = {
     topRestaurants: [
-        { name: "Burger Barn", sales: 4500 },
-        { name: "Pizza Palace", sales: 4200 },
-        { name: "Taco Town", sales: 3800 },
-        { name: "Sushi Station", sales: 3200 },
+        { name: "Burger Barn", sales: 4500, orders: 400 },
+        { name: "Pizza Palace", sales: 4200, orders: 350 },
+        { name: "Taco Town", sales: 3800, orders: 500 },
+        { name: "Sushi Station", sales: 3200, orders: 280 },
     ],
     topItems: [
         { name: "Cheeseburger", sales: 1200 },

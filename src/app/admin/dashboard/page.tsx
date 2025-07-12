@@ -4,9 +4,8 @@ import AdminStats from "@/components/dashboard/admin-stats";
 
 export default function AdminDashboardPage() {
     return (
-        <div className="container py-12">
-            <h1 className="text-3xl font-bold font-headline mb-8">Admin Dashboard</h1>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="space-y-8">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Total Platform Revenue</CardTitle>

@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import { Inter, Poppins } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import Header from '@/components/layout/header';
-import Footer from '@/components/layout/footer';
 import { CartProvider } from '@/components/cart-provider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -26,11 +24,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable} h-full`}>
-      <body className="antialiased flex flex-col h-full">
+      <body className="antialiased flex flex-col h-full bg-background">
         <CartProvider>
-          <Header />
-          <main className="flex-grow">{children}</main>
-          <Footer />
+          {children}
           <Toaster />
         </CartProvider>
       </body>
