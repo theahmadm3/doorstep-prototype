@@ -16,6 +16,7 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: 'Doorstep',
   description: 'Your favorite food, delivered.',
+  icons: null,
 };
 
 export default function RootLayout({
@@ -25,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable} h-full`}>
-      <body className="font-body antialiased flex flex-col h-full">
+      <body className="antialiased flex flex-col h-full">
         <CartProvider>
           <Header />
           <main className="flex-grow">{children}</main>
