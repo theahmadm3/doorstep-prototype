@@ -1,3 +1,4 @@
+
 export const restaurants = [
   { id: 1, name: "Pizza Palace" },
   { id: 2, name: "Burger Barn" },
@@ -6,14 +7,14 @@ export const restaurants = [
 ];
 
 export const foodItems = [
-  { id: 1, restaurantId: 1, name: "Margherita Pizza", description: "Classic cheese and tomato pizza.", price: 12.99, image: "https://placehold.co/300x200.png", dataAiHint: "pizza slice" },
-  { id: 2, restaurantId: 1, name: "Pepperoni Pizza", description: "Loaded with pepperoni.", price: 14.99, image: "https://placehold.co/300x200.png", dataAiHint: "pepperoni pizza" },
-  { id: 3, restaurantId: 2, name: "Cheeseburger", description: "Juicy beef patty with cheese.", price: 8.99, image: "https://placehold.co/300x200.png", dataAiHint: "juicy cheeseburger" },
-  { id: 4, restaurantId: 2, name: "Bacon Burger", description: "Burger with crispy bacon.", price: 10.99, image: "https://placehold.co/300x200.png", dataAiHint: "bacon burger" },
-  { id: 5, restaurantId: 3, name: "California Roll", description: "Crab, avocado, and cucumber.", price: 7.99, image: "https://placehold.co/300x200.png", dataAiHint: "sushi roll" },
-  { id: 6, restaurantId: 3, name: "Spicy Tuna Roll", description: "Tuna with a spicy kick.", price: 9.99, image: "https://placehold.co/300x200.png", dataAiHint: "tuna roll" },
-  { id: 7, restaurantId: 4, name: "Beef Tacos", description: "Three beef tacos.", price: 9.50, image: "https://placehold.co/300x200.png", dataAiHint: "beef tacos" },
-  { id: 8, restaurantId: 4, name: "Chicken Burrito", description: "Large burrito with chicken.", price: 11.50, image: "https://placehold.co/300x200.png", dataAiHint: "chicken burrito" },
+  { id: 1, restaurantId: 1, name: "Margherita Pizza", description: "Classic cheese and tomato pizza.", price: 12.99, image: "https://placehold.co/300x200.png", dataAiHint: "pizza slice", category: "Pizzas" },
+  { id: 2, restaurantId: 1, name: "Pepperoni Pizza", description: "Loaded with pepperoni.", price: 14.99, image: "https://placehold.co/300x200.png", dataAiHint: "pepperoni pizza", category: "Pizzas" },
+  { id: 3, restaurantId: 2, name: "Cheeseburger", description: "Juicy beef patty with cheese.", price: 8.99, image: "https://placehold.co/300x200.png", dataAiHint: "juicy cheeseburger", category: "Burgers" },
+  { id: 4, restaurantId: 2, name: "Bacon Burger", description: "Burger with crispy bacon.", price: 10.99, image: "https://placehold.co/300x200.png", dataAiHint: "bacon burger", category: "Burgers" },
+  { id: 5, restaurantId: 3, name: "California Roll", description: "Crab, avocado, and cucumber.", price: 7.99, image: "https://placehold.co/300x200.png", dataAiHint: "sushi roll", category: "Sushi" },
+  { id: 6, restaurantId: 3, name: "Spicy Tuna Roll", description: "Tuna with a spicy kick.", price: 9.99, image: "https://placehold.co/300x200.png", dataAiHint: "tuna roll", category: "Sushi" },
+  { id: 7, restaurantId: 4, name: "Beef Tacos", description: "Three beef tacos.", price: 9.50, image: "https://placehold.co/300x200.png", dataAiHint: "beef tacos", category: "Tacos" },
+  { id: 8, restaurantId: 4, name: "Chicken Burrito", description: "Large burrito with chicken.", price: 11.50, image: "https://placehold.co/300x200.png", dataAiHint: "chicken burrito", category: "Burritos" },
 ];
 
 export type OrderStatus = 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled';
