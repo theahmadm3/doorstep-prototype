@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, ShieldOff, Trash2, Utensils, DollarSign, Package } from "lucide-react";
+import { MoreHorizontal, ShieldOff, Trash2, Utensils, DollarSign, Package, Legend } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { restaurants, analyticsData } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,7 @@ const chartConfig = {
     orders: { label: "Orders", color: "hsl(var(--chart-2))" },
 };
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 export default function VendorsPage() {
     const { toast } = useToast();
@@ -93,7 +93,6 @@ export default function VendorsPage() {
 							<YAxis yAxisId="left" stroke="hsl(var(--chart-1))" />
 							<YAxis yAxisId="right" orientation="right" stroke="hsl(var(--chart-2))" />
 							<Tooltip content={<ChartTooltipContent />} />
-							<Legend />
 							<Bar dataKey="sales" fill="var(--color-sales)" radius={4} yAxisId="left" name="Sales" />
 							<Bar dataKey="orders" fill="var(--color-orders)" radius={4} yAxisId="right" name="Orders" />
 						</BarChart>

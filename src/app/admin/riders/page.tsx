@@ -18,7 +18,7 @@ const chartConfig = {
 };
 
 const mockRiders = users.map(u => ({ ...u, vehicle: "Bike", status: "Active", deliveries: Math.floor(Math.random() * 50) }));
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 
 export default function RidersPage() {
