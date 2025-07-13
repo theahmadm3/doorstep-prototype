@@ -62,7 +62,7 @@ export default function LoginForm() {
         router.push("/rider/dashboard");
     } else {
         localStorage.setItem('userRole', 'customer');
-        router.push("/menu");
+        router.push("/customer/dashboard");
     }
   }
 

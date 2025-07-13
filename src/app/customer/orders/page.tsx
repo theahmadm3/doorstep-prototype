@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 export default function CustomerOrdersPage() {
   return (
     <div className="container py-12">
-      <h1 className="text-3xl font-bold font-headline mb-8 text-center">Your Orders</h1>
+      <h1 className="text-3xl font-bold font-headline mb-8">Your Orders</h1>
       <Card>
         <CardContent className="p-0">
           <Accordion type="single" collapsible className="w-full">

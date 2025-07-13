@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,42 +13,25 @@ import Image from "next/image";
 import { Separator } from "../ui/separator";
 import { useRouter } from "next/navigation";
 
-type UserRole = "admin" | "vendor" | "customer" | "guest";
-
-const allNavLinks = [
-  { href: "/menu", label: "Menu", roles: ["admin", "vendor", "customer", "guest"] },
-  { href: "/customer/orders", label: "My Orders", roles: ["customer"] },
-];
-
-
 export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const { cart } = useCart();
+  const { itemCount, total } = useCartSummary();
   const router = useRouter();
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
-  
-  const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // This effect runs on the client-side after the component mounts.
-    // It checks localStorage to determine the user's role.
-    const role = localStorage.getItem('userRole') as UserRole | null;
-    if (role && ['admin', 'vendor', 'customer'].includes(role)) {
-      setUserRole(role);
-    } else {
-      setUserRole('guest');
-    }
+    setIsClient(true);
   }, []);
 
-  const handleLogout = () => {
-      localStorage.removeItem('userRole');
-      setUserRole('guest');
-      router.push('/login');
-  };
+  const navLinks = [
+    { href: "/menu", label: "Menu" },
+    { href: "/#features", label: "Features" },
+    { href: "/#how-it-works", label: "How It Works" },
+  ];
 
-  if (userRole === null) {
-    // Render a placeholder or nothing while the role is being determined on the client.
-    return (
+  if (!isClient) {
+     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="container flex h-16 items-center">
                  <div className="mr-4 hidden md:flex">
@@ -60,8 +44,6 @@ export default function Header() {
         </header>
     );
   }
-
-  const navLinks = allNavLinks.filter(link => link.roles.includes(userRole));
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -157,7 +139,7 @@ export default function Header() {
                         <div className="space-y-4">
                             <div className="flex justify-between font-bold text-lg">
                                 <span>Total</span>
-                                <span>${cart.reduce((total, item) => total + item.price * item.quantity, 0).toFixed(2)}</span>
+                                <span>${total.toFixed(2)}</span>
                             </div>
                             <SheetClose asChild>
                                 <Button className="w-full" asChild>
@@ -169,8 +151,7 @@ export default function Header() {
                 )}
             </SheetContent>
           </Sheet>
-          {userRole === 'guest' ? (
-             <div className="hidden sm:flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
                 <Button variant="ghost" asChild>
                 <Link href="/login">Login</Link>
                 </Button>
@@ -178,22 +159,15 @@ export default function Header() {
                 <Link href="/signup">Sign Up</Link>
                 </Button>
             </div>
-          ) : userRole === 'customer' ? (
-            <div className="flex items-center gap-2">
-                <Link href="/customer/profile">
-                    <Button variant="ghost" size="icon">
-                        <User className="h-5 w-5" />
-                        <span className="sr-only">Profile</span>
-                    </Button>
-                </Link>
-                 <Button variant="ghost" size="icon" onClick={handleLogout}>
-                    <LogOut className="h-5 w-5" />
-                    <span className="sr-only">Logout</span>
-                </Button>
-            </div>
-          ) : null}
         </div>
       </div>
     </header>
   );
+}
+
+function useCartSummary() {
+    const { cart } = useCart();
+    const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
+    const total = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+    return { itemCount, total };
 }
