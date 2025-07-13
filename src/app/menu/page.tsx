@@ -7,8 +7,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Image from "next/image";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { PlusCircle, Star } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import Header from "@/components/layout/header";
+import Footer from "@/components/layout/footer";
 
 type FoodItem = (typeof foodItems)[0];
 
@@ -23,6 +25,8 @@ export default function MenuPage() {
       description: `${item.name} has been added to your cart.`,
     });
   };
+
+  const recommendedItems = foodItems.slice(0, 4);
 
   const itemsByRestaurant = restaurants.map(restaurant => ({
     ...restaurant,
@@ -41,55 +45,93 @@ export default function MenuPage() {
   };
 
   return (
-    <div className="container py-12">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold font-headline">Explore Our Menu</h1>
-        <p className="text-muted-foreground mt-2 text-lg">Find your next favorite meal from our curated list of restaurants.</p>
-      </div>
-       <Accordion type="multiple" className="w-full space-y-4">
-          {itemsByRestaurant.map(restaurant => (
-            <AccordionItem value={`restaurant-${restaurant.id}`} key={restaurant.id} className="border-none">
-                <Card>
-                    <AccordionTrigger className="p-6 hover:no-underline">
-                        <h2 className="text-2xl font-bold font-headline">{restaurant.name}</h2>
-                    </AccordionTrigger>
-                    <AccordionContent className="p-6 pt-0">
-                      {Object.entries(itemsByCategory(restaurant.items)).map(([category, items]) => (
-                        <div key={category} className="mb-8">
-                            <h3 className="text-xl font-semibold mb-4 capitalize">{category}</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                {items.map((item) => (
-                                <Card key={item.id} className="flex flex-col">
-                                    <CardHeader className="p-0">
-                                        <Image
-                                        src={item.image}
-                                        alt={item.name}
-                                        width={400}
-                                        height={250}
-                                        data-ai-hint={item.dataAiHint}
-                                        className="rounded-t-lg object-cover w-full aspect-video"
-                                        />
-                                    </CardHeader>
-                                    <CardContent className="pt-6 flex-grow">
-                                    <CardTitle className="font-headline text-xl">{item.name}</CardTitle>
-                                    <CardDescription className="mt-2">{item.description}</CardDescription>
-                                    </CardContent>
-                                    <CardFooter className="flex justify-between items-center">
-                                    <p className="text-lg font-semibold text-primary">${item.price.toFixed(2)}</p>
-                                    <Button onClick={() => handleAddToCart(item)}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
-                                    </Button>
-                                    </CardFooter>
-                                </Card>
+    <div className="flex flex-col min-h-screen">
+        <Header />
+        <main className="flex-grow">
+            <div className="container py-12">
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl font-bold font-headline">Explore Our Menu</h1>
+                    <p className="text-muted-foreground mt-2 text-lg">Find your next favorite meal from our curated list of restaurants.</p>
+                </div>
+
+                <div className="mb-12">
+                    <div className="flex items-center gap-2 mb-6 justify-center">
+                        <Star className="h-6 w-6 text-primary" />
+                        <h2 className="text-2xl font-bold font-headline">Popular Items</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {recommendedItems.map((item) => (
+                        <Card key={item.id} className="flex flex-col">
+                            <CardHeader className="p-0">
+                                <Image
+                                src={item.image}
+                                alt={item.name}
+                                width={400}
+                                height={250}
+                                data-ai-hint={item.dataAiHint}
+                                className="rounded-t-lg object-cover w-full aspect-video"
+                                />
+                            </CardHeader>
+                            <CardContent className="pt-6 flex-grow">
+                                <CardTitle className="font-headline text-xl">{item.name}</CardTitle>
+                                <CardDescription className="mt-2">{item.description}</CardDescription>
+                            </CardContent>
+                            <CardFooter className="flex justify-between items-center">
+                                <p className="text-lg font-semibold text-primary">${item.price.toFixed(2)}</p>
+                                <Button onClick={() => handleAddToCart(item)}>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                        ))}
+                    </div>
+                </div>
+
+                <Separator />
+
+                <div className="space-y-16 mt-12">
+                    {itemsByRestaurant.map(restaurant => (
+                        <div key={restaurant.id}>
+                            <h2 className="text-3xl font-bold font-headline mb-8 text-center">{restaurant.name}</h2>
+                            <div className="space-y-10">
+                                {Object.entries(itemsByCategory(restaurant.items)).map(([category, items]) => (
+                                <div key={category}>
+                                    <h3 className="text-xl font-semibold mb-4 capitalize">{category}</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                                        {items.map((item) => (
+                                        <Card key={item.id} className="flex flex-col">
+                                            <CardHeader className="p-0">
+                                                <Image
+                                                src={item.image}
+                                                alt={item.name}
+                                                width={400}
+                                                height={250}
+                                                data-ai-hint={item.dataAiHint}
+                                                className="rounded-t-lg object-cover w-full aspect-video"
+                                                />
+                                            </CardHeader>
+                                            <CardContent className="pt-6 flex-grow">
+                                            <CardTitle className="font-headline text-xl">{item.name}</CardTitle>
+                                            <CardDescription className="mt-2">{item.description}</CardDescription>
+                                            </CardContent>
+                                            <CardFooter className="flex justify-between items-center">
+                                            <p className="text-lg font-semibold text-primary">${item.price.toFixed(2)}</p>
+                                            <Button onClick={() => handleAddToCart(item)}>
+                                                <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
+                                            </Button>
+                                            </CardFooter>
+                                        </Card>
+                                        ))}
+                                    </div>
+                                </div>
                                 ))}
                             </div>
                         </div>
-                      ))}
-                    </AccordionContent>
-                </Card>
-            </AccordionItem>
-          ))}
-        </Accordion>
+                    ))}
+                </div>
+            </div>
+        </main>
+        <Footer />
     </div>
   );
 }
