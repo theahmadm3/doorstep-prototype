@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,18 +41,27 @@ export default function LoginForm() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
+    
+    // Clear previous auth state
+    localStorage.removeItem('userRole');
+
     toast({
       title: "Login Successful",
       description: "Redirecting to your dashboard...",
     });
+
     // Dummy logic to redirect based on email
     if (values.email.includes("admin")) {
+        localStorage.setItem('userRole', 'admin');
         router.push("/admin/dashboard");
     } else if (values.email.includes("vendor")) {
+        localStorage.setItem('userRole', 'vendor');
         router.push("/vendor/dashboard");
     } else if (values.email.includes("rider")) {
+        localStorage.setItem('userRole', 'rider');
         router.push("/rider/dashboard");
     } else {
+        localStorage.setItem('userRole', 'customer');
         router.push("/menu");
     }
   }

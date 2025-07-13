@@ -1,37 +1,51 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, ShoppingCart, Utensils, User } from "lucide-react";
+import { Menu, ShoppingCart, Utensils, User, LogOut } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
+import { useRouter } from "next/navigation";
 
-// Mock user role. In a real app, this would come from an auth context.
-const userRole: "admin" | "vendor" | "customer" | "guest" = "guest";
+type UserRole = "admin" | "vendor" | "customer" | "guest";
 
 const allNavLinks = [
   { href: "/menu", label: "Menu", roles: ["admin", "vendor", "customer", "guest"] },
   { href: "/customer/orders", label: "My Orders", roles: ["customer"] },
-  { href: "/customer/profile", label: "Profile", roles: ["customer"] },
-  { href: "/vendor/dashboard", label: "Vendor Dashboard", roles: ["vendor"] },
-  { href: "/admin/dashboard", label: "Admin", roles: ["admin"] },
 ];
 
 
 export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const { cart } = useCart();
+  const router = useRouter();
+  const [userRole, setUserRole] = useState<UserRole>("guest");
+  
   const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
-  const navLinks = allNavLinks.filter(link => link.roles.includes(userRole));
+  useEffect(() => {
+    // In a real app, this would come from an auth context.
+    // For now, we simulate it with localStorage.
+    const role = localStorage.getItem('userRole') as UserRole | null;
+    if (role && ['admin', 'vendor', 'customer'].includes(role)) {
+      setUserRole(role);
+    } else {
+      setUserRole('guest');
+    }
+  }, []);
 
-  const customerNavLinks = allNavLinks.filter(link => link.roles.includes("customer"));
-  const guestNavLinks = allNavLinks.filter(link => link.roles.includes("guest"));
+  const handleLogout = () => {
+      localStorage.removeItem('userRole');
+      setUserRole('guest');
+      router.push('/login');
+  };
+
+  const navLinks = allNavLinks.filter(link => link.roles.includes(userRole));
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -42,7 +56,7 @@ export default function Header() {
             <span className="font-bold font-headline">Doorstep</span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
-            {(userRole === 'customer' ? customerNavLinks : guestNavLinks).map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -75,7 +89,7 @@ export default function Header() {
               <span className="font-bold font-headline">Doorstep</span>
             </Link>
             <div className="flex flex-col space-y-3">
-              {(userRole === 'customer' ? customerNavLinks : guestNavLinks).map((link) => (
+              {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -149,12 +163,18 @@ export default function Header() {
                 </Button>
             </div>
           ) : userRole === 'customer' ? (
-            <Link href="/customer/profile">
-                <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">Profile</span>
+            <div className="flex items-center gap-2">
+                <Link href="/customer/profile">
+                    <Button variant="ghost" size="icon">
+                        <User className="h-5 w-5" />
+                        <span className="sr-only">Profile</span>
+                    </Button>
+                </Link>
+                 <Button variant="ghost" size="icon" onClick={handleLogout}>
+                    <LogOut className="h-5 w-5" />
+                    <span className="sr-only">Logout</span>
                 </Button>
-            </Link>
+            </div>
           ) : null}
         </div>
       </div>
