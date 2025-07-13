@@ -24,13 +24,13 @@ export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const { cart } = useCart();
   const router = useRouter();
-  const [userRole, setUserRole] = useState<UserRole>("guest");
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   
   const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   useEffect(() => {
-    // In a real app, this would come from an auth context.
-    // For now, we simulate it with localStorage.
+    // This effect runs on the client-side after the component mounts.
+    // It checks localStorage to determine the user's role.
     const role = localStorage.getItem('userRole') as UserRole | null;
     if (role && ['admin', 'vendor', 'customer'].includes(role)) {
       setUserRole(role);
@@ -44,6 +44,22 @@ export default function Header() {
       setUserRole('guest');
       router.push('/login');
   };
+
+  if (userRole === null) {
+    // Render a placeholder or nothing while the role is being determined on the client.
+    return (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-16 items-center">
+                 <div className="mr-4 hidden md:flex">
+                    <Link href="/" className="mr-6 flex items-center space-x-2">
+                        <Utensils className="h-6 w-6 text-primary" />
+                        <span className="font-bold font-headline">Doorstep</span>
+                    </Link>
+                </div>
+            </div>
+        </header>
+    );
+  }
 
   const navLinks = allNavLinks.filter(link => link.roles.includes(userRole));
 
