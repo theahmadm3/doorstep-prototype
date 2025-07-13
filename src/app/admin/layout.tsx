@@ -1,3 +1,4 @@
+
 import {
   Sidebar,
   SidebarHeader,
@@ -16,6 +17,7 @@ import {
   Users,
   Utensils,
   LogOut,
+  Bike,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -49,6 +51,22 @@ export default function AdminLayout({
                 <Link href="/admin/analytics">
                   <LineChart />
                   Analytics
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/admin/vendors">
+                  <Utensils />
+                  Vendors
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/admin/riders">
+                  <Bike />
+                  Riders
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
