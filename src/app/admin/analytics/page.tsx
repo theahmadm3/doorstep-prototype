@@ -14,7 +14,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { analyticsData, users, restaurants } from "@/lib/data";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
 const chartConfig = {
@@ -79,28 +79,23 @@ export default function AnalyticsPage() {
 								tickMargin={10}
 								axisLine={false}
 							/>
-							<YAxis
-								yAxisId="left"
-								orientation="left"
-								stroke="hsl(var(--chart-1))"
-							/>
-							<YAxis
-								yAxisId="right"
-								orientation="right"
-								stroke="hsl(var(--chart-2))"
-							/>
+							<YAxis yAxisId="left" stroke="hsl(var(--chart-1))" />
+							<YAxis yAxisId="right" orientation="right" stroke="hsl(var(--chart-2))" />
 							<Tooltip content={<ChartTooltipContent />} />
+							<Legend />
 							<Bar
 								dataKey="sales"
 								fill="var(--color-sales)"
 								radius={4}
 								yAxisId="left"
+								name="Sales"
 							/>
 							<Bar
 								dataKey="orders"
 								fill="var(--color-orders)"
 								radius={4}
 								yAxisId="right"
+								name="Orders"
 							/>
 						</BarChart>
 					</ChartContainer>
