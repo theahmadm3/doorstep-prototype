@@ -21,6 +21,7 @@ import {
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ClientHeader from '@/components/layout/client-header';
+import LogoutButton from '@/components/auth/logout-button';
 
 export default function CustomerLayout({
   children,
@@ -75,9 +76,7 @@ export default function CustomerLayout({
                   customer@doorstep.com
                 </span>
               </div>
-              <Link href="/login" className="ml-auto">
-                <LogOut className="w-5 h-5 text-muted-foreground hover:text-foreground" />
-              </Link>
+              <LogoutButton />
             </div>
           </SidebarFooter>
         </Sidebar>
