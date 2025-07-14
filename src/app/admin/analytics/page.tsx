@@ -18,6 +18,8 @@ import {
 import { analyticsData, users, restaurants } from "@/lib/data";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const chartConfig = {
 	sales: {
@@ -30,7 +32,18 @@ const chartConfig = {
 	},
 };
 
+const ITEMS_PER_PAGE = 10;
+
 export default function AnalyticsPage() {
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.ceil(users.length / ITEMS_PER_PAGE);
+    const paginatedUsers = users.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+    
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
 	return (
 		<div className="space-y-8">
 			<h1 className="text-3xl font-bold font-headline">Analytics Overview</h1>
@@ -121,7 +134,7 @@ export default function AnalyticsPage() {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{users.map((user) => (
+							{paginatedUsers.map((user) => (
 								<TableRow key={user.id}>
 									<TableCell className="font-medium">{user.name}</TableCell>
 									<TableCell>{user.email}</TableCell>
@@ -133,6 +146,27 @@ export default function AnalyticsPage() {
 						</TableBody>
 					</Table>
 				</CardContent>
+                 <div className="flex items-center justify-end space-x-2 py-4 px-6">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <span className="text-sm">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </Button>
+                </div>
 			</Card>
 		</div>
 	);

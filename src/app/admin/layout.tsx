@@ -1,3 +1,4 @@
+
 import {
   Sidebar,
   SidebarHeader,
@@ -16,9 +17,11 @@ import {
   Users,
   Utensils,
   LogOut,
+  Bike,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import LogoutButton from '@/components/auth/logout-button';
 
 export default function AdminLayout({
   children,
@@ -54,6 +57,22 @@ export default function AdminLayout({
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
+                <Link href="/admin/vendors">
+                  <Utensils />
+                  Vendors
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/admin/riders">
+                  <Bike />
+                  Riders
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
                 <Link href="/admin/config">
                   <Settings />
                   Config
@@ -73,9 +92,7 @@ export default function AdminLayout({
                   admin@doorstep.com
                 </span>
               </div>
-              <Link href="/login" className="ml-auto">
-                <LogOut className="w-5 h-5 text-muted-foreground hover:text-foreground" />
-              </Link>
+              <LogoutButton />
             </div>
           </SidebarFooter>
         </Sidebar>

@@ -24,8 +24,8 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold text-foreground mb-4">Partnerships</h4>
             <ul className="space-y-2">
-              <li><Link href="/signup" className="hover:text-primary">Become a Vendor</Link></li>
-              <li><Link href="/signup" className="hover:text-primary">Join as a Rider</Link></li>
+              <li><Link href="/signup/vendor" className="hover:text-primary">Become a Vendor</Link></li>
+              <li><Link href="/signup/rider" className="hover:text-primary">Join as a Rider</Link></li>
             </ul>
           </div>
           <div>

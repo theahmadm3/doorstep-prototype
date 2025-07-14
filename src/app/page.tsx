@@ -26,7 +26,7 @@ export default function Home() {
                     <Link href="/menu">Order Now</Link>
                   </Button>
                   <Button asChild size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10">
-                     <Link href="/signup">Become a Partner</Link>
+                     <Link href="/signup/vendor">Become a Partner</Link>
                   </Button>
                 </div>
               </div>
