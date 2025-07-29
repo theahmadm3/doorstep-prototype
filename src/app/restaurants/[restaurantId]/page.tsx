@@ -128,7 +128,7 @@ export default function RestaurantMenuPage() {
                             <Card key={item.id} className="flex flex-col">
                                 <CardHeader className="p-0">
                                 <Image
-                                    src={item.image_url || "https://placehold.co/400x250.png"}
+                                    src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/400x250.png"}
                                     alt={item.name}
                                     width={400}
                                     height={250}
@@ -156,7 +156,7 @@ export default function RestaurantMenuPage() {
                             <Card key={item.id} className="flex flex-col">
                                 <CardHeader className="p-0">
                                 <Image
-                                    src={item.image_url || "https://placehold.co/400x250.png"}
+                                    src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/400x250.png"}
                                     alt={item.name}
                                     width={400}
                                     height={250}

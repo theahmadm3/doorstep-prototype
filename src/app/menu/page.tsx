@@ -28,7 +28,7 @@ export default async function MenuPage() {
                 <Card className="flex flex-col h-full overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1">
                   <CardHeader className="p-0">
                     <Image
-                      src={restaurant.image_url || `https://placehold.co/400x250.png`}
+                      src={restaurant.image_url && restaurant.image_url !== 'string' ? restaurant.image_url : `https://placehold.co/400x250.png`}
                       alt={restaurant.name}
                       width={400}
                       height={250}
