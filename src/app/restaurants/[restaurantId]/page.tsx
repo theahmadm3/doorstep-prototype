@@ -6,7 +6,6 @@ import { getRestaurantById, getRestaurantMenu } from "@/lib/api";
 import type { Restaurant, MenuItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +39,6 @@ export default function RestaurantMenuPage() {
           setMenuItems(menuData);
         } catch (error) {
           console.error("Failed to fetch restaurant data:", error);
-          // notFound() could be called here if the page should 404
         } finally {
           setIsLoading(false);
         }
@@ -72,9 +70,8 @@ export default function RestaurantMenuPage() {
                 </div>
            </div>
            <div className="space-y-8">
-                <Skeleton className="h-10 w-full mb-8" />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {[...Array(4)].map((_, i) => (
+                    {[...Array(8)].map((_, i) => (
                         <Card key={i}>
                             <CardHeader><Skeleton className="h-48 w-full" /></CardHeader>
                             <CardContent className="pt-6">
@@ -99,8 +96,6 @@ export default function RestaurantMenuPage() {
     notFound();
   }
   
-  const categories = ["All", ...new Set(menuItems.map(item => item.category).filter(Boolean))] as string[];
-
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -129,43 +124,31 @@ export default function RestaurantMenuPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="All" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-8">
-                    {categories.map(category => (
-                        <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
-                    ))}
-                </TabsList>
-                
-                {categories.map(category => (
-                     <TabsContent key={category} value={category}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {(category === 'All' ? menuItems : menuItems.filter(item => item.category === category)).map((item) => (
-                            <Card key={item.id} className="flex flex-col">
-                                <CardHeader className="p-0">
-                                <Image
-                                    src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/400x250.png"}
-                                    alt={item.name}
-                                    width={400}
-                                    height={250}
-                                    className="rounded-t-lg object-cover w-full aspect-video"
-                                />
-                                </CardHeader>
-                                <CardContent className="pt-6 flex-grow">
-                                <CardTitle className="font-headline text-xl">{item.name}</CardTitle>
-                                {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
-                                </CardContent>
-                                <CardFooter className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                <p className="text-lg font-semibold text-primary">${parseFloat(item.price).toFixed(2)}</p>
-                                <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
-                                </Button>
-                                </CardFooter>
-                            </Card>
-                            ))}
-                        </div>
-                    </TabsContent>
-                ))}
-            </Tabs>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {menuItems.map((item) => (
+                  <Card key={item.id} className="flex flex-col">
+                      <CardHeader className="p-0">
+                      <Image
+                          src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/400x250.png"}
+                          alt={item.name}
+                          width={400}
+                          height={250}
+                          className="rounded-t-lg object-cover w-full aspect-video"
+                      />
+                      </CardHeader>
+                      <CardContent className="pt-6 flex-grow">
+                      <CardTitle className="font-headline text-xl">{item.name}</CardTitle>
+                      {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
+                      </CardContent>
+                      <CardFooter className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-lg font-semibold text-primary">${parseFloat(item.price).toFixed(2)}</p>
+                      <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
+                          <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
+                      </Button>
+                      </CardFooter>
+                  </Card>
+                  ))}
+              </div>
         </div>
       </main>
       <Footer />
