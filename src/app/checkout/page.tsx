@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCart } from "@/hooks/use-cart";
@@ -27,7 +28,7 @@ export default function CheckoutPage() {
     }
   }, [router]);
 
-  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = cart.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
   const taxes = subtotal * 0.05;
   const deliveryFee = 2.99;
   const total = subtotal + taxes + deliveryFee;
@@ -96,13 +97,13 @@ export default function CheckoutPage() {
               {cart.map(item => (
                 <div key={item.id} className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
-                    <Image src={item.image} alt={item.name} width={48} height={48} className="rounded-md" />
+                    <Image src={item.image_url || "https://placehold.co/48x48.png"} alt={item.name} width={48} height={48} className="rounded-md" />
                     <div>
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                     </div>
                   </div>
-                  <p>${(item.price * item.quantity).toFixed(2)}</p>
+                  <p>${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
               <Separator className="my-4" />

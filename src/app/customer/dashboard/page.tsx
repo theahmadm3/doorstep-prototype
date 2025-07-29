@@ -1,13 +1,13 @@
 
-"use client";
-
-import { restaurants } from "@/lib/data";
+import { getRestaurants } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
 import { Utensils } from "lucide-react";
 
-export default function CustomerDashboardPage() {
+export default async function CustomerDashboardPage() {
+    const restaurants = await getRestaurants();
+
   return (
     <div className="space-y-12">
         <div className="text-left">
@@ -21,7 +21,7 @@ export default function CustomerDashboardPage() {
                 <Card className="flex flex-col h-full overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1">
                   <CardHeader className="p-0">
                     <Image
-                      src={`https://placehold.co/400x250.png`}
+                      src={restaurant.image_url || `https://placehold.co/400x250.png`}
                       alt={restaurant.name}
                       width={400}
                       height={250}

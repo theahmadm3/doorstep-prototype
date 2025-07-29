@@ -2,20 +2,19 @@
 "use client";
 
 import React, { createContext, useState, useEffect } from 'react';
-import type { foodItems } from '@/lib/data';
+import type { MenuItem } from '@/lib/types';
 
-type FoodItem = (typeof foodItems)[0];
-export interface CartItem extends FoodItem {
+export interface CartItem extends MenuItem {
   quantity: number;
 }
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (item: FoodItem) => void;
-  removeFromCart: (itemId: number) => void;
-  updateQuantity: (itemId: number, quantity: number) => void;
-  increaseQuantity: (itemId: number) => void;
-  decreaseQuantity: (itemId: number) => void;
+  addToCart: (item: MenuItem) => void;
+  removeFromCart: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  increaseQuantity: (itemId: string) => void;
+  decreaseQuantity: (itemId: string) => void;
   clearCart: () => void;
 }
 
@@ -43,7 +42,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [cart]);
 
-  const addToCart = (item: FoodItem) => {
+  const addToCart = (item: MenuItem) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(cartItem => cartItem.id === item.id);
       if (existingItem) {
@@ -55,11 +54,11 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     });
   };
 
-  const removeFromCart = (itemId: number) => {
+  const removeFromCart = (itemId: string) => {
     setCart(prevCart => prevCart.filter(item => item.id !== itemId));
   };
 
-  const updateQuantity = (itemId: number, quantity: number) => {
+  const updateQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(itemId);
     } else {
@@ -69,7 +68,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const increaseQuantity = (itemId: number) => {
+  const increaseQuantity = (itemId: string) => {
     setCart(prevCart =>
       prevCart.map(item =>
         item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
@@ -77,7 +76,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     );
   };
 
-  const decreaseQuantity = (itemId: number) => {
+  const decreaseQuantity = (itemId: string) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === itemId);
       if (existingItem && existingItem.quantity <= 1) {

@@ -1,7 +1,5 @@
 
-"use client";
-
-import { restaurants } from "@/lib/data";
+import { getRestaurants } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,7 +7,9 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { Utensils } from "lucide-react";
 
-export default function MenuPage() {
+export default async function MenuPage() {
+  const restaurants = await getRestaurants();
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -28,7 +28,7 @@ export default function MenuPage() {
                 <Card className="flex flex-col h-full overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1">
                   <CardHeader className="p-0">
                     <Image
-                      src={`https://placehold.co/400x250.png`}
+                      src={restaurant.image_url || `https://placehold.co/400x250.png`}
                       alt={restaurant.name}
                       width={400}
                       height={250}
