@@ -2,7 +2,15 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
@@ -12,7 +20,7 @@ import Link from "next/link";
 import { SidebarTrigger } from "../ui/sidebar";
 
 export default function ClientHeader() {
-  const { cart, ...cartUtils } = useCart();
+  const { cart } = useCart();
 
   const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
   const total = cart.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -22,8 +30,8 @@ export default function ClientHeader() {
       <SidebarTrigger />
       <h1 className="text-lg font-semibold">Customer Dashboard</h1>
       <div className="flex flex-1 items-center justify-end space-x-2">
-        <Sheet>
-          <SheetTrigger asChild>
+        <Dialog>
+          <DialogTrigger asChild>
             <Button variant="ghost" size="icon">
               <ShoppingCart className="h-5 w-5" />
               {itemCount > 0 && (
@@ -31,20 +39,23 @@ export default function ClientHeader() {
               )}
               <span className="sr-only">Shopping Cart</span>
             </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <h2 className="text-lg font-medium mb-4">Your Cart</h2>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Your Cart</DialogTitle>
+            </DialogHeader>
             {cart.length === 0 ? (
               <p>Your cart is empty.</p>
             ) : (
-              <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto">
+              <div>
+                <div className="max-h-[400px] overflow-y-auto pr-4">
                   {cart.map(item => (
                     <div key={item.id} className="flex items-center gap-4 mb-4">
                       <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" />
                       <div className="flex-1">
                         <h3 className="font-medium">{item.name}</h3>
                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+
                       </div>
                       <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
                     </div>
@@ -56,16 +67,20 @@ export default function ClientHeader() {
                     <span>Total</span>
                     <span>${total.toFixed(2)}</span>
                   </div>
-                  <SheetClose asChild>
-                    <Button className="w-full" asChild>
-                      <Link href="/checkout">Go to Checkout</Link>
-                    </Button>
-                  </SheetClose>
                 </div>
               </div>
             )}
-          </SheetContent>
-        </Sheet>
+             <DialogFooter>
+                {cart.length > 0 && (
+                     <DialogClose asChild>
+                        <Button className="w-full" asChild>
+                            <Link href="/checkout">Go to Checkout</Link>
+                        </Button>
+                    </DialogClose>
+                )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

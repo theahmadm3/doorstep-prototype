@@ -5,19 +5,30 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger
+} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, ShoppingCart, Utensils, User, LogOut } from "lucide-react";
+import { Menu, ShoppingCart, Utensils } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
-import { useRouter } from "next/navigation";
 
 export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const { cart } = useCart();
   const { itemCount, total } = useCartSummary();
-  const router = useRouter();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -107,8 +118,8 @@ export default function Header() {
 
 
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <Sheet>
-            <SheetTrigger asChild>
+           <Dialog>
+            <DialogTrigger asChild>
               <Button variant="ghost" size="icon">
                 <ShoppingCart className="h-5 w-5" />
                 {itemCount > 0 && (
@@ -116,14 +127,16 @@ export default function Header() {
                 )}
                 <span className="sr-only">Shopping Cart</span>
               </Button>
-            </SheetTrigger>
-            <SheetContent>
-                <h2 className="text-lg font-medium mb-4">Your Cart</h2>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Your Cart</DialogTitle>
+                </DialogHeader>
                 {cart.length === 0 ? (
                     <p>Your cart is empty.</p>
                 ) : (
-                    <div className="flex flex-col h-full">
-                        <div className="flex-1 overflow-y-auto">
+                    <div>
+                        <div className="max-h-[400px] overflow-y-auto pr-4">
                         {cart.map(item => (
                             <div key={item.id} className="flex items-center gap-4 mb-4">
                                 <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" />
@@ -141,16 +154,20 @@ export default function Header() {
                                 <span>Total</span>
                                 <span>${total.toFixed(2)}</span>
                             </div>
-                            <SheetClose asChild>
-                                <Button className="w-full" asChild>
-                                    <Link href="/checkout">Go to Checkout</Link>
-                                </Button>
-                            </SheetClose>
                         </div>
                     </div>
                 )}
-            </SheetContent>
-          </Sheet>
+                 <DialogFooter>
+                    {cart.length > 0 && (
+                        <DialogClose asChild>
+                            <Button className="w-full" asChild>
+                                <Link href="/checkout">Go to Checkout</Link>
+                            </Button>
+                        </DialogClose>
+                    )}
+                </DialogFooter>
+            </DialogContent>
+          </Dialog>
             <div className="hidden sm:flex items-center gap-2">
                 <Button variant="ghost" asChild>
                 <Link href="/login">Login</Link>
