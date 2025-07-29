@@ -12,7 +12,7 @@ async function fetcher<T>(url: string): Promise<T> {
     if (!res.ok) {
         const errorBody = await res.text();
         console.error(`API Error: ${res.status} ${res.statusText}`, errorBody);
-        throw new Error(`An error occurred while fetching the data: ${res.statusText}`);
+        throw new Error(`API Error: ${res.status} ${res.statusText}. Body: ${errorBody}`);
     }
     return res.json();
 }
