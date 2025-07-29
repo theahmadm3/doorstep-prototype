@@ -72,9 +72,9 @@ export default function CustomerDashboardPage() {
                     <CardTitle className="font-headline text-xl">{item.name}</CardTitle>
                     <CardDescription className="mt-2">{item.description}</CardDescription>
                 </CardContent>
-                <CardFooter className="flex justify-between items-center">
+                <CardFooter className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-lg font-semibold text-primary">${item.price.toFixed(2)}</p>
-                    <Button onClick={() => handleAddToCart(item)}>
+                    <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
                     </Button>
                 </CardFooter>
@@ -110,9 +110,9 @@ export default function CustomerDashboardPage() {
                                     <CardTitle className="font-headline text-xl">{item.name}</CardTitle>
                                     <CardDescription className="mt-2">{item.description}</CardDescription>
                                 </CardContent>
-                                <CardFooter className="flex justify-between items-center">
+                                <CardFooter className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <p className="text-lg font-semibold text-primary">${item.price.toFixed(2)}</p>
-                                    <Button onClick={() => handleAddToCart(item)}>
+                                    <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
                                         <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
                                     </Button>
                                 </CardFooter>
