@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useState, useEffect } from 'react';
@@ -13,6 +14,8 @@ interface CartContextType {
   addToCart: (item: FoodItem) => void;
   removeFromCart: (itemId: number) => void;
   updateQuantity: (itemId: number, quantity: number) => void;
+  increaseQuantity: (itemId: number) => void;
+  decreaseQuantity: (itemId: number) => void;
   clearCart: () => void;
 }
 
@@ -65,13 +68,33 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       );
     }
   };
+
+  const increaseQuantity = (itemId: number) => {
+    setCart(prevCart =>
+      prevCart.map(item =>
+        item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
+      )
+    );
+  };
+
+  const decreaseQuantity = (itemId: number) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.id === itemId);
+      if (existingItem && existingItem.quantity <= 1) {
+        return prevCart.filter(item => item.id !== itemId);
+      }
+      return prevCart.map(item =>
+        item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item
+      );
+    });
+  };
   
   const clearCart = () => {
     setCart([]);
   }
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, increaseQuantity, decreaseQuantity, clearCart }}>
       {children}
     </CartContext.Provider>
   );
