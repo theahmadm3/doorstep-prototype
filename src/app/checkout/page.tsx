@@ -20,10 +20,9 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     setIsClient(true);
-    // This is a mock authentication check.
-    // In a real app, you'd use a proper auth provider.
-    const loggedIn = true; // Assume user is logged in for this flow
-    if (!loggedIn) {
+    // Real authentication check.
+    const userRole = localStorage.getItem('userRole');
+    if (!userRole) {
       router.push('/login?redirect=/checkout');
     }
   }, [router]);

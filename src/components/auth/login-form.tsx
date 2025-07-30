@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -30,6 +30,8 @@ const formSchema = z.object({
 export default function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,9 +49,17 @@ export default function LoginForm() {
 
     toast({
       title: "Login Successful",
-      description: "Redirecting to your dashboard...",
+      description: "Redirecting...",
     });
 
+    // Handle redirection
+    if (redirectUrl) {
+      // Set dummy role for redirect to work
+      localStorage.setItem('userRole', 'customer');
+      router.push(redirectUrl);
+      return;
+    }
+    
     // Dummy logic to redirect based on email
     if (values.email.includes("admin")) {
         localStorage.setItem('userRole', 'admin');
