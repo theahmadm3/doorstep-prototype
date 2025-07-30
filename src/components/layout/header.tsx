@@ -143,7 +143,7 @@ export default function Header() {
                                 <Image src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
                                 <div className="flex-1">
                                     <h3 className="font-medium">{item.name}</h3>
-                                    <p className="text-sm text-muted-foreground">${parseFloat(item.price).toFixed(2)}</p>
+                                    <p className="text-sm text-muted-foreground">₦{parseFloat(item.price).toFixed(2)}</p>
                                      <div className="flex items-center gap-2 mt-2">
                                         <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => decreaseQuantity(item.id)}>
                                             <Minus className="h-3 w-3" />
@@ -155,7 +155,7 @@ export default function Header() {
                                     </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
-                                    <p className="font-medium">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                                    <p className="font-medium">₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => removeFromCart(item.id)}>
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -167,7 +167,7 @@ export default function Header() {
                         <div className="space-y-4">
                             <div className="flex justify-between font-bold text-lg">
                                 <span>Total</span>
-                                <span>${total.toFixed(2)}</span>
+                                <span>₦{total.toFixed(2)}</span>
                             </div>
                         </div>
                     </div>

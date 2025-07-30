@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Badge } from "@/components/ui/badge";
@@ -122,7 +123,7 @@ export default function RiderOrdersPage() {
                         <TableCell>
                             <Badge variant='default' className='bg-green-600'>{order.status}</Badge>
                         </TableCell>
-                        <TableCell className="text-right font-semibold">$7.50</TableCell>
+                        <TableCell className="text-right font-semibold">₦7.50</TableCell>
                     </TableRow>
                  )
               })}

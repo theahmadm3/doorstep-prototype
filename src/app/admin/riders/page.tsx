@@ -68,7 +68,7 @@ export default function RidersPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$1,498</div>
+                        <div className="text-2xl font-bold">₦1,498</div>
                         <p className="text-xs text-muted-foreground">Pending for next cycle</p>
                     </CardContent>
                 </Card>

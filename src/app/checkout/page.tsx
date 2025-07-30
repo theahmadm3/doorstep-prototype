@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function CheckoutPage() {
@@ -102,27 +102,27 @@ export default function CheckoutPage() {
                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                     </div>
                   </div>
-                  <p>${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                  <p>₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
               <Separator className="my-4" />
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>₦{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Taxes (5%)</span>
-                  <span>${taxes.toFixed(2)}</span>
+                  <span>₦{taxes.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Delivery Fee</span>
-                  <span>${deliveryFee.toFixed(2)}</span>
+                  <span>₦{deliveryFee.toFixed(2)}</span>
                 </div>
                 <Separator className="my-2" />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₦{total.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>

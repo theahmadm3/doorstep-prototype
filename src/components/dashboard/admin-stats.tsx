@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { analyticsData } from "@/lib/data";
 
 const chartConfig = {
     sales: {
-      label: "Sales ($)",
+      label: "Sales (₦)",
       color: "hsl(var(--primary))",
     },
 };

@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -41,7 +42,7 @@ export default function RiderDashboardPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$62.50</div>
+                        <div className="text-2xl font-bold">₦62.50</div>
                         <p className="text-xs text-muted-foreground">Your current payout</p>
                     </CardContent>
                 </Card>
@@ -69,7 +70,7 @@ export default function RiderDashboardPage() {
                                     <TableCell className="font-medium">#{delivery.id}</TableCell>
                                     <TableCell>{delivery.restaurant}</TableCell>
                                     <TableCell>{delivery.destination}</TableCell>
-                                    <TableCell className="text-right font-semibold">${delivery.payout.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-semibold">₦{delivery.payout.toFixed(2)}</TableCell>
                                     <TableCell>
                                         <Button variant="outline" size="sm">
                                             <Send className="mr-2 h-4 w-4" /> Accept

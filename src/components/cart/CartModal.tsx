@@ -51,7 +51,7 @@ export default function CartModal({ children }: { children: React.ReactNode }) {
                   <div className="flex-1">
                     <h3 className="font-medium">{item.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      ${parseFloat(item.price).toFixed(2)}
+                      ₦{parseFloat(item.price).toFixed(2)}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <Button
@@ -75,7 +75,7 @@ export default function CartModal({ children }: { children: React.ReactNode }) {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <p className="font-medium">
-                      ${(parseFloat(item.price) * item.quantity).toFixed(2)}
+                      ₦{(parseFloat(item.price) * item.quantity).toFixed(2)}
                     </p>
                     <Button
                       variant="ghost"
@@ -93,7 +93,7 @@ export default function CartModal({ children }: { children: React.ReactNode }) {
             <div className="space-y-4">
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>₦{total.toFixed(2)}</span>
               </div>
             </div>
           </div>

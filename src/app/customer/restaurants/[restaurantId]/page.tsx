@@ -3,13 +3,13 @@
 
 import { useState, useEffect } from "react";
 import { getRestaurantMenu } from "@/lib/api";
-import type { MenuItem } from "@/lib/types";
+import type { Restaurant, MenuItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, ArrowLeft } from "lucide-react";
+import { PlusCircle, ArrowLeft, Star, MapPin } from "lucide-react";
 import { notFound, useParams } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,7 @@ export default function RestaurantMenuPage() {
   const params = useParams();
   const restaurantId = params.restaurantId as string;
 
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -28,10 +29,18 @@ export default function RestaurantMenuPage() {
       const fetchData = async () => {
         setIsLoading(true);
         try {
+          // Since we don't have restaurant details endpoint, we can't fetch it directly.
+          // We will get the menu items and display them.
           const menuData = await getRestaurantMenu(restaurantId);
           setMenuItems(menuData);
+          // Mock restaurant data for display purposes since we can't fetch it.
+          // In a real app, the menu endpoint might return restaurant info.
+          if (menuData.length > 0) {
+              setRestaurant({ id: restaurantId, name: "Restaurant", rating: "4.5", address: "123 Foodie Lane", description: "Delicious meals just for you", image_url: "", owner: {} as any, is_active: true, created_at: "", updated_at: "" });
+          }
         } catch (error) {
           console.error("Failed to fetch restaurant data:", error);
+          setRestaurant(null); // Ensure we trigger notFound if fetches fail
         } finally {
           setIsLoading(false);
         }
@@ -50,7 +59,7 @@ export default function RestaurantMenuPage() {
 
   if (isLoading) {
     return (
-      <div className="py-12">
+        <div className="py-12">
            <Skeleton className="h-10 w-48 mb-8" />
            <div className="mb-12">
                 <Skeleton className="h-10 w-3/4 mx-auto mb-4" />
@@ -75,6 +84,11 @@ export default function RestaurantMenuPage() {
            </div>
       </div>
     )
+  }
+  
+  if (!menuItems || menuItems.length === 0) {
+    // This will show a "not found" page if the menu is empty or fails to load.
+    notFound();
   }
 
   return (
@@ -110,7 +124,7 @@ export default function RestaurantMenuPage() {
                       {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
                       </CardContent>
                       <CardFooter className="flex items-center justify-between mt-auto pt-4">
-                          <p className="text-lg font-semibold text-primary">${parseFloat(item.price).toFixed(2)}</p>
+                          <p className="text-lg font-semibold text-primary">₦{parseFloat(item.price).toFixed(2)}</p>
                           <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
                               <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
                           </Button>

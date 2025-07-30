@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -96,7 +97,7 @@ export default function VendorItemManagement() {
                             <Textarea id="description" name="description" defaultValue={editingItem?.description} className="col-span-3" required />
                         </div>
                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="price" className="text-right">Price ($)</Label>
+                            <Label htmlFor="price" className="text-right">Price (₦)</Label>
                             <Input id="price" name="price" type="number" step="0.01" defaultValue={editingItem?.price} className="col-span-3" required />
                         </div>
                     </div>
@@ -124,7 +125,7 @@ export default function VendorItemManagement() {
                     <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" />
                 </TableCell>
                 <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell>${item.price.toFixed(2)}</TableCell>
+                <TableCell>₦{item.price.toFixed(2)}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

@@ -1,3 +1,4 @@
+
 import {
   Accordion,
   AccordionContent,
@@ -29,7 +30,7 @@ export default function CustomerOrdersPage() {
                             <p className="text-sm text-muted-foreground">{restaurant?.name} - {new Date(order.date).toLocaleDateString()}</p>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span className="font-bold text-primary text-lg">${order.total.toFixed(2)}</span>
+                            <span className="font-bold text-primary text-lg">₦{order.total.toFixed(2)}</span>
                             <Badge variant={order.status === 'Delivered' ? 'default' : 'secondary'} className={order.status === 'Delivered' ? "bg-green-600 text-white" : ""}>
                                 {order.status}
                             </Badge>
@@ -48,7 +49,7 @@ export default function CustomerOrdersPage() {
                                     <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                                 </div>
                             </div>
-                            <p>${(item.price * item.quantity).toFixed(2)}</p>
+                            <p>₦{(item.price * item.quantity).toFixed(2)}</p>
                         </div>
                       ))}
                     </div>

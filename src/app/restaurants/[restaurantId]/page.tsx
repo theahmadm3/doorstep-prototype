@@ -82,6 +82,10 @@ export default function RestaurantMenuPage() {
       </div>
     )
   }
+  
+  if (!menuItems || menuItems.length === 0) {
+    notFound();
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -118,7 +122,7 @@ export default function RestaurantMenuPage() {
                       {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
                       </CardContent>
                       <CardFooter className="flex items-center justify-between mt-auto pt-4">
-                          <p className="text-lg font-semibold text-primary">${parseFloat(item.price).toFixed(2)}</p>
+                          <p className="text-lg font-semibold text-primary">₦{parseFloat(item.price).toFixed(2)}</p>
                           <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
                               <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
                           </Button>

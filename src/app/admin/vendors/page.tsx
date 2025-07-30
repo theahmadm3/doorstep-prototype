@@ -14,7 +14,7 @@ import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 const chartConfig = {
-    sales: { label: "Sales ($)", color: "hsl(var(--chart-1))" },
+    sales: { label: "Sales (₦)", color: "hsl(var(--chart-1))" },
     orders: { label: "Orders", color: "hsl(var(--chart-2))" },
 };
 
@@ -57,7 +57,7 @@ export default function VendorsPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$1.1M</div>
+                        <div className="text-2xl font-bold">₦1.1M</div>
                         <p className="text-xs text-muted-foreground">Across all vendors this month</p>
                     </CardContent>
                 </Card>

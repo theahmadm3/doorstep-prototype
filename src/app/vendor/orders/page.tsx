@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +52,7 @@ export default function VendorOrdersPage() {
                   <TableCell>
                     <Badge variant={order.status === 'Preparing' ? 'destructive' : 'secondary'}>{order.status}</Badge>
                   </TableCell>
-                  <TableCell>${order.total.toFixed(2)}</TableCell>
+                  <TableCell>₦{order.total.toFixed(2)}</TableCell>
                   <TableCell>
                     <Button variant="outline" size="sm">
                       <CheckCircle className="mr-2 h-4 w-4" />
@@ -109,7 +110,7 @@ export default function VendorOrdersPage() {
                   <TableCell>
                      <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>
                   </TableCell>
-                  <TableCell>${order.total.toFixed(2)}</TableCell>
+                  <TableCell>₦{order.total.toFixed(2)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

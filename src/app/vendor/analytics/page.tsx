@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
 const chartConfig = {
     sales: {
-      label: "Sales ($)",
+      label: "Sales (₦)",
       color: "hsl(var(--chart-1))",
     },
 };
@@ -23,7 +24,7 @@ export default function VendorAnalyticsPage() {
                         <CardDescription>Last 30 days</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-4xl font-bold">$45,231</p>
+                        <p className="text-4xl font-bold">₦45,231</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -41,7 +42,7 @@ export default function VendorAnalyticsPage() {
                         <CardDescription>Last 30 days</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-4xl font-bold">$129.23</p>
+                        <p className="text-4xl font-bold">₦129.23</p>
                     </CardContent>
                 </Card>
             </div>

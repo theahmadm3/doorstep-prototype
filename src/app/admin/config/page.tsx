@@ -21,7 +21,7 @@ export default function ConfigPage() {
                         <Input id="commission-rate" type="number" defaultValue="15" />
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="delivery-fee">Base Delivery Fee ($)</Label>
+                        <Label htmlFor="delivery-fee">Base Delivery Fee (₦)</Label>
                         <Input id="delivery-fee" type="number" defaultValue="2.99" />
                     </div>
                     <Button>Save Settings</Button>
