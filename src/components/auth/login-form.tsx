@@ -41,38 +41,65 @@ export default function LoginForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     
     // Clear previous auth state
     localStorage.removeItem('userRole');
 
-    toast({
-      title: "Login Successful",
-      description: "Redirecting...",
-    });
+    try {
+      // NOTE: Replace with your actual API endpoint
+      const response = await fetch(`/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
 
-    // Handle redirection
-    if (redirectUrl) {
-      // Set dummy role for redirect to work
-      localStorage.setItem('userRole', 'customer');
-      router.push(redirectUrl);
-      return;
-    }
-    
-    // Dummy logic to redirect based on email
-    if (values.email.includes("admin")) {
-        localStorage.setItem('userRole', 'admin');
-        router.push("/admin/dashboard");
-    } else if (values.email.includes("vendor")) {
-        localStorage.setItem('userRole', 'vendor');
-        router.push("/vendor/dashboard");
-    } else if (values.email.includes("rider")) {
-        localStorage.setItem('userRole', 'rider');
-        router.push("/rider/dashboard");
-    } else {
-        localStorage.setItem('userRole', 'customer');
-        router.push("/customer/dashboard");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to login.");
+      }
+
+      toast({
+        title: "Login Successful",
+        description: "Redirecting...",
+      });
+
+      const userRole = data.role;
+      localStorage.setItem('userRole', userRole);
+
+      if (redirectUrl) {
+        router.push(redirectUrl);
+        return;
+      }
+      
+      switch (userRole) {
+        case 'admin':
+          router.push('/admin/dashboard');
+          break;
+        case 'vendor':
+          router.push('/vendor/dashboard');
+          break;
+        case 'rider':
+          router.push('/rider/dashboard');
+          break;
+        case 'customer':
+          router.push('/customer/dashboard');
+          break;
+        default:
+          router.push('/login');
+          break;
+      }
+
+    } catch (error) {
+       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+       toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   }
 
