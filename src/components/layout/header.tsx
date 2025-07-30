@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -141,7 +140,7 @@ export default function Header() {
                         <div className="max-h-[400px] overflow-y-auto pr-4">
                         {cart.map(item => (
                             <div key={item.id} className="flex items-start gap-4 mb-4">
-                                <Image src={item.image_url || "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
+                                <Image src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
                                 <div className="flex-1">
                                     <h3 className="font-medium">{item.name}</h3>
                                     <p className="text-sm text-muted-foreground">${parseFloat(item.price).toFixed(2)}</p>

@@ -41,7 +41,7 @@ export default function CartModal({ children }: { children: React.ReactNode }) {
                 <div key={item.id} className="flex items-start gap-4 mb-4">
                   <Image
                     src={
-                      item.image_url || "https://placehold.co/64x64.png"
+                      item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/64x64.png"
                     }
                     alt={item.name}
                     width={64}

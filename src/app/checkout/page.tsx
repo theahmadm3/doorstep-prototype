@@ -96,7 +96,7 @@ export default function CheckoutPage() {
               {cart.map(item => (
                 <div key={item.id} className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
-                    <Image src={item.image_url || "https://placehold.co/48x48.png"} alt={item.name} width={48} height={48} className="rounded-md" />
+                    <Image src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/48x48.png"} alt={item.name} width={48} height={48} className="rounded-md" />
                     <div>
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
