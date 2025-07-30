@@ -12,7 +12,7 @@ async function fetcher<T>(url: string): Promise<T> {
     if (!res.ok) {
         const errorBody = await res.text();
         console.error(`API Error: ${res.status} ${res.statusText}`, errorBody);
-        throw new Error(`API Error: ${res.status} ${res.statusText}. Body: ${errorBody}`);
+        throw new Error(`API Error: ${res.status}. Body: ${errorBody}`);
     }
     return res.json();
 }
@@ -20,10 +20,6 @@ async function fetcher<T>(url: string): Promise<T> {
 export async function getRestaurants(): Promise<Restaurant[]> {
     const data = await fetcher<PaginatedResponse<Restaurant>>('/restaurants/');
     return data.results;
-}
-
-export async function getRestaurantById(id: string): Promise<Restaurant> {
-    return await fetcher<Restaurant>(`/restaurants/${id}/`);
 }
 
 export async function getRestaurantMenu(restaurantId: string): Promise<MenuItem[]> {

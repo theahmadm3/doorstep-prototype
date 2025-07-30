@@ -2,14 +2,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getRestaurantById, getRestaurantMenu } from "@/lib/api";
-import type { Restaurant, MenuItem } from "@/lib/types";
+import { getRestaurantMenu } from "@/lib/api";
+import type { MenuItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, ArrowLeft, Star, MapPin } from "lucide-react";
+import { PlusCircle, ArrowLeft } from "lucide-react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { notFound, useParams } from "next/navigation";
@@ -22,7 +22,6 @@ export default function RestaurantMenuPage() {
   const params = useParams();
   const restaurantId = params.restaurantId as string;
 
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,11 +30,7 @@ export default function RestaurantMenuPage() {
       const fetchData = async () => {
         setIsLoading(true);
         try {
-          const [restaurantData, menuData] = await Promise.all([
-            getRestaurantById(restaurantId),
-            getRestaurantMenu(restaurantId),
-          ]);
-          setRestaurant(restaurantData);
+          const menuData = await getRestaurantMenu(restaurantId);
           setMenuItems(menuData);
         } catch (error) {
           console.error("Failed to fetch restaurant data:", error);
@@ -64,21 +59,17 @@ export default function RestaurantMenuPage() {
            <div className="mb-12">
                 <Skeleton className="h-10 w-3/4 mx-auto mb-4" />
                 <Skeleton className="h-6 w-1/2 mx-auto" />
-                <div className="flex justify-center gap-4 mt-4">
-                    <Skeleton className="h-6 w-24" />
-                    <Skeleton className="h-6 w-32" />
-                </div>
            </div>
            <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {[...Array(8)].map((_, i) => (
                         <Card key={i}>
-                            <CardHeader><Skeleton className="h-48 w-full" /></CardHeader>
+                            <CardHeader className="p-0"><Skeleton className="h-48 w-full" /></CardHeader>
                             <CardContent className="pt-6">
                                 <Skeleton className="h-6 w-3/4 mb-2" />
                                 <Skeleton className="h-4 w-full" />
                             </CardContent>
-                            <CardFooter>
+                            <CardFooter className="flex justify-between items-center">
                                 <Skeleton className="h-8 w-1/3" />
                                 <Skeleton className="h-10 w-1/2" />
                             </CardFooter>
@@ -92,10 +83,6 @@ export default function RestaurantMenuPage() {
     )
   }
 
-  if (!restaurant) {
-    notFound();
-  }
-  
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -110,23 +97,13 @@ export default function RestaurantMenuPage() {
                 </Button>
             </div>
             <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold font-headline">{restaurant.name}</h1>
-                <p className="text-muted-foreground mt-2 text-lg">{restaurant.description || "Browse through the delicious offerings."}</p>
-                 <div className="flex items-center justify-center gap-6 mt-4 text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                        <Star className="w-5 h-5 text-yellow-500" />
-                        <span className="font-semibold">{parseFloat(restaurant.rating).toFixed(1)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <MapPin className="w-5 h-5" />
-                        <span>{restaurant.address}</span>
-                    </div>
-                </div>
+                <h1 className="text-4xl font-bold font-headline">Restaurant Menu</h1>
+                <p className="text-muted-foreground mt-2 text-lg">Browse through the delicious offerings.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {menuItems.map((item) => (
-                  <Card key={item.id} className="flex flex-col">
+                  <Card key={item.id} className="flex flex-col overflow-hidden">
                       <CardHeader className="p-0">
                       <Image
                           src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/400x250.png"}
@@ -140,11 +117,11 @@ export default function RestaurantMenuPage() {
                       <CardTitle className="font-headline text-xl">{item.name}</CardTitle>
                       {item.description && <CardDescription className="mt-2">{item.description}</CardDescription>}
                       </CardContent>
-                      <CardFooter className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-lg font-semibold text-primary">${parseFloat(item.price).toFixed(2)}</p>
-                      <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
-                          <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
-                      </Button>
+                      <CardFooter className="flex items-center justify-between mt-auto pt-4">
+                          <p className="text-lg font-semibold text-primary">${parseFloat(item.price).toFixed(2)}</p>
+                          <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
+                              <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
+                          </Button>
                       </CardFooter>
                   </Card>
                   ))}
