@@ -24,7 +24,7 @@ export default async function MenuPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {restaurants.map((restaurant) => (
-              <Link key={restaurant.id} href={`/restaurants/${restaurant.id}`} passHref>
+              <Link key={restaurant.id} href={`/customer/restaurants/${restaurant.id}`} passHref>
                 <Card className="flex flex-col h-full overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1">
                   <CardHeader className="p-0">
                     <Image
