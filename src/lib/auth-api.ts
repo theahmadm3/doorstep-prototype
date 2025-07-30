@@ -2,6 +2,7 @@
 "use client";
 
 import { LoginCredentials, LoginResponse, User } from "./types";
+import { useToast } from "@/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -43,4 +44,30 @@ export async function getAuthUser(): Promise<User> {
     }
 
     return res.json();
+}
+
+export async function logoutUser(): Promise<void> {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+        // No token, nothing to do on the backend
+        return;
+    }
+
+    const res = await fetch(`${BASE_URL}/auth/logout/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!res.ok) {
+        // Even if logout fails on the backend (e.g. token expired),
+        // we should still proceed with client-side logout.
+        // We can log the error for debugging.
+        const errorBody = await res.text();
+        console.error(`Logout failed: ${res.status}`, errorBody);
+        // We don't throw an error here because the user should be logged out
+        // on the client regardless of the server's response.
+    }
 }

@@ -16,15 +16,31 @@ import {
 } from "@/components/ui/alert-dialog";
 import { LogOut } from "lucide-react";
 import { Button } from "../ui/button";
+import { logoutUser } from "@/lib/auth-api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LogoutButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const { toast } = useToast();
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('accessToken');
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      // Log the error but proceed with client-side logout
+      console.error("An error occurred during API logout:", error);
+       toast({
+        title: "Logout Error",
+        description: "Could not log you out from the server, but you have been logged out locally.",
+        variant: "destructive",
+      });
+    } finally {
+        // Always clear local storage and redirect
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        router.push("/login");
+    }
   };
 
   return (
