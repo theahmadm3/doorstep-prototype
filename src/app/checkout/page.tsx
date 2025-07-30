@@ -11,19 +11,22 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { User } from "@/lib/types";
 
 export default function CheckoutPage() {
   const { cart, clearCart } = useCart();
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     setIsClient(true);
-    // Real authentication check.
-    const userRole = localStorage.getItem('userRole');
-    if (!userRole) {
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
       router.push('/login?redirect=/checkout');
+    } else {
+        setUser(JSON.parse(storedUser));
     }
   }, [router]);
 
@@ -42,7 +45,7 @@ export default function CheckoutPage() {
   }
   
   if (!isClient) {
-      return null; // or a loading spinner
+      return null;
   }
 
   return (
@@ -58,11 +61,11 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="John Doe" />
+                  <Input id="name" placeholder="John Doe" defaultValue={user?.full_name} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" placeholder="0801 234 5678" />
+                  <Input id="phone" placeholder="0801 234 5678" defaultValue={user?.phone_number || ''}/>
                 </div>
               </div>
               <div className="space-y-2">
@@ -92,7 +95,7 @@ export default function CheckoutPage() {
               {cart.map(item => (
                 <div key={item.id} className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
-                    <Image src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/48x48.png"} alt={item.name} width={48} height={48} className="rounded-md" />
+                    <Image src={(item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/48x48.png"} alt={item.name} width={48} height={48} className="rounded-md" />
                     <div>
                         <p className="font-medium">{item.name}</p>
                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>

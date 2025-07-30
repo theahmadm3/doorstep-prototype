@@ -1,4 +1,5 @@
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -41,4 +42,30 @@ export interface PaginatedResponse<T> {
     next: string | null;
     previous: string | null;
     results: T[];
+}
+
+export type LoginCredentials = z.infer<typeof loginSchema>;
+
+import * as z from 'zod';
+
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+
+
+export interface User {
+    id: string;
+    full_name: string;
+    email: string;
+    phone_number: string | null;
+    role: "customer" | "restaurant" | "admin" | "rider";
+    status: "Pending" | "Active" | "Suspended";
+    avatar_url: string | null;
+    created_at: string;
+}
+
+export interface LoginResponse {
+    access: string;
+    user: User;
 }

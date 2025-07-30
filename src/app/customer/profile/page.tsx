@@ -1,10 +1,23 @@
 
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useEffect, useState } from "react";
+import { User } from "@/lib/types";
 
 export default function CustomerProfilePage() {
+    const [user, setUser] = useState<User | null>(null);
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
+
     return (
         <div className="container py-12">
             <h1 className="text-3xl font-bold font-headline mb-8">Your Profile</h1>
@@ -20,11 +33,11 @@ export default function CustomerProfilePage() {
                         <form className="space-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="name">Full Name</Label>
-                                <Input id="name" defaultValue="Alice Johnson" />
+                                <Input id="name" defaultValue={user?.full_name || ''} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="phone">Phone Number</Label>
-                                <Input id="phone" defaultValue="0801 234 5678" />
+                                <Input id="phone" defaultValue={user?.phone_number || ''} />
                             </div>
                             <Button type="submit">Save Information</Button>
                         </form>
@@ -41,16 +54,16 @@ export default function CustomerProfilePage() {
                         <form className="space-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="address">Street Address</Label>
-                                <Input id="address" placeholder="123 Allen Avenue" defaultValue="456 Ademola Adetokunbo" />
+                                <Input id="address" placeholder="123 Allen Avenue" />
                             </div>
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="city">City</Label>
-                                    <Input id="city" placeholder="Ikeja" defaultValue="Wuse II"/>
+                                    <Input id="city" placeholder="Ikeja" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="state">State</Label>
-                                    <Input id="state" placeholder="Lagos" defaultValue="Abuja"/>
+                                    <Input id="state" placeholder="Lagos" />
                                 </div>
                             </div>
                             <Button type="submit">Save Address</Button>
@@ -68,7 +81,7 @@ export default function CustomerProfilePage() {
                         <form className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
-                                <Input id="email" type="email" defaultValue="alice@example.com" readOnly />
+                                <Input id="email" type="email" defaultValue={user?.email || ''} readOnly />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="current-password">Current Password</Label>

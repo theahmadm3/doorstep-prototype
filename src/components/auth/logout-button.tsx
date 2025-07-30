@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -21,8 +22,8 @@ export default function LogoutButton() {
   const [open, setOpen] = useState(false);
 
   const handleLogout = () => {
-    // In a real app, you'd also clear any session/auth tokens here.
-    localStorage.removeItem('userRole');
+    localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
     router.push("/login");
   };
 

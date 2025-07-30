@@ -1,4 +1,6 @@
 
+"use client";
+
 import {
   Sidebar,
   SidebarHeader,
@@ -23,12 +25,23 @@ import {
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LogoutButton from '@/components/auth/logout-button';
+import { useEffect, useState } from 'react';
+import type { User as UserType } from '@/lib/types';
 
 export default function VendorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [user, setUser] = useState<UserType | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
@@ -84,13 +97,13 @@ export default function VendorLayout({
           <SidebarFooter>
             <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
               <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" alt="@vendor" />
-                <AvatarFallback>V</AvatarFallback>
+                <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Vendor"} />
+                <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'V'}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold">Pizza Palace</span>
+                <span className="text-sm font-semibold">{user?.full_name || "Vendor User"}</span>
                 <span className="text-xs text-muted-foreground">
-                  vendor@pizzapalace.com
+                  {user?.email || "vendor@example.com"}
                 </span>
               </div>
               <LogoutButton />

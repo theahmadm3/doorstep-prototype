@@ -1,3 +1,6 @@
+
+"use client";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +14,20 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { useEffect, useState } from "react";
+import { User } from "@/lib/types";
+
 
 export default function VendorProfilePage() {
+    const [user, setUser] = useState<User | null>(null);
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
+
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Your Profile</h1>
@@ -29,15 +44,15 @@ export default function VendorProfilePage() {
                             <form className="space-y-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="restaurant-name">Restaurant Name</Label>
-                                    <Input id="restaurant-name" defaultValue="Pizza Palace" />
+                                    <Input id="restaurant-name" defaultValue={user?.full_name} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="restaurant-address">Address</Label>
-                                    <Input id="restaurant-address" defaultValue="123 Allen Avenue, Ikeja, Lagos" />
+                                    <Input id="restaurant-address" placeholder="123 Allen Avenue, Ikeja, Lagos" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="restaurant-description">Description</Label>
-                                    <Textarea id="restaurant-description" defaultValue="The best pizza in town! We've been serving up delicious pies for over 20 years." />
+                                    <Textarea id="restaurant-description" placeholder="The best food in town..." />
                                 </div>
                                 <Button type="submit">Save Restaurant Info</Button>
                             </form>
@@ -55,15 +70,15 @@ export default function VendorProfilePage() {
                             <form className="space-y-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="account-holder">Account Holder Name</Label>
-                                    <Input id="account-holder" defaultValue="Pizza Palace LLC" />
+                                    <Input id="account-holder" defaultValue={user?.full_name} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="account-number">Account Number</Label>
-                                    <Input id="account-number" defaultValue="••••••••1234" />
+                                    <Input id="account-number" placeholder="••••••••1234" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="bank-name">Bank Name</Label>
-                                    <Select defaultValue="gtb">
+                                    <Select>
                                     <SelectTrigger id="bank-name">
                                         <SelectValue placeholder="Select a bank" />
                                     </SelectTrigger>
@@ -87,12 +102,12 @@ export default function VendorProfilePage() {
                             <CardDescription>
                                 Update your login credentials.
                             </CardDescription>
-                        </CardHeader>
+                        </Header>
                         <CardContent>
                             <form className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email</Label>
-                                    <Input id="email" type="email" defaultValue="vendor@pizzapalace.com" />
+                                    <Input id="email" type="email" defaultValue={user?.email} readOnly/>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="current-password">Current Password</Label>

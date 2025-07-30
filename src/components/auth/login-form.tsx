@@ -17,15 +17,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
+import { loginUser } from "@/lib/auth-api";
+import { loginSchema } from "@/lib/types";
 
-const formSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email.",
-  }),
-  password: z.string().min(6, {
-    message: "Password must be at least 6 characters.",
-  }),
-});
 
 export default function LoginForm() {
   const { toast } = useToast();
@@ -33,53 +27,40 @@ export default function LoginForm() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof loginSchema>) {
     
-    // Clear previous auth state
-    localStorage.removeItem('userRole');
+    localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
 
     try {
-      // NOTE: Replace with your actual API endpoint
-      const response = await fetch(`/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to login.");
-      }
+      const data = await loginUser(values);
 
       toast({
         title: "Login Successful",
         description: "Redirecting...",
       });
 
-      const userRole = data.role;
-      localStorage.setItem('userRole', userRole);
+      localStorage.setItem('accessToken', data.access);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
       if (redirectUrl) {
         router.push(redirectUrl);
         return;
       }
       
-      switch (userRole) {
+      switch (data.user.role) {
         case 'admin':
           router.push('/admin/dashboard');
           break;
-        case 'vendor':
+        case 'restaurant':
           router.push('/vendor/dashboard');
           break;
         case 'rider':
