@@ -33,7 +33,7 @@ export default function VendorProfilePage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="restaurant-address">Address</Label>
-                                    <Input id="restaurant-address" defaultValue="123 Main St, Anytown, USA" />
+                                    <Input id="restaurant-address" defaultValue="123 Allen Avenue, Ikeja, Lagos" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="restaurant-description">Description</Label>
@@ -63,15 +63,15 @@ export default function VendorProfilePage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="bank-name">Bank Name</Label>
-                                    <Select defaultValue="chase">
+                                    <Select defaultValue="gtb">
                                     <SelectTrigger id="bank-name">
                                         <SelectValue placeholder="Select a bank" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="chase">Chase Bank</SelectItem>
-                                        <SelectItem value="boa">Bank of America</SelectItem>
-                                        <SelectItem value="wells-fargo">Wells Fargo</SelectItem>
-                                        <SelectItem value="citi">Citibank</SelectItem>
+                                        <SelectItem value="gtb">GTBank</SelectItem>
+                                        <SelectItem value="access">Access Bank</SelectItem>
+                                        <SelectItem value="zenith">Zenith Bank</SelectItem>
+                                        <SelectItem value="uba">UBA</SelectItem>
                                     </SelectContent>
                                     </Select>
                                 </div>

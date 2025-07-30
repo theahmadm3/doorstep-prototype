@@ -62,25 +62,21 @@ export default function CheckoutPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" placeholder="123-456-7890" />
+                  <Input id="phone" placeholder="0801 234 5678" />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Street Address</Label>
-                <Input id="address" placeholder="123 Main St" />
+                <Input id="address" placeholder="123 Allen Avenue" />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="city">City</Label>
-                  <Input id="city" placeholder="Anytown" />
+                  <Input id="city" placeholder="Ikeja" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="state">State</Label>
-                  <Input id="state" placeholder="CA" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="zip">ZIP Code</Label>
-                  <Input id="zip" placeholder="12345" />
+                  <Input id="state" placeholder="Lagos" />
                 </div>
               </div>
             </CardContent>

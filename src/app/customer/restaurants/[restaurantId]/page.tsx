@@ -36,7 +36,7 @@ export default function RestaurantMenuPage() {
           // Mock restaurant data for display purposes since we can't fetch it.
           // In a real app, the menu endpoint might return restaurant info.
           if (menuData.length > 0) {
-              setRestaurant({ id: restaurantId, name: "Restaurant", rating: "4.5", address: "123 Foodie Lane", description: "Delicious meals just for you", image_url: "", owner: {} as any, is_active: true, created_at: "", updated_at: "" });
+              setRestaurant({ id: restaurantId, name: "Restaurant", rating: "4.5", address: "123 Foodie Lane, Ikeja, Lagos", description: "Delicious meals just for you", image_url: "", owner: {} as any, is_active: true, created_at: "", updated_at: "" });
           }
         } catch (error) {
           console.error("Failed to fetch restaurant data:", error);

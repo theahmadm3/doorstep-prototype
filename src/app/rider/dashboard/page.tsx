@@ -6,9 +6,9 @@ import { MapPin, DollarSign, CheckCircle, Package, Send } from "lucide-react";
 
 // Mock data for available deliveries
 const availableDeliveries = [
-  { id: 'ORD101', restaurant: 'Pizza Palace', destination: '123 Main St', payout: 7.50 },
-  { id: 'ORD102', restaurant: 'Burger Barn', destination: '456 Oak Ave', payout: 6.00 },
-  { id: 'ORD103', restaurant: 'Sushi Station', destination: '789 Pine Ln', payout: 8.25 },
+  { id: 'ORD101', restaurant: 'Pizza Palace', destination: '123 Allen Avenue, Ikeja', payout: 7.50 },
+  { id: 'ORD102', restaurant: 'Burger Barn', destination: '456 Ademola Adetokunbo, Wuse II', payout: 6.00 },
+  { id: 'ORD103', restaurant: 'Sushi Station', destination: '789 Bourdillon Rd, Ikoyi', payout: 8.25 },
 ];
 
 export default function RiderDashboardPage() {
