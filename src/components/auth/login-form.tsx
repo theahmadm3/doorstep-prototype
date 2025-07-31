@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { loginUser } from "@/lib/auth-api";
 import { loginSchema } from "@/lib/types";
+import { useState } from "react";
 
 
 export default function LoginForm() {
@@ -26,6 +27,9 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect");
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginErrorMessage, setLoginErrorMessage] = useState("");
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -35,11 +39,13 @@ export default function LoginForm() {
     },
   });
 
+
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     
     localStorage.removeItem('user');
     localStorage.removeItem('accessToken');
 
+    setIsSubmitting(true);
     try {
       const data = await loginUser(values);
 
@@ -76,11 +82,15 @@ export default function LoginForm() {
 
     } catch (error) {
        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+       setLoginErrorMessage(errorMessage);
        toast({
         title: "Login Failed",
         description: errorMessage,
         variant: "destructive",
       });
+    }
+    finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -113,7 +123,10 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">Sign In</Button>
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? "signing in..." : "Sign In"}
+        </Button>
+        <p className={"text-center text-sm " + (loginErrorMessage ? "text-red-500" : "text-white")}> Error: {loginErrorMessage} </p>
       </form>
     </Form>
   );
