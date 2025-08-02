@@ -33,7 +33,7 @@ export default function CustomerOrdersPage() {
     const activeOrders = orders.filter(o => o.status !== 'unsubmitted' && o.status !== 'Delivered' && o.status !== 'Cancelled');
     const pastOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled');
     
-    if (restaurants.length === 0) {
+    if (restaurants.length === 0 && orders.length > 0) {
         return <div>Loading restaurant info...</div>;
     }
 
@@ -94,7 +94,7 @@ export default function CustomerOrdersPage() {
                                 {order.items.map((item) => (
                                     <div key={item.id} className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-4">
-                                            <Image src={item.image_url || "https://placehold.co/50x50.png"} alt={item.name} width={50} height={50} className="rounded-md" />
+                                            <Image src={(item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/50x50.png"} alt={item.name} width={50} height={50} className="rounded-md" />
                                             <div>
                                                 <p>{item.name}</p>
                                                 <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
@@ -148,7 +148,7 @@ export default function CustomerOrdersPage() {
                                 {order.items.map((item) => (
                                     <div key={item.id} className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-4">
-                                            <Image src={item.image_url || "https://placehold.co/50x50.png"} alt={item.name} width={50} height={50} className="rounded-md" />
+                                            <Image src={(item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/50x50.png"} alt={item.name} width={50} height={50} className="rounded-md" />
                                             <div>
                                                 <p>{item.name}</p>
                                                 <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
