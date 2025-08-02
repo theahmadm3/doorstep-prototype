@@ -15,15 +15,27 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function RestaurantMenuPage() {
-  const { addToCart } = useCart();
+  const { addToCart, clearCart } = useCart();
   const { toast } = useToast();
   const params = useParams();
   const restaurantId = params.restaurantId as string;
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showClearCartDialog, setShowClearCartDialog] = useState(false);
+  const [itemToAdd, setItemToAdd] = useState<MenuItem | null>(null);
 
   useEffect(() => {
     if (restaurantId) {
@@ -43,12 +55,31 @@ export default function RestaurantMenuPage() {
   }, [restaurantId]);
 
   const handleAddToCart = (item: MenuItem) => {
-    addToCart(item);
-    toast({
-      title: "Added to cart",
-      description: `${item.name} has been added to your cart.`,
-    });
+    const success = addToCart(item);
+    if (success) {
+      toast({
+        title: "Added to cart",
+        description: `${item.name} has been added to your cart.`,
+      });
+    } else {
+      setItemToAdd(item);
+      setShowClearCartDialog(true);
+    }
   };
+
+  const handleConfirmClearCart = () => {
+    if (itemToAdd) {
+        clearCart();
+        addToCart(itemToAdd);
+        toast({
+            title: "Cart Cleared & Item Added",
+            description: `Your cart has been cleared and ${itemToAdd.name} has been added.`,
+        });
+    }
+    setShowClearCartDialog(false);
+    setItemToAdd(null);
+  };
+
 
   if (isLoading) {
     return (
@@ -89,6 +120,20 @@ export default function RestaurantMenuPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
+       <AlertDialog open={showClearCartDialog} onOpenChange={setShowClearCartDialog}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Start a New Cart?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    You have items from another restaurant in your cart. Would you like to clear your current cart to add this item?
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setItemToAdd(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmClearCart}>Clear Cart & Add</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
       <Header />
       <main className="flex-grow">
         <div className="container py-12">

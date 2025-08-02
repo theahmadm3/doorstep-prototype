@@ -10,24 +10,30 @@ export interface CartItem extends MenuItem {
 
 interface CartContextType {
   cart: CartItem[];
-  addToCart: (item: MenuItem) => void;
+  addToCart: (item: MenuItem) => boolean;
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   increaseQuantity: (itemId: string) => void;
   decreaseQuantity: (itemId: string) => void;
   clearCart: () => void;
+  cartRestaurantId: string | null;
 }
 
 export const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartRestaurantId, setCartRestaurantId] = useState<string | null>(null);
 
   useEffect(() => {
     try {
       const storedCart = localStorage.getItem('doorstepCart');
+      const storedRestaurantId = localStorage.getItem('doorstepCartRestaurantId');
       if (storedCart) {
         setCart(JSON.parse(storedCart));
+      }
+      if (storedRestaurantId) {
+        setCartRestaurantId(JSON.parse(storedRestaurantId));
       }
     } catch (error) {
       console.error("Failed to parse cart from localStorage", error);
@@ -37,13 +43,25 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     try {
       localStorage.setItem('doorstepCart', JSON.stringify(cart));
+      localStorage.setItem('doorstepCartRestaurantId', JSON.stringify(cartRestaurantId));
+       if (cart.length === 0) {
+        setCartRestaurantId(null);
+        localStorage.removeItem('doorstepCartRestaurantId');
+      }
     } catch (error) {
       console.error("Failed to save cart to localStorage", error);
     }
-  }, [cart]);
+  }, [cart, cartRestaurantId]);
 
-  const addToCart = (item: MenuItem) => {
+  const addToCart = (item: MenuItem): boolean => {
+    if (cartRestaurantId && cartRestaurantId !== item.restaurant) {
+      return false; // Indicate that a confirmation is needed
+    }
+
     setCart(prevCart => {
+      if (prevCart.length === 0) {
+        setCartRestaurantId(item.restaurant);
+      }
       const existingItem = prevCart.find(cartItem => cartItem.id === item.id);
       if (existingItem) {
         return prevCart.map(cartItem =>
@@ -52,10 +70,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       }
       return [...prevCart, { ...item, quantity: 1 }];
     });
+    return true;
   };
 
   const removeFromCart = (itemId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== itemId));
+    setCart(prevCart => {
+      const newCart = prevCart.filter(item => item.id !== itemId);
+      if (newCart.length === 0) {
+        setCartRestaurantId(null);
+      }
+      return newCart;
+    });
   };
 
   const updateQuantity = (itemId: string, quantity: number) => {
@@ -78,22 +103,24 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const decreaseQuantity = (itemId: string) => {
     setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === itemId);
-      if (existingItem && existingItem.quantity <= 1) {
-        return prevCart.filter(item => item.id !== itemId);
+      const newCart = prevCart.map(item =>
+        item.id === itemId ? { ...item, quantity: Math.max(0, item.quantity - 1) } : item
+      ).filter(item => item.quantity > 0);
+      
+      if (newCart.length === 0) {
+        setCartRestaurantId(null);
       }
-      return prevCart.map(item =>
-        item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item
-      );
+      return newCart;
     });
   };
   
   const clearCart = () => {
     setCart([]);
+    setCartRestaurantId(null);
   }
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, increaseQuantity, decreaseQuantity, clearCart }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, updateQuantity, increaseQuantity, decreaseQuantity, clearCart, cartRestaurantId }}>
       {children}
     </CartContext.Provider>
   );
