@@ -1,5 +1,4 @@
 
-
 export interface Owner {
     id: string;
     full_name: string;
@@ -83,7 +82,11 @@ export interface Order {
   items: OrderItem[];
   status: OrderStatus;
   total: number;
-  // Add other fields like date, customerId when integrating with a real backend
   date?: string;
   customerId?: string;
+}
+
+export interface GuestCart {
+  restaurantId: string | null;
+  items: OrderItem[];
 }

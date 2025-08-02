@@ -9,17 +9,17 @@ import OrderStatusTracker from "@/components/dashboard/order-status";
 import { Badge } from "@/components/ui/badge";
 import { useOrder } from "@/hooks/use-order";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getRestaurants } from "@/lib/api";
-import type { Restaurant } from "@/lib/types";
+import type { Restaurant, Order } from "@/lib/types";
+import CheckoutModal from "@/components/checkout/checkout-modal";
 
 
 export default function CustomerOrdersPage() {
     const { orders } = useOrder();
-    const router = useRouter();
     const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+    const [isCheckoutOpen, setCheckoutOpen] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     useEffect(() => {
         const fetchRestaurants = async () => {
@@ -28,6 +28,11 @@ export default function CustomerOrdersPage() {
         }
         fetchRestaurants();
     }, []);
+
+    const handleCheckout = (order: Order) => {
+        setSelectedOrder(order);
+        setCheckoutOpen(true);
+    };
 
     const unsubmittedOrders = orders.filter(o => o.status === 'unsubmitted');
     const activeOrders = orders.filter(o => o.status !== 'unsubmitted' && o.status !== 'Delivered' && o.status !== 'Cancelled');
@@ -39,6 +44,12 @@ export default function CustomerOrdersPage() {
 
     return (
         <div className="container py-12">
+            <CheckoutModal
+                isOpen={isCheckoutOpen}
+                onClose={() => setCheckoutOpen(false)}
+                order={selectedOrder}
+            />
+
             <h1 className="text-3xl font-bold font-headline mb-8">Your Orders</h1>
 
             {unsubmittedOrders.length > 0 && (
@@ -57,9 +68,7 @@ export default function CustomerOrdersPage() {
                                         <p className="font-bold">Order for {restaurant?.name || 'Unknown Restaurant'}</p>
                                         <p className="text-sm text-muted-foreground">{order.items.length} item(s) - ₦{total.toFixed(2)}</p>
                                     </div>
-                                    <Button asChild>
-                                        <Link href={`/checkout?orderId=${order.id}`}>Complete Checkout</Link>
-                                    </Button>
+                                    <Button onClick={() => handleCheckout(order)}>Complete Checkout</Button>
                                 </div>
                              )
                         })}

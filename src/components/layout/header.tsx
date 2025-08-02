@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -23,11 +22,13 @@ import { Menu, ShoppingCart, Utensils, Plus, Minus, Trash2 } from "lucide-react"
 import { useOrder } from "@/hooks/use-order";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
+import CheckoutModal from "../checkout/checkout-modal";
 
 export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const { guestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem } = useOrder();
   const [isClient, setIsClient] = useState(false);
+  const [isCheckoutOpen, setCheckoutOpen] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -58,6 +59,12 @@ export default function Header() {
   }
 
   return (
+    <>
+    <CheckoutModal 
+        isOpen={isCheckoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        guestCart={guestCart}
+    />
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
@@ -175,8 +182,8 @@ export default function Header() {
                  <DialogFooter>
                     {guestCart.items.length > 0 && (
                         <DialogClose asChild>
-                            <Button className="w-full" asChild>
-                                <Link href="/checkout">Go to Checkout</Link>
+                            <Button className="w-full" onClick={() => setCheckoutOpen(true)}>
+                                Go to Checkout
                             </Button>
                         </DialogClose>
                     )}
@@ -194,5 +201,6 @@ export default function Header() {
         </div>
       </div>
     </header>
+    </>
   );
 }

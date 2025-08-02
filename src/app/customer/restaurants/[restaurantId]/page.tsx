@@ -3,13 +3,13 @@
 
 import { useState, useEffect } from "react";
 import { getRestaurantMenu } from "@/lib/api";
-import type { Restaurant, MenuItem, User } from "@/lib/types";
+import type { Restaurant, MenuItem, User, Order } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import { useOrder } from "@/hooks/use-order";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, ArrowLeft, Star, MapPin } from "lucide-react";
+import { PlusCircle, ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,9 +23,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import CheckoutModal from "@/components/checkout/checkout-modal";
 
 export default function RestaurantMenuPage() {
-  const { addOrUpdateOrder, guestCart, addToGuestCart, clearGuestCart } = useOrder();
+  const { addOrUpdateOrder, guestCart, addToGuestCart, clearGuestCart, orders } = useOrder();
   const { toast } = useToast();
   const params = useParams();
   const router = useRouter();
@@ -39,6 +40,9 @@ export default function RestaurantMenuPage() {
   const [showClearCartDialog, setShowClearCartDialog] = useState(false);
   const [showIsThatAllDialog, setShowIsThatAllDialog] = useState(false);
   const [itemToAdd, setItemToAdd] = useState<MenuItem | null>(null);
+  
+  const [isCheckoutOpen, setCheckoutOpen] = useState(false);
+  const [orderForCheckout, setOrderForCheckout] = useState<Order | null>(null);
   
   useEffect(() => {
      const storedUser = localStorage.getItem('user');
@@ -55,7 +59,10 @@ export default function RestaurantMenuPage() {
           const menuData = await getRestaurantMenu(restaurantId);
           setMenuItems(menuData);
           if (menuData.length > 0) {
-              setRestaurant({ id: restaurantId, name: "Restaurant", rating: "4.5", address: "123 Foodie Lane, Ikeja, Lagos", description: "Delicious meals just for you", image_url: "", owner: {} as any, is_active: true, created_at: "", updated_at: "" });
+              // This is a mock restaurant object. In a real app, you'd fetch this.
+              const firstItem = menuData[0];
+              const restaurantData = { id: firstItem.restaurant, name: "Restaurant", rating: "4.5", address: "123 Foodie Lane, Ikeja, Lagos", description: "Delicious meals just for you", image_url: "", owner: {} as any, is_active: true, created_at: "", updated_at: "" };
+              setRestaurant(restaurantData);
           }
         } catch (error) {
           console.error("Failed to fetch restaurant data:", error);
@@ -112,12 +119,10 @@ export default function RestaurantMenuPage() {
 
   const handleIsThatAllYes = () => {
      setShowIsThatAllDialog(false);
-     const unsubmittedOrder = guestCart.items.length > 0 ? null : 'unsubmitted-order-id';
+     const unsubmittedOrder = orders.find(o => o.restaurantId === restaurantId && o.status === 'unsubmitted');
      if(unsubmittedOrder) {
-        router.push(`/checkout?orderId=${unsubmittedOrder}`);
-     } else {
-        const order = addOrUpdateOrder(itemToAdd!);
-        router.push(`/checkout?orderId=${order.id}`);
+        setOrderForCheckout(unsubmittedOrder);
+        setCheckoutOpen(true);
      }
   }
 
@@ -157,6 +162,11 @@ export default function RestaurantMenuPage() {
 
   return (
     <div className="flex-grow">
+        <CheckoutModal 
+            isOpen={isCheckoutOpen}
+            onClose={() => setCheckoutOpen(false)}
+            order={orderForCheckout}
+        />
         {/* Dialog for guest users clearing cart */}
         <AlertDialog open={showClearCartDialog} onOpenChange={setShowClearCartDialog}>
             <AlertDialogContent>
@@ -198,7 +208,7 @@ export default function RestaurantMenuPage() {
                 </Button>
             </div>
             <div className="text-center mb-12">
-                <h1 className="text-4xl font-bold font-headline">Restaurant Menu</h1>
+                <h1 className="text-4xl font-bold font-headline">{restaurant?.name || 'Restaurant'} Menu</h1>
                 <p className="text-muted-foreground mt-2 text-lg">Browse through the delicious offerings.</p>
             </div>
 
@@ -231,4 +241,3 @@ export default function RestaurantMenuPage() {
     </div>
   );
 }
-
