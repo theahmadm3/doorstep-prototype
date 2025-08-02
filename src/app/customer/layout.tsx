@@ -24,7 +24,6 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ClientHeader from '@/components/layout/client-header';
 import LogoutButton from '@/components/auth/logout-button';
-import CartModal from '@/components/cart/CartModal';
 import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
 
@@ -68,14 +67,6 @@ export default function CustomerLayout({
                   My Orders
                 </Link>
               </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <CartModal>
-                  <SidebarMenuButton>
-                    <ShoppingCart />
-                    Cart
-                  </SidebarMenuButton>
-                </CartModal>
             </SidebarMenuItem>
              <SidebarMenuItem>
               <SidebarMenuButton asChild>

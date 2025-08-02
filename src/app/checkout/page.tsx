@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useCart } from "@/hooks/use-cart";
+import { useOrder } from "@/hooks/use-order";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,26 +11,69 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { User } from "@/lib/types";
+import type { User, Order } from "@/lib/types";
 
 export default function CheckoutPage() {
-  const { cart, clearCart } = useCart();
+  const { orders, guestCart, clearGuestCart, updateOrderStatus } = useOrder();
   const router = useRouter();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
   const [isClient, setIsClient] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     setIsClient(true);
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
-      router.push('/login?redirect=/checkout');
+        // For guest users, the cart is the order
+        if (guestCart.items.length === 0) {
+            router.push('/menu');
+        } else {
+            setCurrentOrder({
+                id: 'guest-checkout',
+                restaurantId: guestCart.restaurantId || '',
+                items: guestCart.items,
+                status: 'unsubmitted',
+                total: guestCart.items.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0)
+            });
+        }
+        router.push('/login?redirect=/checkout');
     } else {
         setUser(JSON.parse(storedUser));
+        if (orderId) {
+            const foundOrder = orders.find(o => o.id === orderId);
+            if (foundOrder) {
+                setCurrentOrder(foundOrder);
+            } else {
+                toast({ title: "Order not found", variant: "destructive" });
+                router.push('/customer/orders');
+            }
+        } else {
+             // Handle guest checkout continuation after login
+            if (guestCart.items.length > 0) {
+                 setCurrentOrder({
+                    id: 'guest-checkout-final',
+                    restaurantId: guestCart.restaurantId || '',
+                    items: guestCart.items,
+                    status: 'unsubmitted',
+                    total: guestCart.items.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0)
+                });
+            } else {
+                toast({ title: "No order selected for checkout", variant: "destructive" });
+                router.push('/customer/dashboard');
+            }
+        }
     }
-  }, [router]);
+  }, [router, orderId, orders, guestCart, toast]);
 
-  const subtotal = cart.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
+  if (!isClient || !currentOrder) {
+    return null; // Or a loading spinner
+  }
+
+  const subtotal = currentOrder.items.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
   const taxes = subtotal * 0.05;
   const deliveryFee = 2.99;
   const total = subtotal + taxes + deliveryFee;
@@ -40,12 +83,14 @@ export default function CheckoutPage() {
         title: "Payment Successful!",
         description: "Your order has been placed. We're on it!",
     });
-    clearCart();
+    
+    if (user && orderId) {
+        updateOrderStatus(orderId, 'Order Placed');
+    } else {
+        // This was a guest cart, now cleared after login and payment
+        clearGuestCart();
+    }
     router.push('/customer/orders');
-  }
-  
-  if (!isClient) {
-      return null;
   }
 
   return (
@@ -61,7 +106,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" placeholder="John Doe" defaultValue={user?.full_name} />
+                  <Input id="name" placeholder="John Doe" defaultValue={user?.full_name || ''} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
@@ -92,7 +137,7 @@ export default function CheckoutPage() {
               <CardDescription>Review your items before finalizing.</CardDescription>
             </CardHeader>
             <CardContent>
-              {cart.map(item => (
+              {currentOrder.items.map(item => (
                 <div key={item.id} className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
                     <Image src={(item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/48x48.png"} alt={item.name} width={48} height={48} className="rounded-md" />

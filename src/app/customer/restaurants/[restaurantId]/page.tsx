@@ -3,14 +3,14 @@
 
 import { useState, useEffect } from "react";
 import { getRestaurantMenu } from "@/lib/api";
-import type { Restaurant, MenuItem } from "@/lib/types";
+import type { Restaurant, MenuItem, User } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
-import { useCart } from "@/hooks/use-cart";
+import { useOrder } from "@/hooks/use-order";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ArrowLeft, Star, MapPin } from "lucide-react";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -25,17 +25,27 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function RestaurantMenuPage() {
-  const { addToCart, clearCart } = useCart();
+  const { addOrUpdateOrder, guestCart, addToGuestCart, clearGuestCart } = useOrder();
   const { toast } = useToast();
   const params = useParams();
+  const router = useRouter();
   const restaurantId = params.restaurantId as string;
 
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showClearCartDialog, setShowClearCartDialog] = useState(false);
-  const [itemToAdd, setItemToAdd] = useState<MenuItem | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
+  const [showClearCartDialog, setShowClearCartDialog] = useState(false);
+  const [showIsThatAllDialog, setShowIsThatAllDialog] = useState(false);
+  const [itemToAdd, setItemToAdd] = useState<MenuItem | null>(null);
+  
+  useEffect(() => {
+     const storedUser = localStorage.getItem('user');
+     if (storedUser) {
+        setUser(JSON.parse(storedUser));
+     }
+  }, []);
 
   useEffect(() => {
     if (restaurantId) {
@@ -58,23 +68,34 @@ export default function RestaurantMenuPage() {
     }
   }, [restaurantId]);
 
-  const handleAddToCart = (item: MenuItem) => {
-    const success = addToCart(item);
-    if (success) {
-        toast({
-            title: "Added to cart",
-            description: `${item.name} has been added to your cart.`,
-        });
+  const handleAddItem = (item: MenuItem) => {
+    if (user) {
+      // Logged-in user flow
+      addOrUpdateOrder(item);
+      toast({
+        title: "Item Added",
+        description: `${item.name} has been added to your order for this restaurant.`,
+      });
+      setShowIsThatAllDialog(true);
     } else {
-        setItemToAdd(item);
-        setShowClearCartDialog(true);
+      // Guest user flow
+      const success = addToGuestCart(item);
+      if (success) {
+          toast({
+              title: "Added to cart",
+              description: `${item.name} has been added to your cart.`,
+          });
+      } else {
+          setItemToAdd(item);
+          setShowClearCartDialog(true);
+      }
     }
   };
 
   const handleConfirmClearCart = () => {
     if (itemToAdd) {
-        clearCart();
-        addToCart(itemToAdd);
+        clearGuestCart();
+        addToGuestCart(itemToAdd);
         toast({
             title: "Cart Cleared & Item Added",
             description: `Your cart has been cleared and ${itemToAdd.name} has been added.`,
@@ -83,6 +104,23 @@ export default function RestaurantMenuPage() {
     setShowClearCartDialog(false);
     setItemToAdd(null);
   };
+  
+  const handleIsThatAllNo = () => {
+    setShowIsThatAllDialog(false);
+    router.push('/customer/dashboard');
+  }
+
+  const handleIsThatAllYes = () => {
+     setShowIsThatAllDialog(false);
+     const unsubmittedOrder = guestCart.items.length > 0 ? null : 'unsubmitted-order-id';
+     if(unsubmittedOrder) {
+        router.push(`/checkout?orderId=${unsubmittedOrder}`);
+     } else {
+        const order = addOrUpdateOrder(itemToAdd!);
+        router.push(`/checkout?orderId=${order.id}`);
+     }
+  }
+
 
   if (isLoading) {
     return (
@@ -119,17 +157,34 @@ export default function RestaurantMenuPage() {
 
   return (
     <div className="flex-grow">
+        {/* Dialog for guest users clearing cart */}
         <AlertDialog open={showClearCartDialog} onOpenChange={setShowClearCartDialog}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                 <AlertDialogTitle>Start a New Cart?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    You have items from another restaurant in your cart. Would you like to clear your current cart to add this item?
+                    You have items from another restaurant in your cart. Would you like to clear it to add this item?
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setItemToAdd(null)}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmClearCart}>Clear Cart & Add</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Dialog for logged-in users after adding an item */}
+        <AlertDialog open={showIsThatAllDialog} onOpenChange={setShowIsThatAllDialog}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Is that all?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Your item has been added to an order. Would you like to proceed to checkout or continue shopping?
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleIsThatAllNo}>No, continue shopping</AlertDialogCancel>
+                <AlertDialogAction onClick={handleIsThatAllYes}>Yes, go to checkout</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -165,8 +220,8 @@ export default function RestaurantMenuPage() {
                       </CardContent>
                       <CardFooter className="flex items-center justify-between mt-auto pt-4">
                           <p className="text-lg font-semibold text-primary">₦{parseFloat(item.price).toFixed(2)}</p>
-                          <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
-                              <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
+                          <Button onClick={() => handleAddItem(item)} className="w-full sm:w-auto">
+                              <PlusCircle className="mr-2 h-4 w-4" /> {user ? 'Add to Order' : 'Add to Cart'}
                           </Button>
                       </CardFooter>
                   </Card>
@@ -176,3 +231,4 @@ export default function RestaurantMenuPage() {
     </div>
   );
 }
+

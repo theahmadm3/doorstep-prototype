@@ -3,14 +3,14 @@
 
 import { useState, useEffect } from "react";
 import { getRestaurantMenu } from "@/lib/api";
-import type { MenuItem } from "@/lib/types";
+import type { MenuItem, User } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
-import { useCart } from "@/hooks/use-cart";
+import { useOrder } from "@/hooks/use-order";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ArrowLeft } from "lucide-react";
-import { notFound, useParams } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/header";
@@ -27,15 +27,25 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function RestaurantMenuPage() {
-  const { addToCart, clearCart } = useCart();
+  const { addOrUpdateOrder, guestCart, addToGuestCart, clearGuestCart } = useOrder();
   const { toast } = useToast();
   const params = useParams();
+  const router = useRouter();
   const restaurantId = params.restaurantId as string;
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+
   const [showClearCartDialog, setShowClearCartDialog] = useState(false);
   const [itemToAdd, setItemToAdd] = useState<MenuItem | null>(null);
+
+  useEffect(() => {
+     const storedUser = localStorage.getItem('user');
+     if (storedUser) {
+        setUser(JSON.parse(storedUser));
+     }
+  }, []);
 
   useEffect(() => {
     if (restaurantId) {
@@ -54,8 +64,14 @@ export default function RestaurantMenuPage() {
     }
   }, [restaurantId]);
 
-  const handleAddToCart = (item: MenuItem) => {
-    const success = addToCart(item);
+  const handleAddItem = (item: MenuItem) => {
+    // For guests, we add to cart. If they are logged in, we redirect them to the customer dashboard version of this page.
+    if (user) {
+      router.push(`/customer/restaurants/${restaurantId}`);
+      return;
+    }
+
+    const success = addToGuestCart(item);
     if (success) {
       toast({
         title: "Added to cart",
@@ -69,8 +85,8 @@ export default function RestaurantMenuPage() {
 
   const handleConfirmClearCart = () => {
     if (itemToAdd) {
-        clearCart();
-        addToCart(itemToAdd);
+        clearGuestCart();
+        addToGuestCart(itemToAdd);
         toast({
             title: "Cart Cleared & Item Added",
             description: `Your cart has been cleared and ${itemToAdd.name} has been added.`,
@@ -168,7 +184,7 @@ export default function RestaurantMenuPage() {
                       </CardContent>
                       <CardFooter className="flex items-center justify-between mt-auto pt-4">
                           <p className="text-lg font-semibold text-primary">₦{parseFloat(item.price).toFixed(2)}</p>
-                          <Button onClick={() => handleAddToCart(item)} className="w-full sm:w-auto">
+                          <Button onClick={() => handleAddItem(item)} className="w-full sm:w-auto">
                               <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
                           </Button>
                       </CardFooter>

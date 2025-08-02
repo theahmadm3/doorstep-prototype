@@ -69,3 +69,21 @@ export interface LoginResponse {
     access: string;
     user: User;
 }
+
+// Order Management Types
+export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled';
+
+export interface OrderItem extends MenuItem {
+  quantity: number;
+}
+
+export interface Order {
+  id: string;
+  restaurantId: string;
+  items: OrderItem[];
+  status: OrderStatus;
+  total: number;
+  // Add other fields like date, customerId when integrating with a real backend
+  date?: string;
+  customerId?: string;
+}
