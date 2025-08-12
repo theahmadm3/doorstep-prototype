@@ -1,4 +1,5 @@
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -43,16 +44,35 @@ export interface PaginatedResponse<T> {
     results: T[];
 }
 
-export type LoginCredentials = z.infer<typeof loginSchema>;
-
 import * as z from 'zod';
 
+// Login Schemas & Types
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
 });
+export type LoginCredentials = z.infer<typeof loginSchema>;
+
+export interface LoginResponse {
+    access: string;
+    user: User;
+}
+
+// Signup Schemas & Types
+export const signupSchema = z.object({
+  full_name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.string().email("Please enter a valid email."),
+  password: z.string().min(8, "Password must be at least 8 characters."),
+});
+export type SignupCredentials = z.infer<typeof signupSchema>;
+
+export interface SignupResponse {
+    user: User;
+    token: string;
+}
 
 
+// User Type
 export interface User {
     id: string;
     full_name: string;
@@ -64,10 +84,6 @@ export interface User {
     created_at: string;
 }
 
-export interface LoginResponse {
-    access: string;
-    user: User;
-}
 
 // Order Management Types
 export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled';
