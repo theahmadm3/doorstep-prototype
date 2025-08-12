@@ -26,7 +26,7 @@ export default function LogoutButton() {
 
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      // await logoutUser();
     } catch (error) {
       // Log the error but proceed with client-side logout
       console.error("An error occurred during API logout:", error);
