@@ -39,6 +39,8 @@ export default function LogoutButton() {
         // Always clear local storage and redirect
         localStorage.removeItem('user');
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('doorstepOrders');
+        localStorage.removeItem('doorstepGuestCart');
         router.push("/login");
     }
   };
