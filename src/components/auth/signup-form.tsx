@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { signupUser } from "@/lib/auth-api";
-import { signupSchema } from "@/lib/types";
+import { signupSchema, SignupCredentials } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -27,19 +27,21 @@ export default function SignupForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const form = useForm<z.infer<typeof signupSchema>>({
+  const form = useForm<SignupCredentials>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       full_name: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
-  async function onSubmit(values: z.infer<typeof signupSchema>) {
+  async function onSubmit(values: SignupCredentials) {
     setIsSubmitting(true);
     setErrorMessage("");
     try {
+      // The 'confirmPassword' field is implicitly omitted because `signupUser` only expects fields from `SignupPayload`.
       await signupUser(values);
       toast({
         title: "Account Created Successfully!",
@@ -95,6 +97,19 @@ export default function SignupForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="••••••••" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm Password</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { LoginCredentials, LoginResponse, SignupCredentials, SignupResponse, User } from "./types";
+import { LoginCredentials, LoginResponse, SignupPayload, SignupResponse, User } from "./types";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -26,7 +26,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<LoginRes
     return res.json();
 }
 
-export async function signupUser(credentials: SignupCredentials): Promise<SignupResponse> {
+export async function signupUser(credentials: SignupPayload): Promise<SignupResponse> {
     const res = await fetch(`${BASE_URL}/auth/signup/customer/`, {
         method: 'POST',
         headers: {
