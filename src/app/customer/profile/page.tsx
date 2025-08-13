@@ -19,6 +19,7 @@ export default function CustomerProfilePage() {
 
     const profileForm = useForm<ProfileFormData>({
         resolver: zodResolver(profileSchema),
+        mode: "onChange",
         defaultValues: {
             full_name: "",
             phone_number: "",
