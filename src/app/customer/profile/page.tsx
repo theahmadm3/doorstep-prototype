@@ -122,7 +122,14 @@ export default function CustomerProfilePage() {
                                         <FormItem>
                                             <FormLabel>Phone Number</FormLabel>
                                             <FormControl>
-                                                <Input {...field} />
+                                                <Input
+                                                    {...field}
+                                                    onChange={(e) => {
+                                                        const numericValue = e.target.value.replace(/\D/g, '');
+                                                        const truncatedValue = numericValue.slice(0, 11);
+                                                        field.onChange(truncatedValue);
+                                                    }}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
