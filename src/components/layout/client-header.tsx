@@ -7,15 +7,29 @@ import { SidebarTrigger } from "../ui/sidebar";
 import { useOrder } from "@/hooks/use-order";
 import { Package } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { User } from "@/lib/types";
 
 export default function ClientHeader() {
   const { orders } = useOrder();
+  const [user, setUser] = useState<User | null>(null);
+  
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
   const unsubmittedOrderCount = orders.filter(o => o.status === 'unsubmitted').length;
+  const firstName = user?.full_name?.split(' ')[0];
 
   return (
     <div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10">
       <SidebarTrigger />
-      <h1 className="text-lg font-semibold">Customer Dashboard</h1>
+      <h1 className="text-lg font-semibold">
+        {firstName ? `Hello, ${firstName}` : 'Customer Dashboard'}
+      </h1>
       <div className="flex flex-1 items-center justify-end space-x-2">
          <Button variant="ghost" size="icon" asChild>
           <Link href="/customer/orders">
