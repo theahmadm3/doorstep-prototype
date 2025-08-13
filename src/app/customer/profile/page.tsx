@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useEffect, useState } from "react";
-import { User, profileSchema, addressSchema, passwordSchema, ProfileFormData, AddressFormData, PasswordFormData, ProfileUpdatePayload } from "@/lib/types";
+import { User, profileSchema, addressSchema, passwordSchema, ProfileFormData, AddressFormData, PasswordFormData } from "@/lib/types";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
@@ -41,6 +41,9 @@ export default function CustomerProfilePage() {
             newPassword: "",
         }
     });
+    
+    const { formState: { isDirty: isProfileDirty, isValid: isProfileValid, isSubmitting: isProfileSubmitting } } = profileForm;
+
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -59,6 +62,7 @@ export default function CustomerProfilePage() {
             const updatedUser = await updateUserProfile(data);
             localStorage.setItem('user', JSON.stringify(updatedUser));
             setUser(updatedUser);
+            profileForm.reset(data); // Reset form to new default values, making it "not dirty"
             toast({ title: "Success", description: "Your personal information has been updated." });
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -123,8 +127,8 @@ export default function CustomerProfilePage() {
                                         </FormItem>
                                     )}
                                 />
-                                <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                                    {profileForm.formState.isSubmitting ? "Saving..." : "Save Information"}
+                                <Button type="submit" disabled={!isProfileDirty || !isProfileValid || isProfileSubmitting}>
+                                    {isProfileSubmitting ? "Saving..." : "Save Information"}
                                 </Button>
                             </form>
                         </Form>

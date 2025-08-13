@@ -2,6 +2,7 @@
 
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -117,9 +118,15 @@ export interface GuestCart {
 }
 
 // Profile Page Schemas
+const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
+
 export const profileSchema = z.object({
-    full_name: z.string().min(2, "Name must be at least 2 characters."),
-    phone_number: z.string().min(10, "Please enter a valid phone number.").or(z.literal('')),
+    full_name: z.string().min(2, "Full name must be at least 2 characters long."),
+    phone_number: z.preprocess(
+        // Strip non-numeric characters
+        (val) => (typeof val === 'string' ? val.replace(/\D/g, '') : val),
+        z.string().regex(nigerianPhoneRegex, "Please enter a valid Nigerian phone number (e.g., 08012345678).")
+    ),
 });
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
