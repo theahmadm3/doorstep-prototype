@@ -1,6 +1,7 @@
 
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -134,3 +135,9 @@ export const passwordSchema = z.object({
     newPassword: z.string().min(8, "New password must be at least 8 characters."),
 });
 export type PasswordFormData = z.infer<typeof passwordSchema>;
+
+
+export interface ProfileUpdatePayload {
+  full_name: string;
+  phone_number?: string;
+}

@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useEffect, useState } from "react";
-import { User, profileSchema, addressSchema, passwordSchema, ProfileFormData, AddressFormData, PasswordFormData } from "@/lib/types";
+import { User, profileSchema, addressSchema, passwordSchema, ProfileFormData, AddressFormData, PasswordFormData, ProfileUpdatePayload } from "@/lib/types";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
+import { updateUserProfile } from "@/lib/auth-api";
 
 export default function CustomerProfilePage() {
     const [user, setUser] = useState<User | null>(null);
@@ -53,10 +54,20 @@ export default function CustomerProfilePage() {
         }
     }, [profileForm]);
 
-    const onProfileSubmit = (data: ProfileFormData) => {
-        console.log("Profile data submitted:", data);
-        // TODO: Add API call to update user profile
-        toast({ title: "Success", description: "Your personal information has been updated." });
+    const onProfileSubmit = async (data: ProfileFormData) => {
+        try {
+            const updatedUser = await updateUserProfile(data);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
+            toast({ title: "Success", description: "Your personal information has been updated." });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+            toast({
+                title: "Update Failed",
+                description: message,
+                variant: "destructive"
+            });
+        }
     };
 
     const onAddressSubmit = (data: AddressFormData) => {
@@ -112,7 +123,9 @@ export default function CustomerProfilePage() {
                                         </FormItem>
                                     )}
                                 />
-                                <Button type="submit">Save Information</Button>
+                                <Button type="submit" disabled={profileForm.formState.isSubmitting}>
+                                    {profileForm.formState.isSubmitting ? "Saving..." : "Save Information"}
+                                </Button>
                             </form>
                         </Form>
                     </CardContent>

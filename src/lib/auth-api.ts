@@ -1,7 +1,7 @@
 
 "use client";
 
-import { LoginCredentials, LoginResponse, SignupPayload, SignupResponse, User } from "./types";
+import { LoginCredentials, LoginResponse, SignupPayload, SignupResponse, User, ProfileUpdatePayload } from "./types";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -67,6 +67,30 @@ export async function getAuthUser(): Promise<User> {
 
     return res.json();
 }
+
+export async function updateUserProfile(data: ProfileUpdatePayload): Promise<User> {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+        throw new Error("Authentication token not found. Please log in again.");
+    }
+    
+    const res = await fetch(`${BASE_URL}/auth/users/me/update/`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+        const errorBody = await res.json();
+        throw new Error(errorBody.detail || `API Error: ${res.status}`);
+    }
+
+    return res.json();
+}
+
 
 export async function logoutUser(): Promise<void> {
     // const token = localStorage.getItem('accessToken');
