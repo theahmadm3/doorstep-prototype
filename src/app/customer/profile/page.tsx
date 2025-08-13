@@ -5,18 +5,72 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useEffect, useState } from "react";
-import { User } from "@/lib/types";
+import { User, profileSchema, addressSchema, passwordSchema, ProfileFormData, AddressFormData, PasswordFormData } from "@/lib/types";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CustomerProfilePage() {
     const [user, setUser] = useState<User | null>(null);
+    const { toast } = useToast();
+
+    const profileForm = useForm<ProfileFormData>({
+        resolver: zodResolver(profileSchema),
+        defaultValues: {
+            full_name: "",
+            phone_number: "",
+        },
+    });
+
+    const addressForm = useForm<AddressFormData>({
+        resolver: zodResolver(addressSchema),
+        defaultValues: {
+            street: "",
+            city: "",
+            state: "",
+        },
+    });
+
+    const passwordForm = useForm<PasswordFormData>({
+        resolver: zodResolver(passwordSchema),
+        defaultValues: {
+            currentPassword: "",
+            newPassword: "",
+        }
+    });
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+            profileForm.reset({
+                full_name: parsedUser.full_name || '',
+                phone_number: parsedUser.phone_number || '',
+            });
         }
-    }, []);
+    }, [profileForm]);
+
+    const onProfileSubmit = (data: ProfileFormData) => {
+        console.log("Profile data submitted:", data);
+        // TODO: Add API call to update user profile
+        toast({ title: "Success", description: "Your personal information has been updated." });
+    };
+
+    const onAddressSubmit = (data: AddressFormData) => {
+        console.log("Address data submitted:", data);
+        // TODO: Add API call to update user address
+        toast({ title: "Success", description: "Your delivery address has been updated." });
+    };
+
+    const onPasswordSubmit = (data: PasswordFormData) => {
+        console.log("Password change submitted");
+        // TODO: Add API call to update password
+        toast({ title: "Success", description: "Your password has been updated." });
+        passwordForm.reset();
+    };
 
     return (
         <div className="container py-12">
@@ -30,17 +84,37 @@ export default function CustomerProfilePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Full Name</Label>
-                                <Input id="name" defaultValue={user?.full_name || ''} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <Input id="phone" defaultValue={user?.phone_number || ''} />
-                            </div>
-                            <Button type="submit">Save Information</Button>
-                        </form>
+                        <Form {...profileForm}>
+                            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                                <FormField
+                                    control={profileForm.control}
+                                    name="full_name"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Full Name</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={profileForm.control}
+                                    name="phone_number"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Phone Number</FormLabel>
+                                            <FormControl>
+                                                <Input {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="submit">Save Information</Button>
+                            </form>
+                        </Form>
                     </CardContent>
                 </Card>
                  <Card>
@@ -51,23 +125,52 @@ export default function CustomerProfilePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Street Address</Label>
-                                <Input id="address" placeholder="123 Allen Avenue" />
-                            </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="city">City</Label>
-                                    <Input id="city" placeholder="Ikeja" />
+                        <Form {...addressForm}>
+                            <form onSubmit={addressForm.handleSubmit(onAddressSubmit)} className="space-y-6">
+                                <FormField
+                                    control={addressForm.control}
+                                    name="street"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Street Address</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="123 Allen Avenue" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <FormField
+                                        control={addressForm.control}
+                                        name="city"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>City</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Ikeja" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={addressForm.control}
+                                        name="state"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>State</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Lagos" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="state">State</Label>
-                                    <Input id="state" placeholder="Lagos" />
-                                </div>
-                            </div>
-                            <Button type="submit">Save Address</Button>
-                        </form>
+                                <Button type="submit">Save Address</Button>
+                            </form>
+                        </Form>
                     </CardContent>
                 </Card>
                 <Card>
@@ -78,21 +181,41 @@ export default function CustomerProfilePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" type="email" defaultValue={user?.email || ''} readOnly />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="current-password">Current Password</Label>
-                                <Input id="current-password" type="password" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="new-password">New Password</Label>
-                                <Input id="new-password" type="password" />
-                            </div>
-                            <Button type="submit" className="w-full">Update Password</Button>
-                        </form>
+                        <Form {...passwordForm}>
+                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input id="email" type="email" defaultValue={user?.email || ''} readOnly />
+                                </div>
+                                <FormField
+                                    control={passwordForm.control}
+                                    name="currentPassword"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Current Password</FormLabel>
+                                            <FormControl>
+                                                <Input type="password" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={passwordForm.control}
+                                    name="newPassword"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>New Password</FormLabel>
+                                            <FormControl>
+                                                <Input type="password" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="submit" className="w-full">Update Password</Button>
+                            </form>
+                        </Form>
                     </CardContent>
                 </Card>
             </div>

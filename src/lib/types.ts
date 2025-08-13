@@ -1,5 +1,6 @@
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -113,3 +114,23 @@ export interface GuestCart {
   restaurantId: string | null;
   items: OrderItem[];
 }
+
+// Profile Page Schemas
+export const profileSchema = z.object({
+    full_name: z.string().min(2, "Name must be at least 2 characters."),
+    phone_number: z.string().min(10, "Please enter a valid phone number.").or(z.literal('')),
+});
+export type ProfileFormData = z.infer<typeof profileSchema>;
+
+export const addressSchema = z.object({
+    street: z.string().min(5, "Street address is too short."),
+    city: z.string().min(2, "City name is too short."),
+    state: z.string().min(2, "State name is too short."),
+});
+export type AddressFormData = z.infer<typeof addressSchema>;
+
+export const passwordSchema = z.object({
+    currentPassword: z.string().min(1, "Current password is required."),
+    newPassword: z.string().min(8, "New password must be at least 8 characters."),
+});
+export type PasswordFormData = z.infer<typeof passwordSchema>;
