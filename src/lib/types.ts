@@ -3,6 +3,7 @@
 
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -92,6 +93,7 @@ export interface User {
     status: "Pending" | "Active" | "Suspended";
     avatar_url: string | null;
     created_at: string;
+    login_count: number;
 }
 
 
