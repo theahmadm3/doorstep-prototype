@@ -7,13 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useEffect, useState } from "react";
-import { User, profileSchema, addressSchema, passwordSchema, ProfileFormData, AddressFormData, PasswordFormData } from "@/lib/types";
+import { User, profileSchema, PasswordFormData, passwordSchema, ProfileFormData } from "@/lib/types";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/auth-api";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import AddressManagement from "@/components/profile/address-management";
+
 
 export default function CustomerProfilePage() {
     const [user, setUser] = useState<User | null>(null);
@@ -25,16 +25,6 @@ export default function CustomerProfilePage() {
         defaultValues: {
             full_name: "",
             phone_number: "",
-        },
-    });
-
-    const addressForm = useForm<AddressFormData>({
-        resolver: zodResolver(addressSchema),
-        defaultValues: {
-            street: "",
-            district_town: "",
-            nearest_landmark: "",
-            address_nickname: "",
         },
     });
 
@@ -76,12 +66,6 @@ export default function CustomerProfilePage() {
                 variant: "destructive"
             });
         }
-    };
-
-    const onAddressSubmit = (data: AddressFormData) => {
-        console.log("Address data submitted:", data);
-        // TODO: Add API call to update user address
-        toast({ title: "Success", description: "Your delivery address has been updated." });
     };
 
     const onPasswordSubmit = (data: PasswordFormData) => {
@@ -147,81 +131,13 @@ export default function CustomerProfilePage() {
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle>Delivery Address</CardTitle>
+                        <CardTitle>Delivery Addresses</CardTitle>
                         <CardDescription>
-                            Set your primary delivery location.
+                            Manage your saved delivery locations.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Form {...addressForm}>
-                            <form onSubmit={addressForm.handleSubmit(onAddressSubmit)} className="space-y-6">
-                                <FormField
-                                    control={addressForm.control}
-                                    name="street"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>House number and street name</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="e.g. 123 Allen Avenue" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                 <FormField
-                                    control={addressForm.control}
-                                    name="district_town"
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="flex items-center gap-2">
-                                            District/Town
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>Your area name</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        </FormLabel>
-                                        <FormControl>
-                                        <Input placeholder="e.g. Ikeja" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={addressForm.control}
-                                    name="nearest_landmark"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                        <FormLabel>Nearest Landmark (Optional)</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. Opposite the big mosque" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                        </FormItem>
-                                    )}
-                                    />
-                                <FormField
-                                    control={addressForm.control}
-                                    name="address_nickname"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                        <FormLabel>Address Nickname (Optional)</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. Home, Work" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <Button type="submit">Save Address</Button>
-                            </form>
-                        </Form>
+                       <AddressManagement />
                     </CardContent>
                 </Card>
                 <Card>

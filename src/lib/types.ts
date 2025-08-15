@@ -1,10 +1,4 @@
 
-
-
-
-
-
-
 export interface Owner {
     id: string;
     full_name: string;
@@ -140,6 +134,11 @@ export const addressSchema = z.object({
     address_nickname: z.string().optional(),
 });
 export type AddressFormData = z.infer<typeof addressSchema>;
+
+// This represents a saved address, which includes an ID.
+export interface Address extends AddressFormData {
+  id: string;
+}
 
 export const passwordSchema = z.object({
     currentPassword: z.string().min(1, "Current password is required."),
