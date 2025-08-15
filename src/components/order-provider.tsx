@@ -36,15 +36,19 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   const [guestCart, setGuestCart] = useState<GuestCart>({ restaurantId: null, items: [] });
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Load guest cart state from localStorage on mount
+  // Load state from localStorage on mount
   useEffect(() => {
     try {
       const storedGuestCart = localStorage.getItem('doorstepGuestCart');
       if (storedGuestCart) {
         setGuestCart(JSON.parse(storedGuestCart));
       }
+      const storedOrders = localStorage.getItem('doorstepOrders');
+      if (storedOrders) {
+        setOrders(JSON.parse(storedOrders));
+      }
     } catch (error) {
-      console.error("Failed to parse guest cart data from localStorage", error);
+      console.error("Failed to parse data from localStorage", error);
     }
     setIsInitialLoad(false);
   }, []);
@@ -58,6 +62,16 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("Failed to save guest cart data to localStorage", error);
     }
   }, [guestCart, isInitialLoad]);
+  
+  // Save orders state to localStorage on change
+  useEffect(() => {
+    if (isInitialLoad) return;
+    try {
+      localStorage.setItem('doorstepOrders', JSON.stringify(orders));
+    } catch (error) {
+      console.error("Failed to save order data to localStorage", error);
+    }
+  }, [orders, isInitialLoad]);
 
 
   // --- Logged-in User Order Management ---
