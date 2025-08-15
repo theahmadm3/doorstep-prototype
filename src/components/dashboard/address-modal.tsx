@@ -37,8 +37,9 @@ export default function AddressModal({ isOpen, onClose, onSave }: AddressModalPr
 
   const handleFormSubmit = async (data: AddressFormData) => {
     try {
-        const payload: AddressPostData = { ...data, is_default: true };
-        await addAddress(payload);
+        // const payload: AddressPostData = { ...data, is_default: true };
+        // await addAddress(payload); // API call commented out
+        console.log("Stubbed addAddress:", data);
         onSave(data);
         toast({
             title: "Address Saved!",

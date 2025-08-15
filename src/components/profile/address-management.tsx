@@ -25,6 +25,26 @@ import AddressForm from "./address-form";
 import { getAddresses, addAddress } from "@/lib/api";
 import { Skeleton } from "../ui/skeleton";
 
+const mockAddresses: Address[] = [
+    {
+        id: "1",
+        street_address: "123 Allen Avenue",
+        city: "Ikeja",
+        nearest_landmark: "Opposite the big mosque",
+        address_nickname: "Home",
+        is_default: true,
+    },
+    {
+        id: "2",
+        street_address: "456 Tech Road",
+        city: "Yaba",
+        nearest_landmark: "Near Co-creation Hub",
+        address_nickname: "Work",
+        is_default: false,
+    }
+];
+
+
 export default function AddressManagement() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -36,7 +56,8 @@ export default function AddressManagement() {
   const fetchAddresses = useCallback(async () => {
     setIsLoading(true);
     try {
-      const fetchedAddresses = await getAddresses();
+      // const fetchedAddresses = await getAddresses(); // API call commented out
+      const fetchedAddresses = mockAddresses; // Using mock data
       setAddresses(fetchedAddresses);
       if (fetchedAddresses.length > 0 && !selectedAddressId) {
         // Find a default address or fallback to the first one
@@ -79,6 +100,8 @@ export default function AddressManagement() {
      if (!selectedAddressId) return;
      // TODO: Implement API call for deletion
      console.log("Deleting address:", selectedAddressId);
+     setAddresses(addresses.filter(addr => addr.id !== selectedAddressId));
+     setSelectedAddressId(addresses.length > 1 ? addresses.find(addr => addr.id !== selectedAddressId)!.id : null);
      toast({ title: "Address Deleted", description: "The selected address has been removed." });
   };
 
@@ -87,13 +110,18 @@ export default function AddressManagement() {
     if (editingAddress) {
       // TODO: Implement API call for updating an address
       console.log("Updating address:", { ...editingAddress, ...data });
+      setAddresses(addresses.map(addr => addr.id === editingAddress.id ? { ...editingAddress, ...data } : addr));
       toast({ title: "Address Updated", description: "Your address has been successfully updated." });
     } else {
       try {
-        const payload: AddressPostData = { ...data, is_default: true };
-        await addAddress(payload);
+        // const payload: AddressPostData = { ...data, is_default: true };
+        // await addAddress(payload); // API call commented out
+        console.log("Stubbed addAddress:", data);
+        const newAddress: Address = { ...data, id: (Math.random() * 10000).toString(), is_default: false };
+        setAddresses([...addresses, newAddress]);
+        setSelectedAddressId(newAddress.id);
         toast({ title: "Address Added", description: "Your new address has been saved." });
-        fetchAddresses(); // Refresh the list
+        // fetchAddresses(); // Not needed when using local state
       } catch (error) {
          const message = error instanceof Error ? error.message : "Failed to save address.";
          toast({
