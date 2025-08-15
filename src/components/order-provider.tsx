@@ -43,10 +43,6 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
       if (storedGuestCart) {
         setGuestCart(JSON.parse(storedGuestCart));
       }
-      const storedOrders = localStorage.getItem('doorstepOrders');
-      if (storedOrders) {
-        setOrders(JSON.parse(storedOrders));
-      }
     } catch (error) {
       console.error("Failed to parse data from localStorage", error);
     }
@@ -63,16 +59,6 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [guestCart, isInitialLoad]);
   
-  // Save orders state to localStorage on change
-  useEffect(() => {
-    if (isInitialLoad) return;
-    try {
-      localStorage.setItem('doorstepOrders', JSON.stringify(orders));
-    } catch (error) {
-      console.error("Failed to save order data to localStorage", error);
-    }
-  }, [orders, isInitialLoad]);
-
 
   // --- Logged-in User Order Management ---
   const addOrUpdateOrder = useCallback((item: MenuItem): Order => {
