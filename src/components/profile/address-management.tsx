@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -20,34 +19,48 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import type { Address, AddressFormData } from "@/lib/types";
+import type { Address, AddressFormData, AddressPostData } from "@/lib/types";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import AddressForm from "./address-form";
-
-const ADDRESS_STORAGE_KEY = "doorstepAddresses";
+import { getAddresses, addAddress } from "@/lib/api";
+import { Skeleton } from "../ui/skeleton";
 
 export default function AddressManagement() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const storedAddresses = localStorage.getItem(ADDRESS_STORAGE_KEY);
-    if (storedAddresses) {
-      const parsedAddresses: Address[] = JSON.parse(storedAddresses);
-      setAddresses(parsedAddresses);
-      if (parsedAddresses.length > 0) {
-        setSelectedAddressId(parsedAddresses[0].id);
+  const fetchAddresses = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedAddresses = await getAddresses();
+      setAddresses(fetchedAddresses);
+      if (fetchedAddresses.length > 0 && !selectedAddressId) {
+        // Find a default address or fallback to the first one
+        const defaultAddress = fetchedAddresses.find(a => a.is_default);
+        setSelectedAddressId(defaultAddress ? defaultAddress.id : fetchedAddresses[0].id);
+      } else if (fetchedAddresses.length === 0) {
+        setSelectedAddressId(null);
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to load addresses.";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [toast, selectedAddressId]);
 
-  const saveAddressesToStorage = (updatedAddresses: Address[]) => {
-    localStorage.setItem(ADDRESS_STORAGE_KEY, JSON.stringify(updatedAddresses));
-    setAddresses(updatedAddresses);
-  };
+  useEffect(() => {
+    fetchAddresses();
+  }, [fetchAddresses]);
+
   
   const handleAddClick = () => {
     setEditingAddress(null);
@@ -64,28 +77,31 @@ export default function AddressManagement() {
 
   const handleDeleteClick = () => {
      if (!selectedAddressId) return;
-     const updatedAddresses = addresses.filter(addr => addr.id !== selectedAddressId);
-     saveAddressesToStorage(updatedAddresses);
-     setSelectedAddressId(updatedAddresses.length > 0 ? updatedAddresses[0].id : null);
+     // TODO: Implement API call for deletion
+     console.log("Deleting address:", selectedAddressId);
      toast({ title: "Address Deleted", description: "The selected address has been removed." });
   };
 
 
-  const handleSaveAddress = (data: AddressFormData) => {
+  const handleSaveAddress = async (data: AddressFormData) => {
     if (editingAddress) {
-      // Update existing address
-      const updatedAddresses = addresses.map(addr =>
-        addr.id === editingAddress.id ? { ...addr, ...data } : addr
-      );
-      saveAddressesToStorage(updatedAddresses);
+      // TODO: Implement API call for updating an address
+      console.log("Updating address:", { ...editingAddress, ...data });
       toast({ title: "Address Updated", description: "Your address has been successfully updated." });
     } else {
-      // Add new address
-      const newAddress: Address = { id: uuidv4(), ...data };
-      const updatedAddresses = [...addresses, newAddress];
-      saveAddressesToStorage(updatedAddresses);
-      setSelectedAddressId(newAddress.id);
-      toast({ title: "Address Added", description: "Your new address has been saved." });
+      try {
+        const payload: AddressPostData = { ...data, is_default: true };
+        await addAddress(payload);
+        toast({ title: "Address Added", description: "Your new address has been saved." });
+        fetchAddresses(); // Refresh the list
+      } catch (error) {
+         const message = error instanceof Error ? error.message : "Failed to save address.";
+         toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+         });
+      }
     }
     setModalOpen(false);
     setEditingAddress(null);
@@ -93,6 +109,16 @@ export default function AddressManagement() {
 
   const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
   
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -106,7 +132,7 @@ export default function AddressManagement() {
               <SelectContent>
                 {addresses.map(addr => (
                   <SelectItem key={addr.id} value={addr.id}>
-                    {addr.address_nickname || `${addr.street.substring(0, 20)}...`}
+                    {addr.address_nickname || `${addr.street_address.substring(0, 20)}...`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -126,8 +152,8 @@ export default function AddressManagement() {
        {selectedAddress && (
         <div className="text-sm p-3 bg-muted rounded-md border">
             <p className="font-semibold">{selectedAddress.address_nickname}</p>
-            <p>{selectedAddress.street}</p>
-            <p>{selectedAddress.district_town}</p>
+            <p>{selectedAddress.street_address}</p>
+            <p>{selectedAddress.city}</p>
             {selectedAddress.nearest_landmark && <p className="text-muted-foreground">Landmark: {selectedAddress.nearest_landmark}</p>}
         </div>
        )}

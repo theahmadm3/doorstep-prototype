@@ -9,9 +9,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { addressSchema, type AddressFormData } from "@/lib/types";
+import { addressSchema, type AddressFormData, AddressPostData } from "@/lib/types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+import { addAddress } from "@/lib/api";
 
 interface AddressModalProps {
   isOpen: boolean;
@@ -24,8 +25,8 @@ export default function AddressModal({ isOpen, onClose, onSave }: AddressModalPr
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
-      street: "",
-      district_town: "",
+      street_address: "",
+      city: "",
       nearest_landmark: "",
       address_nickname: "",
     },
@@ -35,14 +36,23 @@ export default function AddressModal({ isOpen, onClose, onSave }: AddressModalPr
   const { formState: { isValid, isSubmitting } } = form;
 
   const handleFormSubmit = async (data: AddressFormData) => {
-    // Here you would make an API call to save the address
-    console.log("Address submitted:", data);
-    onSave(data);
-    toast({
-      title: "Address Saved!",
-      description: "Your delivery address has been successfully saved.",
-    });
-    onClose();
+    try {
+        const payload: AddressPostData = { ...data, is_default: true };
+        await addAddress(payload);
+        onSave(data);
+        toast({
+            title: "Address Saved!",
+            description: "Your delivery address has been successfully saved.",
+        });
+        onClose();
+    } catch (error) {
+         const message = error instanceof Error ? error.message : "Failed to save address.";
+         toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+         });
+    }
   };
 
   return (
@@ -62,7 +72,7 @@ export default function AddressModal({ isOpen, onClose, onSave }: AddressModalPr
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4">
             <FormField
               control={form.control}
-              name="street"
+              name="street_address"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>House number and street name</FormLabel>
@@ -75,7 +85,7 @@ export default function AddressModal({ isOpen, onClose, onSave }: AddressModalPr
             />
              <FormField
                 control={form.control}
-                name="district_town"
+                name="city"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">

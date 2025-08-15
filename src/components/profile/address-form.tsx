@@ -18,8 +18,8 @@ export default function AddressForm({ onSubmit, defaultValues }: AddressFormProp
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
     defaultValues: defaultValues || {
-      street: "",
-      district_town: "",
+      street_address: "",
+      city: "",
       nearest_landmark: "",
       address_nickname: "",
     },
@@ -31,7 +31,7 @@ export default function AddressForm({ onSubmit, defaultValues }: AddressFormProp
       <form id="address-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
         <FormField
           control={form.control}
-          name="street"
+          name="street_address"
           render={({ field }) => (
             <FormItem>
               <FormLabel>House number and street name</FormLabel>
@@ -44,7 +44,7 @@ export default function AddressForm({ onSubmit, defaultValues }: AddressFormProp
         />
         <FormField
             control={form.control}
-            name="district_town"
+            name="city"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex items-center gap-2">
