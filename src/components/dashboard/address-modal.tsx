@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { addressSchema, type AddressFormData } from "@/lib/types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 interface AddressModalProps {
   isOpen: boolean;
@@ -23,8 +25,9 @@ export default function AddressModal({ isOpen, onClose, onSave }: AddressModalPr
     resolver: zodResolver(addressSchema),
     defaultValues: {
       street: "",
-      city: "",
-      state: "",
+      district_town: "",
+      nearest_landmark: "",
+      address_nickname: "",
     },
     mode: "onChange",
   });
@@ -62,42 +65,65 @@ export default function AddressModal({ isOpen, onClose, onSave }: AddressModalPr
               name="street"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Street Address</FormLabel>
+                  <FormLabel>House number and street name</FormLabel>
                   <FormControl>
-                    <Input placeholder="123 Allen Avenue" {...field} />
+                    <Input placeholder="e.g. 123 Allen Avenue" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
+             <FormField
                 control={form.control}
-                name="city"
+                name="district_town"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>City</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                        District/Town
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Your area name</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </FormLabel>
                     <FormControl>
-                      <Input placeholder="Ikeja" {...field} />
+                      <Input placeholder="e.g. Ikeja" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Lagos" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="nearest_landmark"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nearest Landmark (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Opposite the big mosque" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="address_nickname"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address Nickname (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Home, Work" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter className="grid grid-cols-2 gap-4">
                 <Button type="button" variant="outline" onClick={onClose}>
                     Skip for now

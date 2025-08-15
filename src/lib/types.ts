@@ -4,6 +4,7 @@
 
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -133,9 +134,10 @@ export const profileSchema = z.object({
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
 export const addressSchema = z.object({
-    street: z.string().min(5, "Street address is too short."),
-    city: z.string().min(2, "City name is too short."),
-    state: z.string().min(2, "State name is too short."),
+    street: z.string().min(5, "House number and street name is too short."),
+    district_town: z.string().min(2, "District/Town is too short."),
+    nearest_landmark: z.string().optional(),
+    address_nickname: z.string().optional(),
 });
 export type AddressFormData = z.infer<typeof addressSchema>;
 
