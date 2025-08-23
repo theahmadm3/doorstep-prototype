@@ -52,10 +52,10 @@ export default function AddressManagement() {
       setAddresses(fetchedAddresses);
       if (fetchedAddresses.length > 0) {
         const defaultAddress = fetchedAddresses.find(a => a.is_default);
-        const currentSelected = selectedAddressId && fetchedAddresses.some(a => a.id === selectedAddressId)
-                                  ? selectedAddressId
-                                  : defaultAddress?.id || fetchedAddresses[0].id;
-        setSelectedAddressId(currentSelected);
+        // Set selected to default or first address only on initial load or after list changes
+        if (!selectedAddressId) {
+            setSelectedAddressId(defaultAddress?.id || fetchedAddresses[0].id);
+        }
       } else {
         setSelectedAddressId(null);
       }
@@ -69,7 +69,7 @@ export default function AddressManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, selectedAddressId]);
+  }, [toast]);
 
   useEffect(() => {
     fetchAddresses();
@@ -94,7 +94,7 @@ export default function AddressManagement() {
      try {
         await deleteAddress(selectedAddressId);
         toast({ title: "Address Deleted", description: "The selected address has been removed." });
-        await fetchAddresses();
+        await fetchAddresses(); // Refetch after delete
      } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to delete address.";
         toast({
@@ -117,7 +117,7 @@ export default function AddressManagement() {
         await addAddress(payload); 
         toast({ title: "Address Added", description: "Your new address has been saved." });
       }
-      await fetchAddresses();
+      await fetchAddresses(); // Refetch after save
     } catch (error) {
        const message = error instanceof Error ? error.message : "Failed to save address.";
        toast({
