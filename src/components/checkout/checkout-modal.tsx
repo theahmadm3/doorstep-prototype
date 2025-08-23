@@ -84,10 +84,10 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   const deliveryFee = 2.99;
   const total = subtotal + taxes + deliveryFee;
 
-  const handlePayment = () => {
+  const handlePlaceOrder = () => {
     toast({
-        title: "Payment Successful!",
-        description: "Your order has been placed. We're on it!",
+        title: "Order Placed!",
+        description: "Your order has been submitted. We're on it!",
     });
     
     if (user && order) {
@@ -227,8 +227,8 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                     </CardContent>
                 </Card>
                 <CardFooter className="p-1 mt-auto">
-                    <Button className="w-full" onClick={handlePayment}>
-                        Proceed to Paystack
+                    <Button className="w-full" onClick={handlePlaceOrder}>
+                        Place Order
                     </Button>
                 </CardFooter>
             </div>
