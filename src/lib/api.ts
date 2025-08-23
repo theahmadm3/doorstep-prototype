@@ -8,7 +8,7 @@ if (!BASE_URL) {
 }
 
 async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const token = localStorage.getItem('accessToken');
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
