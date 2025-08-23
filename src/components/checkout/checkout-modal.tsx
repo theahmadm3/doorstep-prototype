@@ -87,6 +87,17 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
 
   const handlePlaceOrder = async () => {
     if (user && order) {
+        if (!user.phone_number) {
+            toast({
+                title: "Phone Number Required",
+                description: "Please add a phone number to your profile before placing an order.",
+                variant: "destructive",
+            });
+            onClose();
+            router.push('/customer/profile');
+            return;
+        }
+
         if (!selectedAddressId) {
             toast({
                 title: "Address Required",
