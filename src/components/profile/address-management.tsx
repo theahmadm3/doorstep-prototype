@@ -41,10 +41,7 @@ export default function AddressManagement() {
       if (fetchedAddresses.length > 0) {
         // Find a default address or fallback to the first one
         const defaultAddress = fetchedAddresses.find(a => a.is_default);
-        const newSelectedId = defaultAddress ? defaultAddress.id : fetchedAddresses[0].id;
-        if (newSelectedId !== selectedAddressId) {
-             setSelectedAddressId(newSelectedId);
-        }
+        setSelectedAddressId(defaultAddress ? defaultAddress.id : fetchedAddresses[0].id);
       } else {
         setSelectedAddressId(null);
       }
@@ -58,7 +55,7 @@ export default function AddressManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, selectedAddressId]);
+  }, [toast]);
 
   useEffect(() => {
     fetchAddresses();
