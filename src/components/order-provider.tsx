@@ -3,7 +3,7 @@
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import type { MenuItem, Order, OrderStatus, OrderItem } from '@/lib/types';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidvv4 } from 'uuid';
 
 // Renamed CartItem to OrderItem for clarity
 // export interface OrderItem extends MenuItem {
@@ -20,6 +20,8 @@ interface OrderContextType {
   orders: Order[];
   addOrUpdateOrder: (item: MenuItem) => Order;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  increaseOrderItemQuantity: (orderId: string, itemId: string) => void;
+  decreaseOrderItemQuantity: (orderId: string, itemId: string) => void;
   
   guestCart: GuestCart;
   addToGuestCart: (item: MenuItem) => boolean;
@@ -96,6 +98,34 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
       prevOrders.map(o => o.id === orderId ? { ...o, status } : o)
     );
   };
+  
+  const calculateOrderTotal = (items: OrderItem[]) => {
+    return items.reduce((acc, i) => acc + parseFloat(i.price) * i.quantity, 0);
+  };
+
+  const increaseOrderItemQuantity = (orderId: string, itemId: string) => {
+    setOrders(prevOrders => prevOrders.map(order => {
+        if (order.id === orderId) {
+            const newItems = order.items.map(item =>
+                item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
+            );
+            return { ...order, items: newItems, total: calculateOrderTotal(newItems) };
+        }
+        return order;
+    }));
+  };
+
+  const decreaseOrderItemQuantity = (orderId: string, itemId: string) => {
+    setOrders(prevOrders => prevOrders.map(order => {
+        if (order.id === orderId) {
+            const newItems = order.items.map(item =>
+                item.id === itemId ? { ...item, quantity: Math.max(1, item.quantity - 1) } : item
+            );
+            return { ...order, items: newItems, total: calculateOrderTotal(newItems) };
+        }
+        return order;
+    }));
+  };
 
 
   // --- Guest User Cart Management ---
@@ -161,7 +191,7 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   return (
-    <OrderContext.Provider value={{ orders, addOrUpdateOrder, updateOrderStatus, guestCart, addToGuestCart, clearGuestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem }}>
+    <OrderContext.Provider value={{ orders, addOrUpdateOrder, updateOrderStatus, guestCart, addToGuestCart, clearGuestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem, increaseOrderItemQuantity, decreaseOrderItemQuantity }}>
       {children}
     </OrderContext.Provider>
   );

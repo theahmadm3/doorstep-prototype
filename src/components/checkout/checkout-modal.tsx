@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { getAddresses } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Minus, Plus } from "lucide-react";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -29,7 +30,7 @@ interface CheckoutModalProps {
 }
 
 export default function CheckoutModal({ isOpen, onClose, order, guestCart }: CheckoutModalProps) {
-  const { clearGuestCart, updateOrderStatus } = useOrder();
+  const { clearGuestCart, updateOrderStatus, increaseGuestItemQuantity, decreaseGuestItemQuantity, increaseOrderItemQuantity, decreaseOrderItemQuantity } = useOrder();
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
@@ -98,6 +99,23 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     onClose();
     router.push(user ? '/customer/orders' : '/');
   }
+  
+  const handleIncrease = (itemId: string) => {
+    if (order) {
+      increaseOrderItemQuantity(order.id, itemId);
+    } else {
+      increaseGuestItemQuantity(itemId);
+    }
+  };
+
+  const handleDecrease = (itemId: string) => {
+    if (order) {
+      decreaseOrderItemQuantity(order.id, itemId);
+    } else {
+      decreaseGuestItemQuantity(itemId);
+    }
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -171,10 +189,18 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                                 <Image src={(item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/48x48.png"} alt={item.name} width={48} height={48} className="rounded-md" />
                                 <div>
                                     <p className="font-medium text-sm">{item.name}</p>
-                                    <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleDecrease(item.id)} disabled={item.quantity <= 1}>
+                                            <Minus className="h-3 w-3" />
+                                        </Button>
+                                        <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleIncrease(item.id)}>
+                                            <Plus className="h-3 w-3" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
-                            <p className="text-sm">₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                            <p className="text-sm font-semibold">₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
                         </div>
                     ))}
                     </div>
