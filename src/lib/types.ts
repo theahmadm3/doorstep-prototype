@@ -114,6 +114,19 @@ export interface GuestCart {
   items: OrderItem[];
 }
 
+// Order API Payload Types
+export interface OrderItemPayload {
+  menu_item_id: string;
+  quantity: number;
+}
+
+export interface OrderPayload {
+  restaurant_id: string;
+  delivery_address_id: string;
+  items: OrderItemPayload[];
+}
+
+
 // Profile Page Schemas
 const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
 

@@ -11,14 +11,14 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { User, Order, GuestCart, Address } from "@/lib/types";
+import type { User, Order, GuestCart, Address, OrderPayload, OrderItemPayload } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getAddresses } from "@/lib/api";
+import { getAddresses, placeOrder } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Minus, Plus } from "lucide-react";
 
@@ -37,6 +37,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   const [user, setUser] = useState<User | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -84,20 +85,61 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   const deliveryFee = 2.99;
   const total = subtotal + taxes + deliveryFee;
 
-  const handlePlaceOrder = () => {
-    toast({
-        title: "Order Placed!",
-        description: "Your order has been submitted. We're on it!",
-    });
-    
+  const handlePlaceOrder = async () => {
     if (user && order) {
-        updateOrderStatus(order.id, 'Order Placed');
+        if (!selectedAddressId) {
+            toast({
+                title: "Address Required",
+                description: "Please select a delivery address.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsPlacingOrder(true);
+
+        const orderItemsPayload: OrderItemPayload[] = order.items.map(item => ({
+            menu_item_id: item.id,
+            quantity: item.quantity,
+        }));
+
+        const orderPayload: OrderPayload = {
+            restaurant_id: order.restaurantId,
+            delivery_address_id: selectedAddressId,
+            items: orderItemsPayload,
+        };
+        
+        try {
+            await placeOrder(orderPayload);
+            toast({
+                title: "Order Placed!",
+                description: "Your order has been submitted. We're on it!",
+            });
+            updateOrderStatus(order.id, 'Order Placed');
+            onClose();
+            router.push('/customer/orders');
+        } catch (error) {
+             const message = error instanceof Error ? error.message : "Failed to place order.";
+             toast({
+                title: "Order Failed",
+                description: message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsPlacingOrder(false);
+        }
+
     } else {
         // This was a guest cart
+        toast({
+            title: "Please Log In",
+            description: "You need to be logged in to place an order.",
+            variant: "destructive"
+        });
         clearGuestCart();
+        onClose();
+        router.push('/login?redirect=/customer/orders');
     }
-    onClose();
-    router.push(user ? '/customer/orders' : '/');
   }
   
   const handleIncrease = (itemId: string) => {
@@ -132,11 +174,11 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                             <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" placeholder="John Doe" defaultValue={user?.full_name || ''} />
+                            <Input id="name" placeholder="John Doe" defaultValue={user?.full_name || ''} readOnly/>
                             </div>
                             <div className="space-y-2">
                             <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" placeholder="0801 234 5678" defaultValue={user?.phone_number || ''}/>
+                            <Input id="phone" placeholder="0801 234 5678" defaultValue={user?.phone_number || ''} readOnly/>
                             </div>
                         </div>
 
@@ -160,16 +202,16 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
 
                         <div className="space-y-2">
                             <Label htmlFor="address">Street Address</Label>
-                            <Input id="address" placeholder="123 Allen Avenue" value={selectedAddress?.street_address || ''} onChange={(e) => { /* Handle manual edits if needed */ }} />
+                            <Input id="address" placeholder="123 Allen Avenue" value={selectedAddress?.street_address || ''} readOnly />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                             <Label htmlFor="city">District/Town</Label>
-                            <Input id="city" placeholder="Ikeja" value={selectedAddress?.city || ''} onChange={(e) => { /* Handle manual edits if needed */ }} />
+                            <Input id="city" placeholder="Ikeja" value={selectedAddress?.city || ''} readOnly />
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="landmark">Nearest Landmark</Label>
-                                <Input id="landmark" placeholder="Near the market" value={selectedAddress?.nearest_landmark || ''} onChange={(e) => { /* Handle manual edits if needed */ }} />
+                                <Input id="landmark" placeholder="Near the market" value={selectedAddress?.nearest_landmark || ''} readOnly />
                             </div>
                         </div>
                     </CardContent>
@@ -227,8 +269,8 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                     </CardContent>
                 </Card>
                 <CardFooter className="p-1 mt-auto">
-                    <Button className="w-full" onClick={handlePlaceOrder}>
-                        Place Order
+                    <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
+                        {isPlacingOrder ? "Placing Order..." : "Place Order"}
                     </Button>
                 </CardFooter>
             </div>

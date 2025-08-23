@@ -1,5 +1,5 @@
 
-import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData } from "./types";
+import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -74,5 +74,13 @@ export async function updateAddress(addressId: string, addressData: Partial<Addr
 export async function deleteAddress(addressId: string): Promise<void> {
     await fetcher<void>(`/addresses/${addressId}/`, {
         method: 'DELETE',
+    });
+}
+
+// Order Management API Calls
+export async function placeOrder(orderData: OrderPayload): Promise<any> { // Replace 'any' with a proper Order response type if you have one
+    return fetcher<any>('/orders/', {
+        method: 'POST',
+        body: JSON.stringify(orderData),
     });
 }
