@@ -11,13 +11,15 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { User, Order, GuestCart } from "@/lib/types";
+import type { User, Order, GuestCart, Address } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getAddresses } from "@/lib/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -32,14 +34,40 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
 
   useEffect(() => {
     setIsClient(true);
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
     }
   }, []);
+
+  useEffect(() => {
+    if (isOpen && user) {
+        const fetchUserAddresses = async () => {
+            try {
+                const fetchedAddresses = await getAddresses();
+                setAddresses(fetchedAddresses);
+                const defaultAddress = fetchedAddresses.find(a => a.is_default) || fetchedAddresses[0];
+                if (defaultAddress) {
+                    setSelectedAddressId(defaultAddress.id);
+                }
+            } catch (error) {
+                console.error("Failed to fetch addresses:", error);
+                toast({
+                    title: "Could not load addresses",
+                    description: "Please try again or enter your address manually.",
+                    variant: "destructive"
+                });
+            }
+        };
+        fetchUserAddresses();
+    }
+  }, [isOpen, user, toast]);
 
   if (!isClient) return null;
 
@@ -47,6 +75,8 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   if (checkoutItems.length === 0) {
       return null;
   }
+  
+  const selectedAddress = addresses.find(a => a.id === selectedAddressId);
 
   const subtotal = checkoutItems.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
   const taxes = subtotal * 0.05;
@@ -91,18 +121,37 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                             <Input id="phone" placeholder="0801 234 5678" defaultValue={user?.phone_number || ''}/>
                             </div>
                         </div>
+
+                        {user && addresses.length > 0 ? (
+                            <div className="space-y-2">
+                                <Label>Select Address</Label>
+                                <Select value={selectedAddressId} onValueChange={setSelectedAddressId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Choose a delivery address" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {addresses.map(addr => (
+                                            <SelectItem key={addr.id} value={addr.id}>
+                                                {addr.address_nickname ? `${addr.address_nickname} - ${addr.street_address}` : addr.street_address}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : null}
+
                         <div className="space-y-2">
                             <Label htmlFor="address">Street Address</Label>
-                            <Input id="address" placeholder="123 Allen Avenue" />
+                            <Input id="address" placeholder="123 Allen Avenue" value={selectedAddress?.street_address || ''} onChange={(e) => { /* Handle manual edits if needed */ }} />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                            <Label htmlFor="city">City</Label>
-                            <Input id="city" placeholder="Ikeja" />
+                            <Label htmlFor="city">District/Town</Label>
+                            <Input id="city" placeholder="Ikeja" value={selectedAddress?.city || ''} onChange={(e) => { /* Handle manual edits if needed */ }} />
                             </div>
-                            <div className="space-y-2">
-                            <Label htmlFor="state">State</Label>
-                            <Input id="state" placeholder="Lagos" />
+                             <div className="space-y-2">
+                                <Label htmlFor="landmark">Nearest Landmark</Label>
+                                <Input id="landmark" placeholder="Near the market" value={selectedAddress?.nearest_landmark || ''} onChange={(e) => { /* Handle manual edits if needed */ }} />
                             </div>
                         </div>
                     </CardContent>
