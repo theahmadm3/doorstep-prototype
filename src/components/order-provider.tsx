@@ -3,7 +3,7 @@
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import type { MenuItem, Order, OrderStatus, OrderItem } from '@/lib/types';
-import { v4 as uuidvv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
 // Renamed CartItem to OrderItem for clarity
 // export interface OrderItem extends MenuItem {
