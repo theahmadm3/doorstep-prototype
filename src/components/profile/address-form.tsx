@@ -8,13 +8,15 @@ import { Input } from "@/components/ui/input";
 import { addressSchema, type AddressFormData } from "@/lib/types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
+import { Checkbox } from "../ui/checkbox";
 
 interface AddressFormProps {
   onSubmit: (data: AddressFormData) => void;
-  defaultValues?: AddressFormData;
+  defaultValues?: Partial<AddressFormData>;
+  isEditing?: boolean;
 }
 
-export default function AddressForm({ onSubmit, defaultValues }: AddressFormProps) {
+export default function AddressForm({ onSubmit, defaultValues, isEditing = false }: AddressFormProps) {
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
     defaultValues: defaultValues || {
@@ -22,6 +24,7 @@ export default function AddressForm({ onSubmit, defaultValues }: AddressFormProp
       city: "",
       nearest_landmark: "",
       address_nickname: "",
+      is_default: false,
     },
     mode: "onChange",
   });
@@ -93,6 +96,27 @@ export default function AddressForm({ onSubmit, defaultValues }: AddressFormProp
             </FormItem>
           )}
         />
+        {isEditing && (
+            <FormField
+            control={form.control}
+            name="is_default"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>
+                    Set as default address
+                  </FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+        )}
       </form>
     </Form>
   );

@@ -1,5 +1,5 @@
 
-import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData } from "./types";
+import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -61,5 +61,18 @@ export async function addAddress(addressData: AddressPostData): Promise<Address>
     return fetcher<Address>('/addresses/', {
         method: 'POST',
         body: JSON.stringify(addressData),
+    });
+}
+
+export async function updateAddress(addressId: string, addressData: Partial<AddressPostData>): Promise<Address> {
+    return fetcher<Address>(`/addresses/${addressId}/`, {
+        method: 'PUT',
+        body: JSON.stringify(addressData),
+    });
+}
+
+export async function deleteAddress(addressId: string): Promise<void> {
+    await fetcher<void>(`/addresses/${addressId}/`, {
+        method: 'DELETE',
     });
 }

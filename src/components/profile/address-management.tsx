@@ -22,8 +22,20 @@ import { useToast } from "@/hooks/use-toast";
 import type { Address, AddressFormData, AddressPostData } from "@/lib/types";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import AddressForm from "./address-form";
-import { getAddresses, addAddress } from "@/lib/api";
+import { getAddresses, addAddress, updateAddress, deleteAddress } from "@/lib/api";
 import { Skeleton } from "../ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 export default function AddressManagement() {
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -39,9 +51,11 @@ export default function AddressManagement() {
       const fetchedAddresses = await getAddresses(); 
       setAddresses(fetchedAddresses);
       if (fetchedAddresses.length > 0) {
-        // Find a default address or fallback to the first one
         const defaultAddress = fetchedAddresses.find(a => a.is_default);
-        setSelectedAddressId(defaultAddress ? defaultAddress.id : fetchedAddresses[0].id);
+        const currentSelected = selectedAddressId && fetchedAddresses.some(a => a.id === selectedAddressId)
+                                  ? selectedAddressId
+                                  : defaultAddress?.id || fetchedAddresses[0].id;
+        setSelectedAddressId(currentSelected);
       } else {
         setSelectedAddressId(null);
       }
@@ -55,7 +69,7 @@ export default function AddressManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, selectedAddressId]);
 
   useEffect(() => {
     fetchAddresses();
@@ -75,28 +89,35 @@ export default function AddressManagement() {
     }
   };
 
-  const handleDeleteClick = () => {
+  const handleDelete = async () => {
      if (!selectedAddressId) return;
-     // TODO: Implement API call for deletion
-     console.log("Deleting address:", selectedAddressId);
-     setAddresses(addresses.filter(addr => addr.id !== selectedAddressId));
-     setSelectedAddressId(addresses.length > 1 ? addresses.find(addr => addr.id !== selectedAddressId)!.id : null);
-     toast({ title: "Address Deleted", description: "The selected address has been removed." });
+     try {
+        await deleteAddress(selectedAddressId);
+        toast({ title: "Address Deleted", description: "The selected address has been removed." });
+        await fetchAddresses();
+     } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to delete address.";
+        toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+        });
+     }
   };
 
 
   const handleSaveAddress = async (data: AddressFormData) => {
     try {
       if (editingAddress) {
-        // TODO: Implement API call for updating an address
-        console.log("Updating address:", { ...editingAddress, ...data });
+        const payload: Partial<AddressPostData> = { ...data };
+        await updateAddress(editingAddress.id, payload);
         toast({ title: "Address Updated", description: "Your address has been successfully updated." });
       } else {
         const payload: AddressPostData = { ...data, is_default: addresses.length === 0 };
         await addAddress(payload); 
         toast({ title: "Address Added", description: "Your new address has been saved." });
       }
-      fetchAddresses(); // Refresh addresses from the server
+      await fetchAddresses();
     } catch (error) {
        const message = error instanceof Error ? error.message : "Failed to save address.";
        toast({
@@ -104,9 +125,10 @@ export default function AddressManagement() {
           description: message,
           variant: "destructive",
        });
+    } finally {
+        setModalOpen(false);
+        setEditingAddress(null);
     }
-    setModalOpen(false);
-    setEditingAddress(null);
   };
 
   const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
@@ -142,9 +164,26 @@ export default function AddressManagement() {
             <Button variant="ghost" size="icon" onClick={handleEditClick} disabled={!selectedAddressId}>
                 <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleDeleteClick} disabled={!selectedAddressId}>
-                <Trash2 className="h-4 w-4 text-red-500" />
-            </Button>
+            <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" disabled={!selectedAddressId}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your
+                        address.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">You have no saved addresses.</p>
@@ -153,7 +192,7 @@ export default function AddressManagement() {
 
        {selectedAddress && (
         <div className="text-sm p-3 bg-muted rounded-md border">
-            <p className="font-semibold">{selectedAddress.address_nickname}</p>
+            <p className="font-semibold">{selectedAddress.address_nickname || 'Address Details'}</p>
             <p>{selectedAddress.street_address}</p>
             <p>{selectedAddress.city}</p>
             {selectedAddress.nearest_landmark && <p className="text-muted-foreground">Landmark: {selectedAddress.nearest_landmark}</p>}
@@ -175,6 +214,7 @@ export default function AddressManagement() {
           <AddressForm
             onSubmit={handleSaveAddress}
             defaultValues={editingAddress || undefined}
+            isEditing={!!editingAddress}
           />
           <DialogFooter>
              <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>

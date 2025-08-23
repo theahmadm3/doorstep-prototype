@@ -132,6 +132,7 @@ export const addressSchema = z.object({
     city: z.string().min(2, "District/Town is too short."),
     nearest_landmark: z.string().optional(),
     address_nickname: z.string().optional(),
+    is_default: z.boolean().optional(),
 });
 export type AddressFormData = z.infer<typeof addressSchema>;
 
