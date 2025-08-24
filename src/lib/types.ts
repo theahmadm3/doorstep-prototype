@@ -136,11 +136,35 @@ export interface CustomerOrder {
 }
 
 export interface OrderItemDetail {
-    id: string;
-    menu_item_name: string;
     quantity: number;
-    price: string;
-    menu_item_image_url: string;
+    item_name: string;
+    item_price: string;
+}
+
+export interface OrderDetailRestaurant {
+    id: string;
+    name: string;
+    description: string;
+    address: string;
+    image_url: string;
+    rating: string;
+}
+
+export interface OrderDetailAddress {
+    street_address: string;
+    city: string;
+    nearest_landmark: string;
+    address_nickname: string;
+}
+
+export interface OrderDetail {
+    id: string;
+    restaurant: OrderDetailRestaurant;
+    delivery_address: OrderDetailAddress;
+    status: OrderStatus;
+    total_amount: string;
+    items: OrderItemDetail[];
+    created_at: string;
 }
 
 

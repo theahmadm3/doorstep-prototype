@@ -11,7 +11,7 @@ import { useOrder } from "@/hooks/use-order";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { getCustomerOrders, getOrderDetails } from "@/lib/api";
-import type { Order, CustomerOrder, OrderItemDetail, OrderStatus } from "@/lib/types";
+import type { Order, CustomerOrder, OrderDetail } from "@/lib/types";
 import CheckoutModal from "@/components/checkout/checkout-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +21,7 @@ export default function CustomerOrdersPage() {
     const { orders: unsubmittedLocalOrders } = useOrder();
     const { toast } = useToast();
     const [fetchedOrders, setFetchedOrders] = useState<CustomerOrder[]>([]);
-    const [orderDetails, setOrderDetails] = useState<Record<string, OrderItemDetail[]>>({});
+    const [orderDetails, setOrderDetails] = useState<Record<string, OrderDetail>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isDetailsLoading, setIsDetailsLoading] = useState<string | null>(null);
 
@@ -53,7 +53,7 @@ export default function CustomerOrdersPage() {
     };
 
     const handleAccordionChange = async (orderId: string) => {
-        if (orderDetails[orderId]) {
+        if (orderDetails[orderId] || !orderId) {
             return;
         }
         setIsDetailsLoading(orderId);
@@ -133,16 +133,15 @@ export default function CustomerOrdersPage() {
                                     <>
                                         <div>
                                         <h4 className="font-semibold mb-4">Items</h4>
-                                        {orderDetails[order.id]?.map((item) => (
-                                            <div key={item.id} className="flex items-center justify-between mb-3">
+                                        {orderDetails[order.id]?.items.map((item, index) => (
+                                            <div key={index} className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center gap-4">
-                                                    <Image src={(item.menu_item_image_url && item.menu_item_image_url.startsWith('http')) ? item.menu_item_image_url : "https://placehold.co/50x50.png"} alt={item.menu_item_name} width={50} height={50} className="rounded-md" />
                                                     <div>
-                                                        <p>{item.menu_item_name}</p>
+                                                        <p>{item.item_name}</p>
                                                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                                                     </div>
                                                 </div>
-                                                <p>₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                                                <p>₦{(parseFloat(item.item_price) * item.quantity).toFixed(2)}</p>
                                             </div>
                                         ))}
                                         </div>
@@ -189,16 +188,15 @@ export default function CustomerOrdersPage() {
                                 {isDetailsLoading === order.id ? <Skeleton className="h-20 w-full" /> : (
                                     <div>
                                     <h4 className="font-semibold mb-4">Items</h4>
-                                    {orderDetails[order.id]?.map((item) => (
-                                        <div key={item.id} className="flex items-center justify-between mb-3">
+                                    {orderDetails[order.id]?.items.map((item, index) => (
+                                        <div key={index} className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-4">
-                                                <Image src={(item.menu_item_image_url && item.menu_item_image_url.startsWith('http')) ? item.menu_item_image_url : "https://placehold.co/50x50.png"} alt={item.menu_item_name} width={50} height={50} className="rounded-md" />
                                                 <div>
-                                                    <p>{item.menu_item_name}</p>
+                                                    <p>{item.item_name}</p>
                                                     <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
                                                 </div>
                                             </div>
-                                            <p>₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                                            <p>₦{(parseFloat(item.item_price) * item.quantity).toFixed(2)}</p>
                                         </div>
                                     ))}
                                     </div>
