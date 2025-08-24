@@ -126,6 +126,23 @@ export interface OrderPayload {
   items: OrderItemPayload[];
 }
 
+// Customer Order Types from API
+export interface CustomerOrder {
+    id: string;
+    restaurant_name: string;
+    total_amount: string;
+    status: OrderStatus;
+    created_at: string;
+}
+
+export interface OrderItemDetail {
+    id: string;
+    menu_item_name: string;
+    quantity: number;
+    price: string;
+    menu_item_image_url: string;
+}
+
 
 // Profile Page Schemas
 const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;

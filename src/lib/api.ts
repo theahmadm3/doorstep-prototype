@@ -1,5 +1,6 @@
 
-import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload } from "./types";
+import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail } from "./types";
+import {format} from "date-fns"
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -83,4 +84,17 @@ export async function placeOrder(orderData: OrderPayload): Promise<any> { // Rep
         method: 'POST',
         body: JSON.stringify(orderData),
     });
+}
+
+export async function getCustomerOrders(): Promise<CustomerOrder[]> {
+    const response = await fetcher<PaginatedResponse<CustomerOrder>>('/orders/get-customer-order/');
+    return response.results.map(order => ({
+        ...order,
+        created_at: format(new Date(order.created_at), 'dd MMM yyyy, hh:mm a'),
+    }));
+}
+
+export async function getOrderDetails(orderId: string): Promise<OrderItemDetail[]> {
+    const response = await fetcher<PaginatedResponse<OrderItemDetail>>(`/orders/${orderId}/items/`);
+    return response.results;
 }

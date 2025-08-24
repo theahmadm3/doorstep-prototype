@@ -10,37 +10,70 @@ import { Badge } from "@/components/ui/badge";
 import { useOrder } from "@/hooks/use-order";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { getRestaurants } from "@/lib/api";
-import type { Restaurant, Order } from "@/lib/types";
+import { getCustomerOrders, getOrderDetails } from "@/lib/api";
+import type { Order, CustomerOrder, OrderItemDetail, OrderStatus } from "@/lib/types";
 import CheckoutModal from "@/components/checkout/checkout-modal";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 
 export default function CustomerOrdersPage() {
-    const { orders } = useOrder();
-    const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+    const { orders: unsubmittedLocalOrders } = useOrder();
+    const { toast } = useToast();
+    const [fetchedOrders, setFetchedOrders] = useState<CustomerOrder[]>([]);
+    const [orderDetails, setOrderDetails] = useState<Record<string, OrderItemDetail[]>>({});
+    const [isLoading, setIsLoading] = useState(true);
+    const [isDetailsLoading, setIsDetailsLoading] = useState<string | null>(null);
+
     const [isCheckoutOpen, setCheckoutOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
     useEffect(() => {
-        const fetchRestaurants = async () => {
-            const data = await getRestaurants();
-            setRestaurants(data);
-        }
-        fetchRestaurants();
-    }, []);
+        const fetchOrders = async () => {
+            setIsLoading(true);
+            try {
+                const data = await getCustomerOrders();
+                setFetchedOrders(data);
+            } catch (error) {
+                 toast({
+                    title: "Error fetching orders",
+                    description: "Could not retrieve your order history. Please try again later.",
+                    variant: "destructive"
+                 });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchOrders();
+    }, [toast]);
 
     const handleCheckout = (order: Order) => {
         setSelectedOrder(order);
         setCheckoutOpen(true);
     };
 
-    const unsubmittedOrders = orders.filter(o => o.status === 'unsubmitted');
-    const activeOrders = orders.filter(o => o.status !== 'unsubmitted' && o.status !== 'Delivered' && o.status !== 'Cancelled');
-    const pastOrders = orders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled');
-    
-    if (restaurants.length === 0 && orders.length > 0) {
-        return <div>Loading restaurant info...</div>;
+    const handleAccordionChange = async (orderId: string) => {
+        if (orderDetails[orderId]) {
+            return;
+        }
+        setIsDetailsLoading(orderId);
+        try {
+            const details = await getOrderDetails(orderId);
+            setOrderDetails(prev => ({...prev, [orderId]: details}));
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Could not load order details.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsDetailsLoading(null);
+        }
     }
+
+    const unsubmittedOrders = unsubmittedLocalOrders.filter(o => o.status === 'unsubmitted');
+    const activeOrders = fetchedOrders.filter(o => o.status !== 'unsubmitted' && o.status !== 'Delivered' && o.status !== 'Cancelled');
+    const pastOrders = fetchedOrders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled');
 
     return (
         <div className="container py-12">
@@ -60,12 +93,11 @@ export default function CustomerOrdersPage() {
                     </CardHeader>
                     <CardContent>
                         {unsubmittedOrders.map(order => {
-                             const restaurant = restaurants.find(r => r.id === order.restaurantId);
                              const total = order.items.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
                              return (
                                 <div key={order.id} className="flex justify-between items-center p-4 border rounded-md mb-4">
                                     <div>
-                                        <p className="font-bold">Order for {restaurant?.name || 'Unknown Restaurant'}</p>
+                                        <p className="font-bold">Order for a restaurant</p>
                                         <p className="text-sm text-muted-foreground">{order.items.length} item(s) - ₦{total.toFixed(2)}</p>
                                     </div>
                                     <Button onClick={() => handleCheckout(order)}>Complete Checkout</Button>
@@ -77,47 +109,50 @@ export default function CustomerOrdersPage() {
             )}
 
             <h2 className="text-2xl font-bold font-headline mt-8 mb-4">Active Orders</h2>
-            {activeOrders.length > 0 ? (
+            {isLoading ? <Skeleton className="h-24 w-full" /> : activeOrders.length > 0 ? (
                 <Card>
                     <CardContent className="p-0">
-                    <Accordion type="single" collapsible className="w-full">
+                    <Accordion type="single" collapsible className="w-full" onValueChange={handleAccordionChange}>
                         {activeOrders.map((order) => {
-                        const restaurant = restaurants.find(r => r.id === order.restaurantId);
                         return (
                             <AccordionItem value={order.id} key={order.id}>
                             <AccordionTrigger className="px-6 py-4 hover:no-underline">
                                 <div className="flex justify-between items-center w-full">
                                     <div className="text-left">
                                         <p className="font-bold text-lg">Order #{order.id.slice(0, 8)}</p>
-                                        <p className="text-sm text-muted-foreground">{restaurant?.name}</p>
+                                        <p className="text-sm text-muted-foreground">{order.restaurant_name} - {order.created_at}</p>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <span className="font-bold text-primary text-lg">₦{order.total.toFixed(2)}</span>
+                                        <span className="font-bold text-primary text-lg">₦{parseFloat(order.total_amount).toFixed(2)}</span>
                                         <Badge variant="secondary">{order.status}</Badge>
                                     </div>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="px-6 pb-6">
-                                <div>
-                                <h4 className="font-semibold mb-4">Items</h4>
-                                {order.items.map((item) => (
-                                    <div key={item.id} className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-4">
-                                            <Image src={(item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/50x50.png"} alt={item.name} width={50} height={50} className="rounded-md" />
-                                            <div>
-                                                <p>{item.name}</p>
-                                                <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                {isDetailsLoading === order.id ? <Skeleton className="h-20 w-full" /> : (
+                                    <>
+                                        <div>
+                                        <h4 className="font-semibold mb-4">Items</h4>
+                                        {orderDetails[order.id]?.map((item) => (
+                                            <div key={item.id} className="flex items-center justify-between mb-3">
+                                                <div className="flex items-center gap-4">
+                                                    <Image src={(item.menu_item_image_url && item.menu_item_image_url.startsWith('http')) ? item.menu_item_image_url : "https://placehold.co/50x50.png"} alt={item.menu_item_name} width={50} height={50} className="rounded-md" />
+                                                    <div>
+                                                        <p>{item.menu_item_name}</p>
+                                                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                                    </div>
+                                                </div>
+                                                <p>₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
                                             </div>
+                                        ))}
                                         </div>
-                                        <p>₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
-                                    </div>
-                                ))}
-                                </div>
-                                <Separator className="my-6" />
-                                <div>
-                                <h4 className="font-semibold mb-6">Order Status</h4>
-                                <OrderStatusTracker currentStatus={order.status} />
-                                </div>
+                                        <Separator className="my-6" />
+                                        <div>
+                                        <h4 className="font-semibold mb-6">Order Status</h4>
+                                        <OrderStatusTracker currentStatus={order.status} />
+                                        </div>
+                                    </>
+                                )}
                             </AccordionContent>
                             </AccordionItem>
                         );
@@ -129,22 +164,21 @@ export default function CustomerOrdersPage() {
 
 
              <h2 className="text-2xl font-bold font-headline mt-8 mb-4">Past Orders</h2>
-             {pastOrders.length > 0 ? (
+             {isLoading ? <Skeleton className="h-24 w-full" /> : pastOrders.length > 0 ? (
                 <Card>
                     <CardContent className="p-0">
-                    <Accordion type="single" collapsible className="w-full">
+                    <Accordion type="single" collapsible className="w-full" onValueChange={handleAccordionChange}>
                         {pastOrders.map((order) => {
-                        const restaurant = restaurants.find(r => r.id === order.restaurantId);
                         return (
                             <AccordionItem value={order.id} key={order.id}>
                             <AccordionTrigger className="px-6 py-4 hover:no-underline">
                                 <div className="flex justify-between items-center w-full">
                                     <div className="text-left">
                                         <p className="font-bold text-lg">Order #{order.id.slice(0, 8)}</p>
-                                        <p className="text-sm text-muted-foreground">{restaurant?.name}</p>
+                                        <p className="text-sm text-muted-foreground">{order.restaurant_name} - {order.created_at}</p>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <span className="font-bold text-lg">₦{order.total.toFixed(2)}</span>
+                                        <span className="font-bold text-lg">₦{parseFloat(order.total_amount).toFixed(2)}</span>
                                         <Badge variant={order.status === 'Delivered' ? 'default' : 'secondary'} className={order.status === 'Delivered' ? "bg-green-600 text-white" : ""}>
                                             {order.status}
                                         </Badge>
@@ -152,21 +186,23 @@ export default function CustomerOrdersPage() {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="px-6 pb-6">
-                                <div>
-                                <h4 className="font-semibold mb-4">Items</h4>
-                                {order.items.map((item) => (
-                                    <div key={item.id} className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-4">
-                                            <Image src={(item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/50x50.png"} alt={item.name} width={50} height={50} className="rounded-md" />
-                                            <div>
-                                                <p>{item.name}</p>
-                                                <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                {isDetailsLoading === order.id ? <Skeleton className="h-20 w-full" /> : (
+                                    <div>
+                                    <h4 className="font-semibold mb-4">Items</h4>
+                                    {orderDetails[order.id]?.map((item) => (
+                                        <div key={item.id} className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-4">
+                                                <Image src={(item.menu_item_image_url && item.menu_item_image_url.startsWith('http')) ? item.menu_item_image_url : "https://placehold.co/50x50.png"} alt={item.menu_item_name} width={50} height={50} className="rounded-md" />
+                                                <div>
+                                                    <p>{item.menu_item_name}</p>
+                                                    <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                                </div>
                                             </div>
+                                            <p>₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
                                         </div>
-                                        <p>₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                                    ))}
                                     </div>
-                                ))}
-                                </div>
+                                )}
                             </AccordionContent>
                             </AccordionItem>
                         );
