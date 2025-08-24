@@ -87,7 +87,7 @@ export async function placeOrder(orderData: OrderPayload): Promise<any> { // Rep
 }
 
 export async function getCustomerOrders(): Promise<CustomerOrder[]> {
-    const response = await fetcher<PaginatedResponse<CustomerOrder>>('/orders/get-customer-order/');
+    const response = await fetcher<PaginatedResponse<CustomerOrder>>('/get-customer-order');
     return response.results.map(order => ({
         ...order,
         created_at: format(new Date(order.created_at), 'dd MMM yyyy, hh:mm a'),
