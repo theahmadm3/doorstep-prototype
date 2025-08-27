@@ -1,5 +1,5 @@
 
-import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail } from "./types";
+import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser } from "./types";
 import {format} from "date-fns"
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -96,4 +96,9 @@ export async function getCustomerOrders(): Promise<CustomerOrder[]> {
 
 export async function getOrderDetails(orderId: string): Promise<OrderDetail> {
     return fetcher<OrderDetail>(`/orders/${orderId}/`);
+}
+
+// Admin API calls
+export async function getAdminUsers(page: number = 1): Promise<PaginatedResponse<AdminUser>> {
+    return fetcher<PaginatedResponse<AdminUser>>(`/admin/users/?page=${page}`);
 }

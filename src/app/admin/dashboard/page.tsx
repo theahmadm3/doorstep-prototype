@@ -2,6 +2,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ShoppingBag, Users, Utensils } from "lucide-react";
 import AdminStats from "@/components/dashboard/admin-stats";
+import AdminUsersTable from "@/components/dashboard/admin-users-table";
 
 export default function AdminDashboardPage() {
     return (
@@ -50,6 +51,8 @@ export default function AdminDashboardPage() {
             </div>
             
             <AdminStats />
+
+            <AdminUsersTable />
         </div>
     );
 }

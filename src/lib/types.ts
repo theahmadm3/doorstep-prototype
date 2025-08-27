@@ -91,6 +91,16 @@ export interface User {
     login_count: number;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string;
+  phone_number: string | null;
+  role: string;
+  status: string;
+  is_active: boolean;
+}
+
 
 // Order Management Types
 export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled';
