@@ -30,7 +30,7 @@ import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 
-type FoodItem = (typeof foodItems)[0];
+type FoodItem = Omit<(typeof foodItems)[0], 'quantity'>;
 
 export default function VendorItemManagement() {
   const [items, setItems] = useState<FoodItem[]>(foodItems.filter(item => item.restaurant === '1')); // Mock: for restaurant 1
@@ -52,7 +52,6 @@ export default function VendorItemManagement() {
         category: "uncategorized",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        quantity: parseInt(formData.get("quantity") as string, 10),
     };
 
     if (editingItem) {
@@ -115,10 +114,6 @@ export default function VendorItemManagement() {
                             <Input id="price" name="price" type="number" step="0.01" defaultValue={editingItem?.price} className="col-span-3" required />
                         </div>
                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="quantity" className="text-right">Quantity</Label>
-                            <Input id="quantity" name="quantity" type="number" step="1" defaultValue={editingItem?.quantity} className="col-span-3" required />
-                        </div>
-                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="is_available" className="text-right">Available</Label>
                             <Switch id="is_available" name="is_available" defaultChecked={editingItem?.is_available ?? true} />
                         </div>
@@ -137,7 +132,6 @@ export default function VendorItemManagement() {
               <TableHead className="hidden w-[100px] sm:table-cell">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Quantity</TableHead>
               <TableHead>Availability</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -150,7 +144,6 @@ export default function VendorItemManagement() {
                 </TableCell>
                 <TableCell className="font-medium">{item.name}</TableCell>
                 <TableCell>₦{parseFloat(item.price).toFixed(2)}</TableCell>
-                <TableCell>{item.quantity}</TableCell>
                 <TableCell>
                     <div className="flex items-center space-x-2">
                         <Switch
