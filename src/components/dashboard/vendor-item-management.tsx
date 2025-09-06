@@ -29,7 +29,7 @@ import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { MenuItem, MenuItemPayload } from "@/lib/types";
-import { createVendorMenuItem, getVendorMenuItems } from "@/lib/api";
+import { createVendorMenuItem, getVendorMenuItems, updateMenuItemAvailability } from "@/lib/api";
 import { Skeleton } from "../ui/skeleton";
 import { format } from "date-fns";
 
@@ -58,7 +58,7 @@ export default function VendorItemManagement() {
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [toast]);
 
   const handleSaveItem = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -93,11 +93,27 @@ export default function VendorItemManagement() {
     toast({ title: "Delete logic not implemented yet.", variant: "destructive" });
   };
 
-  const handleToggleAvailability = (itemId: string, available: boolean) => {
-    // TODO: Implement availability toggle logic when the endpoint is available
-    toast({ title: "Availability toggle not implemented yet." });
-    // Optimistic UI update (can be removed if not desired)
-    setItems(items.map(item => item.id === itemId ? { ...item, is_available: available } : item));
+  const handleToggleAvailability = async (itemId: string, available: boolean) => {
+    // Optimistic UI update
+    const originalItems = [...items];
+    setItems(prevItems => prevItems.map(item => item.id === itemId ? { ...item, is_available: available } : item));
+
+    try {
+        await updateMenuItemAvailability(itemId, available);
+        toast({
+            title: "Availability Updated",
+            description: `Item is now ${available ? "available" : "unavailable"}.`,
+        });
+    } catch (error) {
+        // Revert UI on failure
+        setItems(originalItems);
+        const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+        toast({
+            title: "Update Failed",
+            description: message,
+            variant: "destructive",
+        });
+    }
   }
 
   return (
@@ -216,5 +232,3 @@ export default function VendorItemManagement() {
     </Card>
   );
 }
-
-    

@@ -117,4 +117,11 @@ export async function createVendorMenuItem(itemData: MenuItemPayload): Promise<M
     });
 }
 
+export async function updateMenuItemAvailability(itemId: string, is_available: boolean): Promise<MenuItem> {
+    return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/availability/`, {
+        method: 'PUT',
+        body: JSON.stringify({ is_available }),
+    });
+}
+
     
