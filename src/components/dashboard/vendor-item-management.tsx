@@ -1,8 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
-import { foodItems } from "@/lib/data";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -29,37 +28,60 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-
-type FoodItem = Omit<(typeof foodItems)[0], 'quantity'>;
+import { MenuItem, MenuItemPayload } from "@/lib/types";
+import { createVendorMenuItem, getVendorMenuItems } from "@/lib/api";
+import { Skeleton } from "../ui/skeleton";
+import { format } from "date-fns";
 
 export default function VendorItemManagement() {
-  const [items, setItems] = useState<FoodItem[]>(foodItems.filter(item => item.restaurant === '1')); // Mock: for restaurant 1
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const { toast } = useToast();
   
-  const handleSaveItem = (event: React.FormEvent<HTMLFormElement>) => {
+  const fetchItems = async () => {
+    setIsLoading(true);
+    try {
+        const fetchedItems = await getVendorMenuItems();
+        setItems(fetchedItems);
+    } catch (error) {
+        toast({
+            title: "Error fetching menu",
+            description: "Could not retrieve your menu items. Please try again later.",
+            variant: "destructive"
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const handleSaveItem = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const newItem: FoodItem = {
-        id: editingItem ? editingItem.id : String(Math.max(...items.map(i => Number(i.id)), 0) + 1),
-        restaurant: '1',
-        name: formData.get("name") as string,
-        description: formData.get("description") as string,
-        price: String(parseFloat(formData.get("price") as string)),
-        image_url: "https://placehold.co/300x200.png", // Placeholder
-        is_available: formData.get("is_available") === 'on',
-        category: "uncategorized",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-    };
-
+    
     if (editingItem) {
-        setItems(items.map(item => item.id === newItem.id ? newItem : item));
-        toast({ title: "Item Updated", description: `${newItem.name} has been successfully updated.` });
+        // TODO: Implement update logic when the endpoint is available
+        toast({ title: "Update logic not implemented yet." });
     } else {
-        setItems([...items, newItem]);
-        toast({ title: "Item Added", description: `${newItem.name} has been successfully added.` });
+        const newItemPayload: MenuItemPayload = {
+            name: formData.get("name") as string,
+            description: formData.get("description") as string,
+            price: String(parseFloat(formData.get("price") as string)),
+            is_available: formData.get("is_available") === 'on',
+        };
+        try {
+            await createVendorMenuItem(newItemPayload);
+            toast({ title: "Item Added", description: `${newItemPayload.name} has been successfully added.` });
+            fetchItems(); // Refetch items to show the new one
+        } catch (error) {
+             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+             toast({ title: "Failed to Add Item", description: message, variant: "destructive" });
+        }
     }
     
     setDialogOpen(false);
@@ -67,16 +89,15 @@ export default function VendorItemManagement() {
   };
   
   const handleDeleteItem = (itemId: string) => {
-    setItems(items.filter(item => item.id !== itemId));
-    toast({ title: "Item Deleted", description: "The item has been removed from your menu.", variant: "destructive" });
+    // TODO: Implement delete logic when the endpoint is available
+    toast({ title: "Delete logic not implemented yet.", variant: "destructive" });
   };
 
   const handleToggleAvailability = (itemId: string, available: boolean) => {
+    // TODO: Implement availability toggle logic when the endpoint is available
+    toast({ title: "Availability toggle not implemented yet." });
+    // Optimistic UI update (can be removed if not desired)
     setItems(items.map(item => item.id === itemId ? { ...item, is_available: available } : item));
-     toast({
-        title: "Availability Updated",
-        description: `The item is now ${available ? 'available' : 'unavailable'}.`
-    });
   }
 
   return (
@@ -133,11 +154,23 @@ export default function VendorItemManagement() {
               <TableHead>Name</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Availability</TableHead>
+               <TableHead>Date Added</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => (
+            {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-16 w-16 rounded-md" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                    </TableRow>
+                ))
+            ) : items.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="hidden sm:table-cell">
                     <Image src={item.image_url || "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
@@ -156,6 +189,7 @@ export default function VendorItemManagement() {
                         </Badge>
                     </div>
                 </TableCell>
+                 <TableCell>{format(new Date(item.created_at), "dd MMM yyyy")}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -182,3 +216,5 @@ export default function VendorItemManagement() {
     </Card>
   );
 }
+
+    

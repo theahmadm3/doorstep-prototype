@@ -36,6 +36,14 @@ export interface MenuItem {
     updated_at: string;
 }
 
+export interface MenuItemPayload {
+    name: string;
+    description: string;
+    price: string;
+    is_available: boolean;
+}
+
+
 export interface PaginatedResponse<T> {
     count: number;
     next: string | null;
@@ -221,3 +229,5 @@ export interface ProfileUpdatePayload {
   full_name: string;
   phone_number?: string;
 }
+
+    
