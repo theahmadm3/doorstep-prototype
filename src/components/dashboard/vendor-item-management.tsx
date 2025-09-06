@@ -39,14 +39,18 @@ export default function VendorItemManagement() {
   const handleSaveItem = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const newItem = {
-        id: editingItem ? editingItem.id : Math.max(...items.map(i => i.id), 0) + 1,
-        restaurantId: 1,
+    const newItem: FoodItem = {
+        id: editingItem ? editingItem.id : String(Math.max(...items.map(i => Number(i.id)), 0) + 1),
+        restaurant: '1',
         name: formData.get("name") as string,
         description: formData.get("description") as string,
-        price: parseFloat(formData.get("price") as string),
-        image: "https://placehold.co/300x200.png", // Placeholder
-        dataAiHint: ""
+        price: String(parseFloat(formData.get("price") as string)),
+        image_url: "https://placehold.co/300x200.png", // Placeholder
+        is_available: true,
+        category: "uncategorized",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        quantity: parseInt(formData.get("quantity") as string, 10),
     };
 
     if (editingItem) {
@@ -61,7 +65,7 @@ export default function VendorItemManagement() {
     setEditingItem(null);
   };
   
-  const handleDeleteItem = (itemId: number) => {
+  const handleDeleteItem = (itemId: string) => {
     setItems(items.filter(item => item.id !== itemId));
     toast({ title: "Item Deleted", description: "The item has been removed from your menu.", variant: "destructive" });
   };
@@ -94,11 +98,15 @@ export default function VendorItemManagement() {
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="description" className="text-right">Description</Label>
-                            <Textarea id="description" name="description" defaultValue={editingItem?.description} className="col-span-3" required />
+                            <Textarea id="description" name="description" defaultValue={editingItem?.description || ''} className="col-span-3" required />
                         </div>
                          <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="price" className="text-right">Price (₦)</Label>
                             <Input id="price" name="price" type="number" step="0.01" defaultValue={editingItem?.price} className="col-span-3" required />
+                        </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="quantity" className="text-right">Quantity</Label>
+                            <Input id="quantity" name="quantity" type="number" step="1" defaultValue={editingItem?.quantity} className="col-span-3" required />
                         </div>
                     </div>
                 </form>
@@ -115,6 +123,7 @@ export default function VendorItemManagement() {
               <TableHead className="hidden w-[100px] sm:table-cell">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Price</TableHead>
+              <TableHead>Quantity</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -122,10 +131,11 @@ export default function VendorItemManagement() {
             {items.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="hidden sm:table-cell">
-                    <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" />
+                    <Image src={item.image_url || "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
                 </TableCell>
                 <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell>₦{item.price.toFixed(2)}</TableCell>
+                <TableCell>₦{parseFloat(item.price).toFixed(2)}</TableCell>
+                <TableCell>{item.quantity}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
