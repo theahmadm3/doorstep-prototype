@@ -13,10 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { useEffect, useState } from "react";
 import { User } from "@/lib/types";
-
 
 export default function VendorProfilePage() {
     const [user, setUser] = useState<User | null>(null);
@@ -44,7 +42,7 @@ export default function VendorProfilePage() {
                             <form className="space-y-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="restaurant-name">Restaurant Name</Label>
-                                    <Input id="restaurant-name" defaultValue={user?.full_name} />
+                                    <Input id="restaurant-name" defaultValue={user?.full_name || ''} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="restaurant-address">Address</Label>
@@ -58,7 +56,6 @@ export default function VendorProfilePage() {
                             </form>
                         </CardContent>
                     </Card>
-
                     <Card>
                         <CardHeader>
                             <CardTitle>Payout Settings</CardTitle>
@@ -70,7 +67,7 @@ export default function VendorProfilePage() {
                             <form className="space-y-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="account-holder">Account Holder Name</Label>
-                                    <Input id="account-holder" defaultValue={user?.full_name} />
+                                    <Input id="account-holder" defaultValue={user?.full_name || ''} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="account-number">Account Number</Label>
@@ -79,15 +76,15 @@ export default function VendorProfilePage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="bank-name">Bank Name</Label>
                                     <Select>
-                                    <SelectTrigger id="bank-name">
-                                        <SelectValue placeholder="Select a bank" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="gtb">GTBank</SelectItem>
-                                        <SelectItem value="access">Access Bank</SelectItem>
-                                        <SelectItem value="zenith">Zenith Bank</SelectItem>
-                                        <SelectItem value="uba">UBA</SelectItem>
-                                    </SelectContent>
+                                        <SelectTrigger id="bank-name">
+                                            <SelectValue placeholder="Select a bank" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="gtb">GTBank</SelectItem>
+                                            <SelectItem value="access">Access Bank</SelectItem>
+                                            <SelectItem value="zenith">Zenith Bank</SelectItem>
+                                            <SelectItem value="uba">UBA</SelectItem>
+                                        </SelectContent>
                                     </Select>
                                 </div>
                                 <Button type="submit">Save Payout Info</Button>
@@ -96,18 +93,18 @@ export default function VendorProfilePage() {
                     </Card>
                 </div>
                 <div className="space-y-8">
-                     <Card>
+                    <Card>
                         <CardHeader>
                             <CardTitle>Account Security</CardTitle>
                             <CardDescription>
                                 Update your login credentials.
                             </CardDescription>
-                        </Header>
+                        </CardHeader>
                         <CardContent>
                             <form className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email</Label>
-                                    <Input id="email" type="email" defaultValue={user?.email} readOnly/>
+                                    <Input id="email" type="email" defaultValue={user?.email || ''} readOnly/>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="current-password">Current Password</Label>
