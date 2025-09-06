@@ -27,11 +27,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 type FoodItem = (typeof foodItems)[0];
 
 export default function VendorItemManagement() {
-  const [items, setItems] = useState<FoodItem[]>(foodItems.filter(item => item.restaurantId === 1)); // Mock: for restaurant 1
+  const [items, setItems] = useState<FoodItem[]>(foodItems.filter(item => item.restaurant === '1')); // Mock: for restaurant 1
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const { toast } = useToast();
@@ -46,7 +48,7 @@ export default function VendorItemManagement() {
         description: formData.get("description") as string,
         price: String(parseFloat(formData.get("price") as string)),
         image_url: "https://placehold.co/300x200.png", // Placeholder
-        is_available: true,
+        is_available: formData.get("is_available") === 'on',
         category: "uncategorized",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -69,6 +71,14 @@ export default function VendorItemManagement() {
     setItems(items.filter(item => item.id !== itemId));
     toast({ title: "Item Deleted", description: "The item has been removed from your menu.", variant: "destructive" });
   };
+
+  const handleToggleAvailability = (itemId: string, available: boolean) => {
+    setItems(items.map(item => item.id === itemId ? { ...item, is_available: available } : item));
+     toast({
+        title: "Availability Updated",
+        description: `The item is now ${available ? 'available' : 'unavailable'}.`
+    });
+  }
 
   return (
     <Card>
@@ -108,6 +118,10 @@ export default function VendorItemManagement() {
                             <Label htmlFor="quantity" className="text-right">Quantity</Label>
                             <Input id="quantity" name="quantity" type="number" step="1" defaultValue={editingItem?.quantity} className="col-span-3" required />
                         </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="is_available" className="text-right">Available</Label>
+                            <Switch id="is_available" name="is_available" defaultChecked={editingItem?.is_available ?? true} />
+                        </div>
                     </div>
                 </form>
                  <DialogFooter>
@@ -124,6 +138,7 @@ export default function VendorItemManagement() {
               <TableHead>Name</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Quantity</TableHead>
+              <TableHead>Availability</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -136,6 +151,18 @@ export default function VendorItemManagement() {
                 <TableCell className="font-medium">{item.name}</TableCell>
                 <TableCell>₦{parseFloat(item.price).toFixed(2)}</TableCell>
                 <TableCell>{item.quantity}</TableCell>
+                <TableCell>
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id={`available-${item.id}`}
+                            checked={item.is_available}
+                            onCheckedChange={(checked) => handleToggleAvailability(item.id, checked)}
+                        />
+                         <Badge variant={item.is_available ? "default" : "outline"} className={item.is_available ? "bg-green-600" : ""}>
+                            {item.is_available ? "On" : "Off"}
+                        </Badge>
+                    </div>
+                </TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
