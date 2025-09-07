@@ -72,7 +72,7 @@ export default function VendorItemManagement() {
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [toast]);
 
   const handleSaveItem = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -212,20 +212,20 @@ export default function VendorItemManagement() {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="hidden w-[100px] sm:table-cell">Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Availability</TableHead>
-                <TableHead>Date Added</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
+          {isLoading ? (
+             <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="hidden w-[100px] sm:table-cell">Image</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Availability</TableHead>
+                    <TableHead>Date Added</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={i}>
                           <TableCell className="hidden sm:table-cell"><Skeleton className="h-16 w-16 rounded-md" /></TableCell>
                           <TableCell><Skeleton className="h-5 w-32" /></TableCell>
@@ -234,59 +234,84 @@ export default function VendorItemManagement() {
                           <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                           <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                       </TableRow>
-                  ))
-              ) : items.map((item) => {
-                const status = updatingStatus[item.id] || 'idle';
-                const isUpdating = status !== 'idle';
-
-                return (
-                <TableRow key={item.id}>
-                  <TableCell className="hidden sm:table-cell">
-                      <Image src={item.image_url || "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
-                  </TableCell>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>₦{parseFloat(item.price).toFixed(2)}</TableCell>
-                  <TableCell>
-                      <div className="flex items-center space-x-2">
-                          <Switch
-                              id={`available-${item.id}`}
-                              checked={item.is_available}
-                              onCheckedChange={(checked) => handleToggleAvailability(item.id, checked)}
-                              disabled={isUpdating}
-                          />
-                          {status === 'updating' && <span className="text-xs text-muted-foreground animate-pulse">Updating...</span>}
-                          {status === 'success' && <span className="text-xs text-green-600">Update applied.</span>}
-                          {status === 'error' && <span className="text-xs text-red-600">Update failed.</span>}
-                          {status === 'idle' && (
-                              <Badge variant={item.is_available ? "default" : "outline"} className={item.is_available ? "bg-green-600" : ""}>
-                                  {item.is_available ? "On" : "Off"}
-                              </Badge>
-                          )}
-                      </div>
-                  </TableCell>
-                  <TableCell>{format(new Date(item.created_at), "dd MMM yyyy")}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => { setEditingItem(item); setDialogOpen(true); }}>
-                          <Edit className="mr-2 h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setItemToDelete(item)} className="text-red-600">
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+                  ))}
+                </TableBody>
+              </Table>
+          ) : items.length === 0 ? (
+            <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">No menu items available. Please add a new item.</p>
+                <DialogTrigger asChild>
+                    <Button onClick={() => setEditingItem(null)}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Your First Item
+                    </Button>
+                </DialogTrigger>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="hidden w-[100px] sm:table-cell">Image</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Availability</TableHead>
+                  <TableHead>Date Added</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              )})}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {items.map((item) => {
+                  const status = updatingStatus[item.id] || 'idle';
+                  const isUpdating = status !== 'idle';
+
+                  return (
+                  <TableRow key={item.id}>
+                    <TableCell className="hidden sm:table-cell">
+                        <Image src={item.image_url || "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
+                    </TableCell>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>₦{parseFloat(item.price).toFixed(2)}</TableCell>
+                    <TableCell>
+                        <div className="flex items-center space-x-2">
+                            <Switch
+                                id={`available-${item.id}`}
+                                checked={item.is_available}
+                                onCheckedChange={(checked) => handleToggleAvailability(item.id, checked)}
+                                disabled={isUpdating}
+                            />
+                            {status === 'updating' && <span className="text-xs text-muted-foreground animate-pulse">Updating...</span>}
+                            {status === 'success' && <span className="text-xs text-green-600">Update applied.</span>}
+                            {status === 'error' && <span className="text-xs text-red-600">Update failed.</span>}
+                            {status === 'idle' && (
+                                <Badge variant={item.is_available ? "default" : "outline"} className={item.is_available ? "bg-green-600" : ""}>
+                                    {item.is_available ? "On" : "Off"}
+                                </Badge>
+                            )}
+                        </div>
+                    </TableCell>
+                    <TableCell>{format(new Date(item.created_at), "dd MMM yyyy")}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => { setEditingItem(item); setDialogOpen(true); }}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setItemToDelete(item)} className="text-red-600">
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                )})}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </>
