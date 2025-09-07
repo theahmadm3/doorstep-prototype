@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { orders as mockOrders } from "@/lib/data";
-import { CheckCircle, Clock, Utensils, ThumbsUp, Bike } from "lucide-react";
+import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { Order } from "@/lib/types";
 
@@ -161,10 +161,16 @@ export default function VendorOrdersPage() {
                         totalPages={totalPages.incoming}
                         onPageChange={(p) => handlePageChange('incoming', p)}
                         actions={(order) => (
-                            <Button variant="outline" size="sm">
-                                <ThumbsUp className="mr-2 h-4 w-4" />
-                                Accept Order
-                            </Button>
+                            <>
+                                <Button variant="outline" size="sm">
+                                    <ThumbsUp className="mr-2 h-4 w-4" />
+                                    Accept
+                                </Button>
+                                <Button variant="destructive" size="sm">
+                                    <ThumbsDown className="mr-2 h-4 w-4" />
+                                    Reject
+                                </Button>
+                            </>
                         )}
                     />
                 </TabsContent>
