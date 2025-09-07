@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,25 +106,32 @@ export default function AdminOrdersPage() {
     const { toast } = useToast();
     const [orders, setOrders] = useState<AdminOrder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(false);
+
+    const fetchOrders = useCallback(async () => {
+        if (isFetching) return;
+        setIsFetching(true);
+        try {
+            const data = await getAdminOrders();
+            setOrders(data);
+        } catch (error) {
+            toast({
+                title: "Error fetching orders",
+                description: "Could not retrieve the order list. Please try again later.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsFetching(false);
+            if (isLoading) setIsLoading(false);
+        }
+    }, [isFetching, toast, isLoading]);
 
     useEffect(() => {
-        const fetchOrders = async () => {
-            setIsLoading(true);
-            try {
-                const data = await getAdminOrders();
-                setOrders(data);
-            } catch (error) {
-                toast({
-                    title: "Error fetching orders",
-                    description: "Could not retrieve the order list. Please try again later.",
-                    variant: "destructive"
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchOrders();
-    }, [toast]);
+        fetchOrders(); // Initial fetch
+        const interval = setInterval(fetchOrders, 60000); // Poll every 60 seconds
+        return () => clearInterval(interval); // Cleanup on unmount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const statusOrder = { 'Pending': 1, 'Accepted': 2, 'Preparing': 3, 'Ready for Pickup': 4 };
 

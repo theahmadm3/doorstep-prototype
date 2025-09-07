@@ -9,7 +9,7 @@ import OrderStatusTracker from "@/components/dashboard/order-status";
 import { Badge } from "@/components/ui/badge";
 import { useOrder } from "@/hooks/use-order";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getCustomerOrders, getOrderDetails } from "@/lib/api";
 import type { Order, CustomerOrder, OrderDetail } from "@/lib/types";
 import CheckoutModal from "@/components/checkout/checkout-modal";
@@ -24,28 +24,35 @@ export default function CustomerOrdersPage() {
     const [orderDetails, setOrderDetails] = useState<Record<string, OrderDetail>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isDetailsLoading, setIsDetailsLoading] = useState<string | null>(null);
+    const [isFetching, setIsFetching] = useState(false);
 
     const [isCheckoutOpen, setCheckoutOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+     const fetchOrders = useCallback(async () => {
+        if (isFetching) return;
+        setIsFetching(true);
+        try {
+            const data = await getCustomerOrders();
+            setFetchedOrders(data);
+        } catch (error) {
+             toast({
+                title: "Error fetching orders",
+                description: "Could not retrieve your order history. Please try again later.",
+                variant: "destructive"
+             });
+        } finally {
+            setIsFetching(false);
+            if (isLoading) setIsLoading(false);
+        }
+    }, [isFetching, toast, isLoading]);
+
     useEffect(() => {
-        const fetchOrders = async () => {
-            setIsLoading(true);
-            try {
-                const data = await getCustomerOrders();
-                setFetchedOrders(data);
-            } catch (error) {
-                 toast({
-                    title: "Error fetching orders",
-                    description: "Could not retrieve your order history. Please try again later.",
-                    variant: "destructive"
-                 });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchOrders();
-    }, [toast]);
+        fetchOrders(); // Initial fetch
+        const interval = setInterval(fetchOrders, 60000); // Poll every 60 seconds
+        return () => clearInterval(interval); // Cleanup on unmount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleCheckout = (order: Order) => {
         setSelectedOrder(order);
