@@ -5,139 +5,204 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { orders } from "@/lib/data";
-import { CheckCircle, Clock } from "lucide-react";
-import { useState } from "react";
+import { orders as mockOrders } from "@/lib/data";
+import { CheckCircle, Clock, Utensils, ThumbsUp, Bike } from "lucide-react";
+import { useState, useEffect } from "react";
+import type { Order } from "@/lib/types";
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
+
+const OrderTable = ({ title, description, orders, actions, currentPage, onPageChange, totalPages }) => {
+    if (orders.length === 0) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground text-center py-8">No orders in this category.</p>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Order ID</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead>Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {orders.map((order) => (
+                            <TableRow key={order.id}>
+                                <TableCell className="font-medium">#{order.id}</TableCell>
+                                <TableCell>Customer #{order.customerId}</TableCell>
+                                <TableCell>
+                                    <Badge variant={order.status === 'Preparing' ? 'destructive' : 'secondary'}>{order.status}</Badge>
+                                </TableCell>
+                                <TableCell>₦{order.total.toFixed(2)}</TableCell>
+                                <TableCell className="space-x-2">
+                                    {actions(order)}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+             {totalPages > 1 && (
+                <div className="flex items-center justify-end space-x-2 py-4 px-6">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                    >
+                        Previous
+                    </Button>
+                    <span className="text-sm">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onPageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                    </Button>
+                </div>
+             )}
+        </Card>
+    );
+};
+
 
 export default function VendorOrdersPage() {
-  const ongoingOrders = orders.filter(o => o.status !== "Delivered" && o.status !== "Cancelled" && o.status !== "Order Ready" && o.status !== "Rider Assigned" && o.status !== "Rider on the Way");
-  const pastOrders = orders.filter(o => o.status === "Delivered" || o.status === "Cancelled" || o.status === "Order Ready" || o.status === "Rider Assigned" || o.status === "Rider on the Way");
+    const [orders, setOrders] = useState<Order[]>(mockOrders);
+    const [time, setTime] = useState(Date.now());
 
-  const [ongoingPage, setOngoingPage] = useState(1);
-  const [pastPage, setPastPage] = useState(1);
+    useEffect(() => {
+        const interval = setInterval(() => setTime(Date.now()), 60000);
+        // In a real app, you would fetch data here:
+        // fetchOrders().then(setOrders);
+        return () => {
+            clearInterval(interval);
+        };
+    }, [time]);
 
-  const ongoingTotalPages = Math.ceil(ongoingOrders.length / ITEMS_PER_PAGE);
-  const paginatedOngoingOrders = ongoingOrders.slice((ongoingPage - 1) * ITEMS_PER_PAGE, ongoingPage * ITEMS_PER_PAGE);
+    const incomingOrders = orders.filter(o => o.status === "Order Placed");
+    const ongoingOrders = orders.filter(o => o.status === "Vendor Accepted" || o.status === "Preparing");
+    const readyForPickupOrders = orders.filter(o => o.status === "Order Ready");
+    const pastOrders = orders.filter(o => o.status === "Delivered" || o.status === "Cancelled" || o.status === "Rider Assigned" || o.status === "Rider on the Way");
 
-  const pastTotalPages = Math.ceil(pastOrders.length / ITEMS_PER_PAGE);
-  const paginatedPastOrders = pastOrders.slice((pastPage - 1) * ITEMS_PER_PAGE, pastPage * ITEMS_PER_PAGE);
+    const [pages, setPages] = useState({
+        incoming: 1,
+        ongoing: 1,
+        ready: 1,
+        past: 1,
+    });
+    
+    const handlePageChange = (category, page) => {
+        setPages(prev => ({ ...prev, [category]: page }));
+    };
 
-  return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Ongoing Orders</CardTitle>
-          <CardDescription>Orders that are currently in progress.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedOngoingOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">#{order.id}</TableCell>
-                  <TableCell>Customer #{order.customerId}</TableCell>
-                  <TableCell>
-                    <Badge variant={order.status === 'Preparing' ? 'destructive' : 'secondary'}>{order.status}</Badge>
-                  </TableCell>
-                  <TableCell>₦{order.total.toFixed(2)}</TableCell>
-                  <TableCell>
+    const paginate = (data, page) => {
+        const start = (page - 1) * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        return data.slice(start, end);
+    };
+
+    const paginatedIncoming = paginate(incomingOrders, pages.incoming);
+    const paginatedOngoing = paginate(ongoingOrders, pages.ongoing);
+    const paginatedReady = paginate(readyForPickupOrders, pages.ready);
+    const paginatedPast = paginate(pastOrders, pages.past);
+
+    const totalPages = {
+        incoming: Math.ceil(incomingOrders.length / ITEMS_PER_PAGE),
+        ongoing: Math.ceil(ongoingOrders.length / ITEMS_PER_PAGE),
+        ready: Math.ceil(readyForPickupOrders.length / ITEMS_PER_PAGE),
+        past: Math.ceil(pastOrders.length / ITEMS_PER_PAGE),
+    };
+
+
+    return (
+        <div className="space-y-8">
+            <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
+
+            <OrderTable
+                title="Incoming Orders"
+                description="New orders awaiting your confirmation."
+                orders={paginatedIncoming}
+                currentPage={pages.incoming}
+                totalPages={totalPages.incoming}
+                onPageChange={(p) => handlePageChange('incoming', p)}
+                actions={(order) => (
                     <Button variant="outline" size="sm">
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Mark as Ready
+                        <ThumbsUp className="mr-2 h-4 w-4" />
+                        Accept Order
                     </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-        <div className="flex items-center justify-end space-x-2 py-4 px-6">
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setOngoingPage(ongoingPage - 1)}
-                disabled={ongoingPage === 1}
-            >
-                Previous
-            </Button>
-            <span className="text-sm">
-                Page {ongoingPage} of {ongoingTotalPages}
-            </span>
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setOngoingPage(ongoingPage + 1)}
-                disabled={ongoingPage === ongoingTotalPages}
-            >
-                Next
-            </Button>
-        </div>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Past Orders</CardTitle>
-          <CardDescription>Completed or cancelled orders.</CardDescription>
-        </CardHeader>
-        <CardContent>
-           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedPastOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">#{order.id}</TableCell>
-                  <TableCell>Customer #{order.customerId}</TableCell>
-                  <TableCell>
+                )}
+            />
+
+            <OrderTable
+                title="Ongoing Orders"
+                description="Orders you are currently preparing."
+                orders={paginatedOngoing}
+                currentPage={pages.ongoing}
+                totalPages={totalPages.ongoing}
+                onPageChange={(p) => handlePageChange('ongoing', p)}
+                actions={(order) => (
+                    order.status === 'Vendor Accepted' ? (
+                        <Button variant="outline" size="sm">
+                            <Utensils className="mr-2 h-4 w-4" />
+                            Mark as Preparing
+                        </Button>
+                    ) : (
+                        <Button variant="outline" size="sm">
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Mark as Ready
+                        </Button>
+                    )
+                )}
+            />
+
+            <OrderTable
+                title="Ready for Pickup"
+                description="Orders waiting for the rider to pick up."
+                orders={paginatedReady}
+                currentPage={pages.ready}
+                totalPages={totalPages.ready}
+                onPageChange={(p) => handlePageChange('ready', p)}
+                actions={(order) => (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                       <Bike className="h-4 w-4" /> Waiting for rider...
+                    </div>
+                )}
+            />
+
+            <OrderTable
+                title="Past Orders"
+                description="Completed or cancelled orders."
+                orders={paginatedPast}
+                currentPage={pages.past}
+                totalPages={totalPages.past}
+                onPageChange={(p) => handlePageChange('past', p)}
+                actions={(order) => (
                      <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>
-                  </TableCell>
-                  <TableCell>₦{order.total.toFixed(2)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-        <div className="flex items-center justify-end space-x-2 py-4 px-6">
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPastPage(pastPage - 1)}
-                disabled={pastPage === 1}
-            >
-                Previous
-            </Button>
-            <span className="text-sm">
-                Page {pastPage} of {pastTotalPages}
-            </span>
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPastPage(pastPage + 1)}
-                disabled={pastPage === pastTotalPages}
-            >
-                Next
-            </Button>
+                )}
+            />
         </div>
-      </Card>
-    </div>
-  );
+    );
 }
