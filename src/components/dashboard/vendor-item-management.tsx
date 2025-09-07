@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, MoreHorizontal, Edit, Trash2, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,12 +33,15 @@ import { createVendorMenuItem, getVendorMenuItems, updateMenuItemAvailability } 
 import { Skeleton } from "../ui/skeleton";
 import { format } from "date-fns";
 
+type ItemUpdateStatus = 'idle' | 'updating' | 'success' | 'error';
+
 export default function VendorItemManagement() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const { toast } = useToast();
+  const [updatingStatus, setUpdatingStatus] = useState<Record<string, ItemUpdateStatus>>({});
   
   const fetchItems = async () => {
     setIsLoading(true);
@@ -94,25 +97,35 @@ export default function VendorItemManagement() {
   };
 
   const handleToggleAvailability = async (itemId: string, available: boolean) => {
+    // Set status to updating
+    setUpdatingStatus(prev => ({ ...prev, [itemId]: 'updating' }));
+
     // Optimistic UI update
     const originalItems = [...items];
     setItems(prevItems => prevItems.map(item => item.id === itemId ? { ...item, is_available: available } : item));
 
     try {
         await updateMenuItemAvailability(itemId, available);
+        setUpdatingStatus(prev => ({ ...prev, [itemId]: 'success' }));
         toast({
-            title: "Availability Updated",
+            title: "Update applied",
             description: `Item is now ${available ? "available" : "unavailable"}.`,
         });
     } catch (error) {
         // Revert UI on failure
         setItems(originalItems);
+        setUpdatingStatus(prev => ({ ...prev, [itemId]: 'error' }));
         const message = error instanceof Error ? error.message : "An unexpected error occurred.";
         toast({
-            title: "Update Failed",
+            title: "Update failed",
             description: message,
             variant: "destructive",
         });
+    } finally {
+        // After 5 seconds, reset the status to idle
+        setTimeout(() => {
+            setUpdatingStatus(prev => ({ ...prev, [itemId]: 'idle' }));
+        }, 5000);
     }
   }
 
@@ -186,7 +199,11 @@ export default function VendorItemManagement() {
                         <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                     </TableRow>
                 ))
-            ) : items.map((item) => (
+            ) : items.map((item) => {
+              const status = updatingStatus[item.id] || 'idle';
+              const isUpdating = status !== 'idle';
+
+              return (
               <TableRow key={item.id}>
                 <TableCell className="hidden sm:table-cell">
                     <Image src={item.image_url || "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
@@ -199,10 +216,16 @@ export default function VendorItemManagement() {
                             id={`available-${item.id}`}
                             checked={item.is_available}
                             onCheckedChange={(checked) => handleToggleAvailability(item.id, checked)}
+                            disabled={isUpdating}
                         />
-                         <Badge variant={item.is_available ? "default" : "outline"} className={item.is_available ? "bg-green-600" : ""}>
-                            {item.is_available ? "On" : "Off"}
-                        </Badge>
+                        {status === 'updating' && <span className="text-xs text-muted-foreground animate-pulse">Updating...</span>}
+                        {status === 'success' && <span className="text-xs text-green-600">Update applied.</span>}
+                        {status === 'error' && <span className="text-xs text-red-600">Update failed.</span>}
+                        {status === 'idle' && (
+                            <Badge variant={item.is_available ? "default" : "outline"} className={item.is_available ? "bg-green-600" : ""}>
+                                {item.is_available ? "On" : "Off"}
+                            </Badge>
+                        )}
                     </div>
                 </TableCell>
                  <TableCell>{format(new Date(item.created_at), "dd MMM yyyy")}</TableCell>
@@ -225,7 +248,7 @@ export default function VendorItemManagement() {
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
           </TableBody>
         </Table>
       </CardContent>
