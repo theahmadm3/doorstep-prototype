@@ -41,6 +41,7 @@ export interface MenuItemPayload {
     description: string;
     price: string;
     is_available: boolean;
+    image_url?: string;
 }
 
 

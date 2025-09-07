@@ -117,6 +117,20 @@ export async function createVendorMenuItem(itemData: MenuItemPayload): Promise<M
     });
 }
 
+export async function updateVendorMenuItem(itemId: string, itemData: MenuItemPayload): Promise<MenuItem> {
+    return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/`, {
+        method: 'PUT',
+        body: JSON.stringify(itemData),
+    });
+}
+
+export async function deleteVendorMenuItem(itemId: string): Promise<void> {
+    await fetcher<void>(`/restaurants/me/menu/${itemId}/`, {
+        method: 'DELETE',
+    });
+}
+
+
 export async function updateMenuItemAvailability(itemId: string, is_available: boolean): Promise<MenuItem> {
     return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/availability/`, {
         method: 'PUT',
