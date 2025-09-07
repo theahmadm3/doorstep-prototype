@@ -1,28 +1,42 @@
 
-
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger
+} from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, ShoppingCart, Utensils, User, LogOut } from "lucide-react";
-import { useCart } from "@/hooks/use-cart";
+import { Menu, ShoppingCart, Utensils, Plus, Minus, Trash2 } from "lucide-react";
+import { useOrder } from "@/hooks/use-order";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
-import { useRouter } from "next/navigation";
+import CheckoutModal from "../checkout/checkout-modal";
 
 export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
-  const { cart } = useCart();
-  const { itemCount, total } = useCartSummary();
-  const router = useRouter();
+  const { guestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem } = useOrder();
   const [isClient, setIsClient] = useState(false);
+  const [isCheckoutOpen, setCheckoutOpen] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+  
+  const itemCount = guestCart.items.reduce((total, item) => total + item.quantity, 0);
+  const total = guestCart.items.reduce((total, item) => total + (parseFloat(item.price) * item.quantity), 0);
 
   const navLinks = [
     { href: "/menu", label: "Menu" },
@@ -46,6 +60,12 @@ export default function Header() {
   }
 
   return (
+    <>
+    <CheckoutModal 
+        isOpen={isCheckoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        guestCart={guestCart}
+    />
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
@@ -107,8 +127,8 @@ export default function Header() {
 
 
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <Sheet>
-            <SheetTrigger asChild>
+           <Dialog>
+            <DialogTrigger asChild>
               <Button variant="ghost" size="icon">
                 <ShoppingCart className="h-5 w-5" />
                 {itemCount > 0 && (
@@ -116,22 +136,38 @@ export default function Header() {
                 )}
                 <span className="sr-only">Shopping Cart</span>
               </Button>
-            </SheetTrigger>
-            <SheetContent>
-                <h2 className="text-lg font-medium mb-4">Your Cart</h2>
-                {cart.length === 0 ? (
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Your Cart</DialogTitle>
+                </DialogHeader>
+                {guestCart.items.length === 0 ? (
                     <p>Your cart is empty.</p>
                 ) : (
-                    <div className="flex flex-col h-full">
-                        <div className="flex-1 overflow-y-auto">
-                        {cart.map(item => (
-                            <div key={item.id} className="flex items-center gap-4 mb-4">
-                                <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" />
+                    <div>
+                        <div className="max-h-[400px] overflow-y-auto pr-4">
+                        {guestCart.items.map(item => (
+                            <div key={item.id} className="flex items-start gap-4 mb-4">
+                                <Image src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
                                 <div className="flex-1">
                                     <h3 className="font-medium">{item.name}</h3>
-                                    <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                    <p className="text-sm text-muted-foreground">₦{parseFloat(item.price).toFixed(2)}</p>
+                                     <div className="flex items-center gap-2 mt-2">
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => decreaseGuestItemQuantity(item.id)}>
+                                            <Minus className="h-3 w-3" />
+                                        </Button>
+                                        <span>{item.quantity}</span>
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => increaseGuestItemQuantity(item.id)}>
+                                            <Plus className="h-3 w-3" />
+                                        </Button>
+                                    </div>
                                 </div>
-                                <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                                <div className="flex flex-col items-end gap-2">
+                                    <p className="font-medium">₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => removeGuestItem(item.id)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                         </div>
@@ -139,18 +175,22 @@ export default function Header() {
                         <div className="space-y-4">
                             <div className="flex justify-between font-bold text-lg">
                                 <span>Total</span>
-                                <span>${total.toFixed(2)}</span>
+                                <span>₦{total.toFixed(2)}</span>
                             </div>
-                            <SheetClose asChild>
-                                <Button className="w-full" asChild>
-                                    <Link href="/checkout">Go to Checkout</Link>
-                                </Button>
-                            </SheetClose>
                         </div>
                     </div>
                 )}
-            </SheetContent>
-          </Sheet>
+                 <DialogFooter>
+                    {guestCart.items.length > 0 && (
+                        <DialogClose asChild>
+                            <Button className="w-full" onClick={() => setCheckoutOpen(true)}>
+                                Go to Checkout
+                            </Button>
+                        </DialogClose>
+                    )}
+                </DialogFooter>
+            </DialogContent>
+          </Dialog>
             <div className="hidden sm:flex items-center gap-2">
                 <Button variant="ghost" asChild>
                 <Link href="/login">Login</Link>
@@ -162,12 +202,6 @@ export default function Header() {
         </div>
       </div>
     </header>
+    </>
   );
-}
-
-function useCartSummary() {
-    const { cart } = useCart();
-    const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
-    const total = cart.reduce((total, item) => total + item.price * item.quantity, 0);
-    return { itemCount, total };
 }

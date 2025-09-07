@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -5,9 +6,9 @@ import { MapPin, DollarSign, CheckCircle, Package, Send } from "lucide-react";
 
 // Mock data for available deliveries
 const availableDeliveries = [
-  { id: 'ORD101', restaurant: 'Pizza Palace', destination: '123 Main St', payout: 7.50 },
-  { id: 'ORD102', restaurant: 'Burger Barn', destination: '456 Oak Ave', payout: 6.00 },
-  { id: 'ORD103', restaurant: 'Sushi Station', destination: '789 Pine Ln', payout: 8.25 },
+  { id: 'ORD101', restaurant: 'Pizza Palace', destination: '123 Allen Avenue, Ikeja', payout: 7.50 },
+  { id: 'ORD102', restaurant: 'Burger Barn', destination: '456 Ademola Adetokunbo, Wuse II', payout: 6.00 },
+  { id: 'ORD103', restaurant: 'Sushi Station', destination: '789 Bourdillon Rd, Ikoyi', payout: 8.25 },
 ];
 
 export default function RiderDashboardPage() {
@@ -41,7 +42,7 @@ export default function RiderDashboardPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$62.50</div>
+                        <div className="text-2xl font-bold">₦62.50</div>
                         <p className="text-xs text-muted-foreground">Your current payout</p>
                     </CardContent>
                 </Card>
@@ -69,7 +70,7 @@ export default function RiderDashboardPage() {
                                     <TableCell className="font-medium">#{delivery.id}</TableCell>
                                     <TableCell>{delivery.restaurant}</TableCell>
                                     <TableCell>{delivery.destination}</TableCell>
-                                    <TableCell className="text-right font-semibold">${delivery.payout.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-semibold">₦{delivery.payout.toFixed(2)}</TableCell>
                                     <TableCell>
                                         <Button variant="outline" size="sm">
                                             <Send className="mr-2 h-4 w-4" /> Accept

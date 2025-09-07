@@ -2,70 +2,44 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart } from "lucide-react";
-import { useCart } from "@/hooks/use-cart";
-import Image from "next/image";
-import { Separator } from "../ui/separator";
-import Link from "next/link";
 import { SidebarTrigger } from "../ui/sidebar";
+import { useOrder } from "@/hooks/use-order";
+import { Package } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { User } from "@/lib/types";
 
 export default function ClientHeader() {
-  const { cart, ...cartUtils } = useCart();
+  const { orders } = useOrder();
+  const [user, setUser] = useState<User | null>(null);
+  
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
-  const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
-  const total = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  const unsubmittedOrderCount = orders.filter(o => o.status === 'unsubmitted').length;
+  const firstName = user?.full_name?.split(' ')[0];
 
   return (
     <div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10">
       <SidebarTrigger />
-      <h1 className="text-lg font-semibold">Customer Dashboard</h1>
+      <h1 className="text-lg font-semibold">
+        {firstName ? `Hello, ${firstName}` : 'Customer Dashboard'}
+      </h1>
       <div className="flex flex-1 items-center justify-end space-x-2">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <ShoppingCart className="h-5 w-5" />
-              {itemCount > 0 && (
-                <Badge className="absolute top-2 right-2 h-4 w-4 justify-center p-0">{itemCount}</Badge>
-              )}
-              <span className="sr-only">Shopping Cart</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent>
-            <h2 className="text-lg font-medium mb-4">Your Cart</h2>
-            {cart.length === 0 ? (
-              <p>Your cart is empty.</p>
-            ) : (
-              <div className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto">
-                  {cart.map(item => (
-                    <div key={item.id} className="flex items-center gap-4 mb-4">
-                      <Image src={item.image} alt={item.name} width={64} height={64} className="rounded-md" />
-                      <div className="flex-1">
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                      </div>
-                      <p className="font-medium">${(item.price * item.quantity).toFixed(2)}</p>
-                    </div>
-                  ))}
-                </div>
-                <Separator className="my-4" />
-                <div className="space-y-4">
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
-                  </div>
-                  <SheetClose asChild>
-                    <Button className="w-full" asChild>
-                      <Link href="/checkout">Go to Checkout</Link>
-                    </Button>
-                  </SheetClose>
-                </div>
-              </div>
+         <Button variant="ghost" size="icon" asChild>
+          <Link href="/customer/orders">
+            <Package className="h-5 w-5" />
+            {unsubmittedOrderCount > 0 && (
+              <Badge className="absolute top-2 right-2 h-4 w-4 justify-center p-0">{unsubmittedOrderCount}</Badge>
             )}
-          </SheetContent>
-        </Sheet>
+            <span className="sr-only">Unsubmitted Orders</span>
+          </Link>
+        </Button>
       </div>
     </div>
   );

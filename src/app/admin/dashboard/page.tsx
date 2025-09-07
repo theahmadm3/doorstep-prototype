@@ -1,6 +1,8 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, ShoppingBag, Users, Utensils } from "lucide-react";
 import AdminStats from "@/components/dashboard/admin-stats";
+import AdminUsersTable from "@/components/dashboard/admin-users-table";
 
 export default function AdminDashboardPage() {
     return (
@@ -12,7 +14,7 @@ export default function AdminDashboardPage() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$1.2M</div>
+                        <div className="text-2xl font-bold">₦1.2M</div>
                         <p className="text-xs text-muted-foreground">+15.2% from last month</p>
                     </CardContent>
                 </Card>
@@ -49,6 +51,8 @@ export default function AdminDashboardPage() {
             </div>
             
             <AdminStats />
+
+            <AdminUsersTable />
         </div>
     );
 }

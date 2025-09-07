@@ -1,4 +1,6 @@
 
+"use client";
+
 import {
   Sidebar,
   SidebarHeader,
@@ -20,12 +22,25 @@ import {
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LogoutButton from '@/components/auth/logout-button';
+import { useEffect, useState } from 'react';
+import type { User as UserType } from '@/lib/types';
 
 export default function RiderLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+
+  const [user, setUser] = useState<UserType | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
@@ -65,13 +80,13 @@ export default function RiderLayout({
           <SidebarFooter>
             <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
               <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" alt="@rider" />
-                <AvatarFallback>R</AvatarFallback>
+                <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Rider"} />
+                <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'R'}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold">Rider User</span>
+                <span className="text-sm font-semibold">{user?.full_name || "Rider User"}</span>
                 <span className="text-xs text-muted-foreground">
-                  rider@doorstep.com
+                  {user?.email || "rider@doorstep.com"}
                 </span>
               </div>
               <LogoutButton />

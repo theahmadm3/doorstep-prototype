@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -23,7 +24,7 @@ import { Button } from "@/components/ui/button";
 
 const chartConfig = {
 	sales: {
-		label: "Sales ($)",
+		label: "Sales (₦)",
 		color: "hsl(var(--chart-1))",
 	},
 	orders: {
@@ -54,7 +55,7 @@ export default function AnalyticsPage() {
 						<CardDescription>Last 30 days</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<p className="text-4xl font-bold">$1.2M</p>
+						<p className="text-4xl font-bold">₦1.2M</p>
 					</CardContent>
 				</Card>
 				<Card>

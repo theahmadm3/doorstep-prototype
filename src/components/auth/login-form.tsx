@@ -16,53 +16,81 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { loginUser } from "@/lib/auth-api";
+import { loginSchema } from "@/lib/types";
+import { useState } from "react";
 
-const formSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email.",
-  }),
-  password: z.string().min(6, {
-    message: "Password must be at least 6 characters.",
-  }),
-});
 
 export default function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("redirect");
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginErrorMessage, setLoginErrorMessage] = useState("");
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+
+  async function onSubmit(values: z.infer<typeof loginSchema>) {
     
-    // Clear previous auth state
-    localStorage.removeItem('userRole');
+    localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
 
-    toast({
-      title: "Login Successful",
-      description: "Redirecting to your dashboard...",
-    });
+    setIsSubmitting(true);
+    try {
+      const data = await loginUser(values);
 
-    // Dummy logic to redirect based on email
-    if (values.email.includes("admin")) {
-        localStorage.setItem('userRole', 'admin');
-        router.push("/admin/dashboard");
-    } else if (values.email.includes("vendor")) {
-        localStorage.setItem('userRole', 'vendor');
-        router.push("/vendor/dashboard");
-    } else if (values.email.includes("rider")) {
-        localStorage.setItem('userRole', 'rider');
-        router.push("/rider/dashboard");
-    } else {
-        localStorage.setItem('userRole', 'customer');
-        router.push("/customer/dashboard");
+      toast({
+        title: "Login Successful",
+        description: "Redirecting...",
+      });
+
+      localStorage.setItem('accessToken', data.access);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      if (redirectUrl) {
+        router.push(redirectUrl);
+        return;
+      }
+      
+      switch (data.user.role) {
+        case 'admin':
+          router.push('/admin/dashboard');
+          break;
+        case 'restaurant':
+          router.push('/vendor/dashboard');
+          break;
+        case 'rider':
+          router.push('/rider/dashboard');
+          break;
+        case 'customer':
+          router.push('/customer/dashboard');
+          break;
+        default:
+          router.push('/login');
+          break;
+      }
+
+    } catch (error) {
+       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+       setLoginErrorMessage(errorMessage);
+       toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+    finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -95,7 +123,10 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">Sign In</Button>
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? "signing in..." : "Sign In"}
+        </Button>
+        <p className={"text-center text-sm " + (loginErrorMessage ? "text-red-500" : "text-white")}> Error: {loginErrorMessage} </p>
       </form>
     </Form>
   );

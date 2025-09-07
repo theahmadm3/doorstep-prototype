@@ -1,4 +1,6 @@
 
+"use client";
+
 import {
   Sidebar,
   SidebarHeader,
@@ -18,16 +20,28 @@ import {
   Utensils,
   LogOut,
   Bike,
+  ShoppingBag,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LogoutButton from '@/components/auth/logout-button';
+import { useEffect, useState } from 'react';
+import type { User as UserType } from '@/lib/types';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [user, setUser] = useState<UserType | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
@@ -44,6 +58,14 @@ export default function AdminLayout({
                 <Link href="/admin/dashboard">
                   <Home />
                   Dashboard
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/admin/orders">
+                  <ShoppingBag />
+                  Orders
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -83,13 +105,13 @@ export default function AdminLayout({
           <SidebarFooter>
             <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
               <Avatar>
-                <AvatarImage src="https://github.com/shadcn.png" alt="@admin" />
-                <AvatarFallback>AD</AvatarFallback>
+                <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Admin"} />
+                <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'A'}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold">Admin User</span>
+                <span className="text-sm font-semibold">{user?.full_name || "Admin User"}</span>
                 <span className="text-xs text-muted-foreground">
-                  admin@doorstep.com
+                   {user?.email || "admin@doorstep.com"}
                 </span>
               </div>
               <LogoutButton />
