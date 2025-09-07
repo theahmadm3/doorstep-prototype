@@ -229,11 +229,12 @@ export default function VendorItemManagement() {
                 {items.map((item) => {
                   const status = updatingStatus[item.id] || 'idle';
                   const isUpdating = status !== 'idle';
+                  const imageUrl = (item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/64x64.png";
 
                   return (
                   <TableRow key={item.id}>
                     <TableCell className="hidden sm:table-cell">
-                        <Image src={item.image_url || "https://placehold.co/64x64.png"} alt={item.name} width={64} height={64} className="rounded-md" />
+                        <Image src={imageUrl} alt={item.name} width={64} height={64} className="rounded-md" />
                     </TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
                     <TableCell>₦{parseFloat(item.price).toFixed(2)}</TableCell>
