@@ -195,6 +195,17 @@ export interface VendorOrder {
     created_at: string;
 }
 
+// Admin Order Type
+export interface AdminOrder {
+    id: string;
+    customer_name: string;
+    restaurant_name: string;
+    total_amount: string;
+    status: OrderStatus;
+    payment_method: string | null;
+    created_at: string;
+}
+
 
 // Profile Page Schemas
 const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
