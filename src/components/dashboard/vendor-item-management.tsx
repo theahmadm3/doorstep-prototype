@@ -149,7 +149,7 @@ export default function VendorItemManagement() {
   }
 
   return (
-    <>
+    <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -172,44 +172,11 @@ export default function VendorItemManagement() {
             <CardTitle>Your Menu Items</CardTitle>
             <CardDescription>Add, edit, or remove items from your menu.</CardDescription>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                  <Button onClick={() => setEditingItem(null)}>
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add Item
-                  </Button>
-              </DialogTrigger>
-              <DialogContent>
-                  <DialogHeader>
-                      <DialogTitle>{editingItem ? 'Edit Item' : 'Add a New Item'}</DialogTitle>
-                      <DialogDescription>
-                          Fill in the details for your menu item below.
-                      </DialogDescription>
-                  </DialogHeader>
-                  <form id="item-form" onSubmit={handleSaveItem}>
-                      <div className="grid gap-4 py-4">
-                          <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="name" className="text-right">Name</Label>
-                              <Input id="name" name="name" defaultValue={editingItem?.name} className="col-span-3" required />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="description" className="text-right">Description</Label>
-                              <Textarea id="description" name="description" defaultValue={editingItem?.description || ''} className="col-span-3" required />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="price" className="text-right">Price (₦)</Label>
-                              <Input id="price" name="price" type="number" step="0.01" defaultValue={editingItem?.price} className="col-span-3" required />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                              <Label htmlFor="is_available" className="text-right">Available</Label>
-                              <Switch id="is_available" name="is_available" defaultChecked={editingItem?.is_available ?? true} />
-                          </div>
-                      </div>
-                  </form>
-                  <DialogFooter>
-                      <Button type="submit" form="item-form">Save changes</Button>
-                  </DialogFooter>
-              </DialogContent>
-          </Dialog>
+          <DialogTrigger asChild>
+              <Button onClick={() => setEditingItem(null)}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Item
+              </Button>
+          </DialogTrigger>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -314,6 +281,38 @@ export default function VendorItemManagement() {
           )}
         </CardContent>
       </Card>
-    </>
+
+      <DialogContent>
+          <DialogHeader>
+              <DialogTitle>{editingItem ? 'Edit Item' : 'Add a New Item'}</DialogTitle>
+              <DialogDescription>
+                  Fill in the details for your menu item below.
+              </DialogDescription>
+          </DialogHeader>
+          <form id="item-form" onSubmit={handleSaveItem}>
+              <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="name" className="text-right">Name</Label>
+                      <Input id="name" name="name" defaultValue={editingItem?.name} className="col-span-3" required />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="description" className="text-right">Description</Label>
+                      <Textarea id="description" name="description" defaultValue={editingItem?.description || ''} className="col-span-3" required />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="price" className="text-right">Price (₦)</Label>
+                      <Input id="price" name="price" type="number" step="0.01" defaultValue={editingItem?.price} className="col-span-3" required />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="is_available" className="text-right">Available</Label>
+                      <Switch id="is_available" name="is_available" defaultChecked={editingItem?.is_available ?? true} />
+                  </div>
+              </div>
+          </form>
+          <DialogFooter>
+              <Button type="submit" form="item-form">Save changes</Button>
+          </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
