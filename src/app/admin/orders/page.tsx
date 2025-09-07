@@ -32,7 +32,7 @@ const OrderTable = ({ orders, title, description, actionButton, isLoading }) => 
                                 <TableHead>Payment</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Date</TableHead>
-                                {actionButton && <TableHead>Action</TableHead>}
+                                <TableHead>Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -45,7 +45,7 @@ const OrderTable = ({ orders, title, description, actionButton, isLoading }) => 
                                     <TableCell><Skeleton className="h-5 w-16" /></TableCell>
                                     <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                                     <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    {actionButton && <TableCell><Skeleton className="h-8 w-24" /></TableCell>}
+                                    <TableCell><Skeleton className="h-8 w-24" /></TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -75,7 +75,7 @@ const OrderTable = ({ orders, title, description, actionButton, isLoading }) => 
                                 <TableHead>Payment</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Date</TableHead>
-                                {actionButton && <TableHead>Action</TableHead>}
+                                <TableHead>Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -88,11 +88,9 @@ const OrderTable = ({ orders, title, description, actionButton, isLoading }) => 
                                     <TableCell>{order.payment_method || 'N/A'}</TableCell>
                                     <TableCell><Badge variant="secondary">{order.status}</Badge></TableCell>
                                     <TableCell>{order.created_at}</TableCell>
-                                    {actionButton && (
-                                        <TableCell>
-                                            {actionButton(order)}
-                                        </TableCell>
-                                    )}
+                                    <TableCell>
+                                        {actionButton && actionButton(order)}
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -128,9 +126,14 @@ export default function AdminOrdersPage() {
         fetchOrders();
     }, [toast]);
 
-    const incomingOrders = orders.filter(o => ["Pending", "Accepted", "Preparing"].includes(o.status));
-    const readyForPickupOrders = orders.filter(o => o.status === "Ready for Pickup");
-    const riderAssignedOrders = orders.filter(o => o.status === "Rider on the Way").sort((a,b) => a.status === "Rider on the Way" ? -1 : 1);
+    const statusOrder = { 'Pending': 1, 'Accepted': 2, 'Preparing': 3, 'Ready for Pickup': 4 };
+
+    const pendingOrders = orders
+        .filter(o => ["Pending", "Accepted", "Preparing", "Ready for Pickup"].includes(o.status))
+        .sort((a, b) => (statusOrder[a.status as keyof typeof statusOrder] || 99) - (statusOrder[b.status as keyof typeof statusOrder] || 99));
+
+    const riderAssignedOrders = orders.filter(o => o.status === "Rider on the Way");
+    
     const pastOrders = orders.filter(o => !["Pending", "Accepted", "Preparing", "Ready for Pickup", "Rider on the Way"].includes(o.status));
 
     const handleAssignRider = (orderId: string) => {
@@ -143,32 +146,24 @@ export default function AdminOrdersPage() {
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Order Management</h1>
-            <Tabs defaultValue="incoming">
+            <Tabs defaultValue="pending">
                 <TabsList>
-                    <TabsTrigger value="incoming">Incoming</TabsTrigger>
-                    <TabsTrigger value="ready">Ready for Pickup</TabsTrigger>
+                    <TabsTrigger value="pending">Pending Orders</TabsTrigger>
                     <TabsTrigger value="assigned">Rider Assigned</TabsTrigger>
                     <TabsTrigger value="past">Past Orders</TabsTrigger>
                 </TabsList>
-                <TabsContent value="incoming">
+                <TabsContent value="pending">
                     <OrderTable
-                        orders={incomingOrders}
-                        title="Incoming Orders"
-                        description="Orders being processed by vendors. This is a read-only view."
-                        actionButton={null}
-                        isLoading={isLoading}
-                    />
-                </TabsContent>
-                <TabsContent value="ready">
-                    <OrderTable
-                        orders={readyForPickupOrders}
-                        title="Ready for Pickup"
-                        description="Orders that are prepared and waiting for a rider."
-                        actionButton={(order) => (
-                            <Button variant="outline" size="sm" onClick={() => handleAssignRider(order.id)}>
-                                <Bike className="mr-2 h-4 w-4" /> Assign Rider
-                            </Button>
-                        )}
+                        orders={pendingOrders}
+                        title="Pending Orders"
+                        description="Orders being processed by vendors and awaiting rider assignment."
+                        actionButton={(order) => 
+                            order.status === 'Ready for Pickup' ? (
+                                <Button variant="outline" size="sm" onClick={() => handleAssignRider(order.id)}>
+                                    <Bike className="mr-2 h-4 w-4" /> Assign Rider
+                                </Button>
+                            ) : null
+                        }
                         isLoading={isLoading}
                     />
                 </TabsContent>
