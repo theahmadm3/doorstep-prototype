@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { orders as mockOrders } from "@/lib/data";
 import { CheckCircle, Clock, Utensils, ThumbsUp, Bike } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -141,68 +142,84 @@ export default function VendorOrdersPage() {
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
 
-            <OrderTable
-                title="Incoming Orders"
-                description="New orders awaiting your confirmation."
-                orders={paginatedIncoming}
-                currentPage={pages.incoming}
-                totalPages={totalPages.incoming}
-                onPageChange={(p) => handlePageChange('incoming', p)}
-                actions={(order) => (
-                    <Button variant="outline" size="sm">
-                        <ThumbsUp className="mr-2 h-4 w-4" />
-                        Accept Order
-                    </Button>
-                )}
-            />
+            <Tabs defaultValue="incoming">
+                <TabsList>
+                    <TabsTrigger value="incoming">
+                        Incoming <Badge className="ml-2">{incomingOrders.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
+                    <TabsTrigger value="ready">Ready for Pickup</TabsTrigger>
+                    <TabsTrigger value="past">Past Orders</TabsTrigger>
+                </TabsList>
 
-            <OrderTable
-                title="Ongoing Orders"
-                description="Orders you are currently preparing."
-                orders={paginatedOngoing}
-                currentPage={pages.ongoing}
-                totalPages={totalPages.ongoing}
-                onPageChange={(p) => handlePageChange('ongoing', p)}
-                actions={(order) => (
-                    order.status === 'Vendor Accepted' ? (
-                        <Button variant="outline" size="sm">
-                            <Utensils className="mr-2 h-4 w-4" />
-                            Mark as Preparing
-                        </Button>
-                    ) : (
-                        <Button variant="outline" size="sm">
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Mark as Ready
-                        </Button>
-                    )
-                )}
-            />
-
-            <OrderTable
-                title="Ready for Pickup"
-                description="Orders waiting for the rider to pick up."
-                orders={paginatedReady}
-                currentPage={pages.ready}
-                totalPages={totalPages.ready}
-                onPageChange={(p) => handlePageChange('ready', p)}
-                actions={(order) => (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                       <Bike className="h-4 w-4" /> Waiting for rider...
-                    </div>
-                )}
-            />
-
-            <OrderTable
-                title="Past Orders"
-                description="Completed or cancelled orders."
-                orders={paginatedPast}
-                currentPage={pages.past}
-                totalPages={totalPages.past}
-                onPageChange={(p) => handlePageChange('past', p)}
-                actions={(order) => (
-                     <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>
-                )}
-            />
+                <TabsContent value="incoming">
+                     <OrderTable
+                        title="Incoming Orders"
+                        description="New orders awaiting your confirmation."
+                        orders={paginatedIncoming}
+                        currentPage={pages.incoming}
+                        totalPages={totalPages.incoming}
+                        onPageChange={(p) => handlePageChange('incoming', p)}
+                        actions={(order) => (
+                            <Button variant="outline" size="sm">
+                                <ThumbsUp className="mr-2 h-4 w-4" />
+                                Accept Order
+                            </Button>
+                        )}
+                    />
+                </TabsContent>
+                <TabsContent value="ongoing">
+                    <OrderTable
+                        title="Ongoing Orders"
+                        description="Orders you are currently preparing."
+                        orders={paginatedOngoing}
+                        currentPage={pages.ongoing}
+                        totalPages={totalPages.ongoing}
+                        onPageChange={(p) => handlePageChange('ongoing', p)}
+                        actions={(order) => (
+                            order.status === 'Vendor Accepted' ? (
+                                <Button variant="outline" size="sm">
+                                    <Utensils className="mr-2 h-4 w-4" />
+                                    Mark as Preparing
+                                </Button>
+                            ) : (
+                                <Button variant="outline" size="sm">
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Mark as Ready
+                                </Button>
+                            )
+                        )}
+                    />
+                </TabsContent>
+                 <TabsContent value="ready">
+                    <OrderTable
+                        title="Ready for Pickup"
+                        description="Orders waiting for the rider to pick up."
+                        orders={paginatedReady}
+                        currentPage={pages.ready}
+                        totalPages={totalPages.ready}
+                        onPageChange={(p) => handlePageChange('ready', p)}
+                        actions={(order) => (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Bike className="h-4 w-4" /> Waiting for rider...
+                            </div>
+                        )}
+                    />
+                </TabsContent>
+                 <TabsContent value="past">
+                    <OrderTable
+                        title="Past Orders"
+                        description="Completed or cancelled orders."
+                        orders={paginatedPast}
+                        currentPage={pages.past}
+                        totalPages={totalPages.past}
+                        onPageChange={(p) => handlePageChange('past', p)}
+                        actions={(order) => (
+                            <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>
+                        )}
+                    />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
