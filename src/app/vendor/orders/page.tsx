@@ -161,7 +161,8 @@ export default function VendorOrdersPage() {
         const interval = setInterval(fetchOrders, 60000); // Poll every 60 seconds
 
         return () => clearInterval(interval);
-    }, [fetchOrders]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
     
     const handleUpdateStatus = async (orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready') => {
         setIsUpdating(orderId);
@@ -189,7 +190,7 @@ export default function VendorOrdersPage() {
     const incomingOrders = orders.filter(o => o.status === "Pending");
     const ongoingOrders = orders
         .filter(o => o.status === "Accepted" || o.status === "Preparing")
-        .sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+        .sort((a, b) => (statusOrder[a.status as keyof typeof statusOrder] || 0) - (statusOrder[b.status as keyof typeof statusOrder] || 0));
     const readyForPickupOrders = orders.filter(o => o.status === "Ready for Pickup");
     const pastOrders = orders.filter(o => !["Pending", "Accepted", "Preparing", "Ready for Pickup"].includes(o.status));
 
