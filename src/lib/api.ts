@@ -146,4 +146,10 @@ export async function getVendorOrders(): Promise<VendorOrder[]> {
     }));
 }
 
+export async function updateVendorOrderStatus(orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready'): Promise<void> {
+    await fetcher<void>(`/restaurants/me/orders/${orderId}/${action}/`, {
+        method: 'POST',
+    });
+}
+
     
