@@ -20,6 +20,7 @@ import {
   Utensils,
   LogOut,
   Bike,
+  ShoppingBag,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -57,6 +58,14 @@ export default function AdminLayout({
                 <Link href="/admin/dashboard">
                   <Home />
                   Dashboard
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/admin/orders">
+                  <ShoppingBag />
+                  Orders
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
