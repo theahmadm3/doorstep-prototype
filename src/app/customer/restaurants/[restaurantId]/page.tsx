@@ -213,11 +213,13 @@ export default function RestaurantMenuPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {menuItems.map((item) => (
+              {menuItems.map((item) => {
+                  const imageUrl = (item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/400x250.png";
+                  return (
                   <Card key={item.id} className="flex flex-col overflow-hidden">
                       <CardHeader className="p-0">
                       <Image
-                          src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/400x250.png"}
+                          src={imageUrl}
                           alt={item.name}
                           width={400}
                           height={250}
@@ -235,7 +237,8 @@ export default function RestaurantMenuPage() {
                           </Button>
                       </CardFooter>
                   </Card>
-                  ))}
+                  )
+                })}
               </div>
         </div>
     </div>
