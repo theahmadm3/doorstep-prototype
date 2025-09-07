@@ -112,7 +112,7 @@ export interface AdminUser {
 
 
 // Order Management Types
-export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled';
+export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup';
 
 export interface OrderItem extends MenuItem {
   quantity: number;
@@ -183,6 +183,15 @@ export interface OrderDetail {
     status: OrderStatus;
     total_amount: string;
     items: OrderItemDetail[];
+    created_at: string;
+}
+
+// Vendor Order Type
+export interface VendorOrder {
+    id: string;
+    customer_name: string;
+    total_amount: string;
+    status: OrderStatus;
     created_at: string;
 }
 

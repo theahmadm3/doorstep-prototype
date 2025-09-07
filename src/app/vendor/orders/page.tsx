@@ -6,14 +6,53 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { orders as mockOrders } from "@/lib/data";
+import { getVendorOrders } from "@/lib/api";
 import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown } from "lucide-react";
 import { useState, useEffect } from "react";
-import type { Order } from "@/lib/types";
+import type { VendorOrder } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 const ITEMS_PER_PAGE = 5;
 
-const OrderTable = ({ title, description, orders, actions, currentPage, onPageChange, totalPages }) => {
+const OrderTable = ({ title, description, orders, actions, currentPage, onPageChange, totalPages, isLoading }) => {
+    if (isLoading) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>{title}</CardTitle>
+                    <CardDescription>{description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Order ID</TableHead>
+                                <TableHead>Customer</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Total</TableHead>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {[...Array(3)].map((_, i) => (
+                                <TableRow key={i}>
+                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-8 w-24" /></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        )
+    }
+
     if (orders.length === 0) {
         return (
             <Card>
@@ -40,6 +79,7 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
                         <TableRow>
                             <TableHead>Order ID</TableHead>
                             <TableHead>Customer</TableHead>
+                            <TableHead>Date</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Total</TableHead>
                             <TableHead>Actions</TableHead>
@@ -48,12 +88,13 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
                     <TableBody>
                         {orders.map((order) => (
                             <TableRow key={order.id}>
-                                <TableCell className="font-medium">#{order.id}</TableCell>
-                                <TableCell>Customer #{order.customerId}</TableCell>
+                                <TableCell className="font-medium">#{order.id.slice(0, 8)}</TableCell>
+                                <TableCell>{order.customer_name}</TableCell>
+                                <TableCell>{order.created_at}</TableCell>
                                 <TableCell>
                                     <Badge variant={order.status === 'Preparing' ? 'destructive' : 'secondary'}>{order.status}</Badge>
                                 </TableCell>
-                                <TableCell>₦{order.total.toFixed(2)}</TableCell>
+                                <TableCell>₦{parseFloat(order.total_amount).toFixed(2)}</TableCell>
                                 <TableCell className="space-x-2">
                                     {actions(order)}
                                 </TableCell>
@@ -91,22 +132,47 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
 
 
 export default function VendorOrdersPage() {
-    const [orders, setOrders] = useState<Order[]>(mockOrders);
-    const [time, setTime] = useState(Date.now());
+    const [orders, setOrders] = useState<VendorOrder[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
 
-    useEffect(() => {
-        const interval = setInterval(() => setTime(Date.now()), 60000);
-        // In a real app, you would fetch data here:
-        // fetchOrders().then(setOrders);
-        return () => {
-            clearInterval(interval);
+     useEffect(() => {
+        const fetchOrders = async () => {
+            try {
+                // Only show loading skeleton on initial load
+                if (isLoading) {
+                    const data = await getVendorOrders();
+                    setOrders(data);
+                } else {
+                    // For subsequent fetches, just update the data without the skeleton
+                    const data = await getVendorOrders();
+                    setOrders(data);
+                }
+            } catch (error) {
+                toast({
+                    title: "Error fetching orders",
+                    description: "Could not retrieve your orders. Please try again later.",
+                    variant: "destructive"
+                });
+            } finally {
+                if (isLoading) setIsLoading(false);
+            }
         };
-    }, [time]);
 
-    const incomingOrders = orders.filter(o => o.status === "Order Placed");
-    const ongoingOrders = orders.filter(o => o.status === "Vendor Accepted" || o.status === "Preparing");
-    const readyForPickupOrders = orders.filter(o => o.status === "Order Ready");
-    const pastOrders = orders.filter(o => o.status === "Delivered" || o.status === "Cancelled" || o.status === "Rider Assigned" || o.status === "Rider on the Way");
+        fetchOrders(); // Initial fetch
+        const interval = setInterval(fetchOrders, 60000); // Poll every 60 seconds
+
+        return () => clearInterval(interval);
+    }, [isLoading, toast]);
+
+    const statusOrder = { 'Accepted': 1, 'Preparing': 2 };
+
+    const incomingOrders = orders.filter(o => o.status === "Pending");
+    const ongoingOrders = orders
+        .filter(o => o.status === "Accepted" || o.status === "Preparing")
+        .sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
+    const readyForPickupOrders = orders.filter(o => o.status === "Ready for Pickup");
+    const pastOrders = orders.filter(o => !["Pending", "Accepted", "Preparing", "Ready for Pickup"].includes(o.status));
 
     const [pages, setPages] = useState({
         incoming: 1,
@@ -160,6 +226,7 @@ export default function VendorOrdersPage() {
                         currentPage={pages.incoming}
                         totalPages={totalPages.incoming}
                         onPageChange={(p) => handlePageChange('incoming', p)}
+                        isLoading={isLoading}
                         actions={(order) => (
                             <>
                                 <Button variant="outline" size="sm">
@@ -182,8 +249,9 @@ export default function VendorOrdersPage() {
                         currentPage={pages.ongoing}
                         totalPages={totalPages.ongoing}
                         onPageChange={(p) => handlePageChange('ongoing', p)}
+                        isLoading={isLoading}
                         actions={(order) => (
-                            order.status === 'Vendor Accepted' ? (
+                            order.status === 'Accepted' ? (
                                 <Button variant="outline" size="sm">
                                     <Utensils className="mr-2 h-4 w-4" />
                                     Mark as Preparing
@@ -205,6 +273,7 @@ export default function VendorOrdersPage() {
                         currentPage={pages.ready}
                         totalPages={totalPages.ready}
                         onPageChange={(p) => handlePageChange('ready', p)}
+                        isLoading={isLoading}
                         actions={(order) => (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Bike className="h-4 w-4" /> Waiting for rider...
@@ -220,6 +289,7 @@ export default function VendorOrdersPage() {
                         currentPage={pages.past}
                         totalPages={totalPages.past}
                         onPageChange={(p) => handlePageChange('past', p)}
+                        isLoading={isLoading}
                         actions={(order) => (
                             <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>
                         )}
