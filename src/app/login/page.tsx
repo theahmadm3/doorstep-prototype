@@ -4,6 +4,24 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Utensils, ArrowLeft } from "lucide-react";
 import Footer from "@/components/layout/footer";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function LoginFormSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <Skeleton className="h-10 w-full" />
+    </div>
+  );
+}
 
 export default function LoginPage() {
   return (
@@ -32,7 +50,9 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <LoginForm />
+              <Suspense fallback={<LoginFormSkeleton />}>
+                <LoginForm />
+              </Suspense>
               <div className="mt-4 text-center text-sm">
                 Don&apos;t have an account?{" "}
                 <Link href="/signup" className="underline text-primary">
