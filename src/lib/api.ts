@@ -162,6 +162,13 @@ export async function updateVendorOrderStatus(orderId: string, action: 'accept' 
     });
 }
 
+export async function assignRiderToOrder(orderId: string, driverName: string): Promise<void> {
+    await fetcher<void>(`/restaurants/me/orders/${orderId}/ongoing/`, {
+        method: 'POST',
+        body: JSON.stringify({ driver_name: driverName }),
+    });
+}
+
 // Vendor Rider Management API Calls
 export async function getVendorRiders(): Promise<Rider[]> {
     const response = await fetcher<RiderListResponse>('/restaurants/me/drivers/');
