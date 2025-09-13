@@ -192,12 +192,14 @@ export default function VendorOrdersPage() {
         .filter(o => o.status === "Accepted" || o.status === "Preparing")
         .sort((a, b) => (statusOrder[a.status as keyof typeof statusOrder] || 0) - (statusOrder[b.status as keyof typeof statusOrder] || 0));
     const readyForPickupOrders = orders.filter(o => o.status === "Ready for Pickup");
-    const pastOrders = orders.filter(o => !["Pending", "Accepted", "Preparing", "Ready for Pickup"].includes(o.status));
+    const onTheWayOrders = orders.filter(o => o.status === "On the Way");
+    const pastOrders = orders.filter(o => !["Pending", "Accepted", "Preparing", "Ready for Pickup", "On the Way"].includes(o.status));
 
     const [pages, setPages] = useState({
         incoming: 1,
         ongoing: 1,
         ready: 1,
+        onTheWay: 1,
         past: 1,
     });
     
@@ -214,12 +216,14 @@ export default function VendorOrdersPage() {
     const paginatedIncoming = paginate(incomingOrders, pages.incoming);
     const paginatedOngoing = paginate(ongoingOrders, pages.ongoing);
     const paginatedReady = paginate(readyForPickupOrders, pages.ready);
+    const paginatedOnTheWay = paginate(onTheWayOrders, pages.onTheWay);
     const paginatedPast = paginate(pastOrders, pages.past);
 
     const totalPages = {
         incoming: Math.ceil(incomingOrders.length / ITEMS_PER_PAGE),
         ongoing: Math.ceil(ongoingOrders.length / ITEMS_PER_PAGE),
         ready: Math.ceil(readyForPickupOrders.length / ITEMS_PER_PAGE),
+        onTheWay: Math.ceil(onTheWayOrders.length / ITEMS_PER_PAGE),
         past: Math.ceil(pastOrders.length / ITEMS_PER_PAGE),
     };
 
@@ -235,7 +239,7 @@ export default function VendorOrdersPage() {
                     </TabsTrigger>
                     <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
                     <TabsTrigger value="ready">Ready for Pickup</TabsTrigger>
-                    <TabsTrigger value="past">Past Orders</TabsTrigger>
+                    <TabsTrigger value="onTheWay">On the Way</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="incoming">
@@ -302,22 +306,36 @@ export default function VendorOrdersPage() {
                         )}
                     />
                 </TabsContent>
-                 <TabsContent value="past">
+                 <TabsContent value="onTheWay">
                     <OrderTable
-                        title="Past Orders"
-                        description="Completed or cancelled orders."
-                        orders={paginatedPast}
-                        currentPage={pages.past}
-                        totalPages={totalPages.past}
-                        onPageChange={(p) => handlePageChange('past', p)}
+                        title="On the Way"
+                        description="Orders currently out for delivery."
+                        orders={paginatedOnTheWay}
+                        currentPage={pages.onTheWay}
+                        totalPages={totalPages.onTheWay}
+                        onPageChange={(p) => handlePageChange('onTheWay', p)}
                         isLoading={isLoading}
                         showActions={false}
-                        actions={(order) => (
-                            <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>
-                        )}
+                        actions={() => null}
                     />
                 </TabsContent>
             </Tabs>
+
+            <div className="mt-12">
+                 <OrderTable
+                    title="Past Orders"
+                    description="Completed or cancelled orders."
+                    orders={paginatedPast}
+                    currentPage={pages.past}
+                    totalPages={totalPages.past}
+                    onPageChange={(p) => handlePageChange('past', p)}
+                    isLoading={isLoading}
+                    showActions={false}
+                    actions={(order) => (
+                        <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>
+                    )}
+                />
+            </div>
         </div>
     );
 }
