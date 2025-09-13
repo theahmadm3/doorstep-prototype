@@ -209,24 +209,25 @@ export interface AdminOrder {
 
 // Vendor Rider Types
 export interface Rider {
-    id: string;
-    full_name: string;
-    phone_number: string;
-    status: 'Active' | 'Inactive';
-    created_at: string;
+    name: string;
+    phone: string;
 }
 
+export interface RiderListResponse {
+    drivers: Rider[];
+}
+
+const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
+
 export const riderSchema = z.object({
-    full_name: z.string().min(2, "Full name must be at least 2 characters long."),
-    phone_number: z.string().regex(/^(070|080|081|090|091)\d{8}$/, "Please enter a valid Nigerian phone number."),
-    status: z.enum(['Active', 'Inactive']),
+    name: z.string().min(2, "Name must be at least 2 characters."),
+    phone: z.string().regex(nigerianPhoneRegex, "Please enter a valid Nigerian phone number."),
 });
 
 export type RiderPayload = z.infer<typeof riderSchema>;
 
 
 // Profile Page Schemas
-const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
 
 export const profileSchema = z.object({
     full_name: z.string().min(2, "Full name must be at least 2 characters long."),
