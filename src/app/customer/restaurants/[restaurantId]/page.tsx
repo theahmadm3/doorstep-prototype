@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import CheckoutModal from "@/components/checkout/checkout-modal";
+import { cn } from "@/lib/utils";
 
 export default function RestaurantMenuPage() {
   const { addOrUpdateOrder, guestCart, addToGuestCart, clearGuestCart, orders } = useOrder();
@@ -216,15 +217,21 @@ export default function RestaurantMenuPage() {
               {menuItems.map((item) => {
                   const imageUrl = (item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/400x250.png";
                   return (
-                  <Card key={item.id} className="flex flex-col overflow-hidden">
+                  <Card key={item.id} className={cn("flex flex-col overflow-hidden", { 'opacity-50': !item.is_available })}>
                       <CardHeader className="p-0">
-                      <Image
-                          src={imageUrl}
-                          alt={item.name}
-                          width={400}
-                          height={250}
-                          className="rounded-t-lg object-cover w-full aspect-video"
-                      />
+                        {item.is_available ? (
+                            <Image
+                                src={imageUrl}
+                                alt={item.name}
+                                width={400}
+                                height={250}
+                                className="rounded-t-lg object-cover w-full aspect-video"
+                            />
+                        ) : (
+                            <div className="flex items-center justify-center text-center aspect-video bg-muted rounded-t-lg">
+                                <p className="text-sm text-muted-foreground p-4">Item not available at the moment — will be back soon.</p>
+                            </div>
+                        )}
                       </CardHeader>
                       <CardContent className="pt-6 flex-grow">
                       <CardTitle className="font-headline text-xl">{item.name}</CardTitle>
@@ -232,8 +239,12 @@ export default function RestaurantMenuPage() {
                       </CardContent>
                       <CardFooter className="flex items-center justify-between mt-auto pt-4">
                           <p className="text-lg font-semibold text-primary">₦{parseFloat(item.price).toFixed(2)}</p>
-                          <Button onClick={() => handleAddItem(item)} className="w-full sm:w-auto">
-                              <PlusCircle className="mr-2 h-4 w-4" /> {user ? 'Add to Order' : 'Add to Cart'}
+                          <Button onClick={() => handleAddItem(item)} className="w-full sm:w-auto" disabled={!item.is_available}>
+                            {!item.is_available ? 'Unavailable' : (
+                                <>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> {user ? 'Add to Order' : 'Add to Cart'}
+                                </>
+                            )}
                           </Button>
                       </CardFooter>
                   </Card>
