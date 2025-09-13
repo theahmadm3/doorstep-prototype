@@ -1,5 +1,5 @@
 
-import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder } from "./types";
+import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder, Rider, RiderPayload } from "./types";
 import {format} from "date-fns"
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -161,4 +161,28 @@ export async function updateVendorOrderStatus(orderId: string, action: 'accept' 
     });
 }
 
-    
+// Vendor Rider Management API Calls
+export async function getVendorRiders(): Promise<Rider[]> {
+    const response = await fetcher<PaginatedResponse<Rider>>('/restaurants/me/riders/');
+    return response.results;
+}
+
+export async function createVendorRider(riderData: RiderPayload): Promise<Rider> {
+    return fetcher<Rider>('/restaurants/me/riders/', {
+        method: 'POST',
+        body: JSON.stringify(riderData),
+    });
+}
+
+export async function updateVendorRider(riderId: string, riderData: RiderPayload): Promise<Rider> {
+    return fetcher<Rider>(`/restaurants/me/riders/${riderId}/`, {
+        method: 'PUT',
+        body: JSON.stringify(riderData),
+    });
+}
+
+export async function deleteVendorRider(riderId: string): Promise<void> {
+    await fetcher<void>(`/restaurants/me/riders/${riderId}/`, {
+        method: 'DELETE',
+    });
+}
