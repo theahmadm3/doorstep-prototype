@@ -25,8 +25,14 @@ export default function CustomerOrderTimeline({ order, onConfirmDelivery, isConf
                     <div>
                         <h4 className="font-semibold mb-4 text-md">Delivery To</h4>
                         <div className="text-sm p-3 bg-muted rounded-md border">
-                            <p className="font-semibold">{order.delivery_address.address_nickname || 'Address Details'}</p>
-                            <p>{order.delivery_address.street_address}, {order.delivery_address.city}</p>
+                            {order.delivery_address ? (
+                                <>
+                                    <p className="font-semibold">{order.delivery_address.address_nickname || 'Address Details'}</p>
+                                    <p>{order.delivery_address.street_address}, {order.delivery_address.city}</p>
+                                </>
+                            ) : (
+                                <p>Address not available.</p>
+                            )}
                         </div>
                     </div>
                      <div>
