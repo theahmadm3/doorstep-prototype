@@ -290,16 +290,10 @@ export interface VendorAnalyticsData {
 
 // Payment Types
 export interface InitializePaymentPayload {
-  amount: number; // in kobo
-  email: string;
-  metadata?: {
-    order_payload: OrderPayload;
-    user_id: string;
-  };
+  amount: number;
 }
 
 export interface InitializePaymentResponse {
-  authorization_url: string;
-  access_code: string;
+  public_key: string;
   reference: string;
 }

@@ -11,7 +11,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder, isLoading }) => {
+const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder, isLoading, onToggle, orderDetails, loadingDetailsId }) => {
     if (isLoading) {
         return (
             <div>
@@ -38,7 +38,7 @@ const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder
             <h2 className="text-2xl font-bold font-headline mt-8 mb-4">{title}</h2>
             <Card>
                 <CardContent className="p-0">
-                    <Accordion type="single" collapsible className="w-full">
+                    <Accordion type="single" collapsible className="w-full" onValueChange={onToggle}>
                         {orders.map((order) => (
                             <AccordionItem value={order.id} key={order.id}>
                                 <AccordionTrigger className="px-6 py-4 hover:no-underline">
@@ -58,6 +58,8 @@ const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder
                                 <AccordionContent className="px-6 pb-6">
                                      <CustomerOrderTimeline
                                         order={order}
+                                        details={orderDetails[order.id]}
+                                        isLoadingDetails={loadingDetailsId === order.id}
                                         onConfirmDelivery={onConfirmDelivery}
                                         isConfirming={isConfirming === order.id}
                                     />
@@ -78,6 +80,8 @@ export default function CustomerOrdersPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isFetching, setIsFetching] = useState(false);
     const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
+    const [orderDetails, setOrderDetails] = useState<Record<string, OrderDetail>>({});
+    const [loadingDetailsId, setLoadingDetailsId] = useState<string | null>(null);
 
      const fetchOrders = useCallback(async () => {
         if (isFetching) return;
@@ -103,6 +107,25 @@ export default function CustomerOrdersPage() {
         return () => clearInterval(interval); // Cleanup on unmount
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const handleToggleAccordion = async (orderId: string | undefined) => {
+        if (!orderId || orderDetails[orderId]) {
+            return; // Don't fetch if it's already loaded or if closing
+        }
+        setLoadingDetailsId(orderId);
+        try {
+            const details = await getOrderDetails(orderId);
+            setOrderDetails(prev => ({ ...prev, [orderId]: details }));
+        } catch (error) {
+             toast({
+                title: "Error",
+                description: "Could not load order details.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoadingDetailsId(null);
+        }
+    };
 
     const handleConfirmDelivery = async (orderId: string) => {
         setConfirmingOrderId(orderId);
@@ -144,6 +167,9 @@ export default function CustomerOrdersPage() {
                 isConfirming={confirmingOrderId}
                 isPastOrder={false}
                 isLoading={isLoading}
+                onToggle={handleToggleAccordion}
+                orderDetails={orderDetails}
+                loadingDetailsId={loadingDetailsId}
             />
 
             <OrderList
@@ -151,6 +177,9 @@ export default function CustomerOrdersPage() {
                 orders={pastOrders}
                 isPastOrder={true}
                 isLoading={isLoading}
+                onToggle={handleToggleAccordion}
+                orderDetails={orderDetails}
+                loadingDetailsId={loadingDetailsId}
             />
         </div>
     );
