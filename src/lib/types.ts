@@ -153,6 +153,7 @@ export interface CustomerOrder {
     total_amount: string;
     status: OrderStatus;
     created_at: string;
+    delivery_address: OrderDetailAddress;
 }
 
 export interface OrderItemDetail {

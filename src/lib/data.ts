@@ -1,4 +1,5 @@
 
+
 import type { OrderStatus as Status, Order } from './types';
 
 export const restaurants = [
@@ -22,6 +23,8 @@ export const foodItems = [
 export type OrderStatus = Status;
 
 export const orderStatusFlow: OrderStatus[] = ['Order Placed', 'Vendor Accepted', 'Preparing', 'Order Ready', 'Rider Assigned', 'Rider on the Way', 'Delivered'];
+export const orderStatusSteps: OrderStatus[] = ['Pending', 'Accepted', 'Preparing', 'Ready for Pickup', 'On the Way', 'Delivered'];
+
 
 export const orders: Order[] = [
   {

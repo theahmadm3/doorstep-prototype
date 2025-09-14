@@ -95,6 +95,13 @@ export async function getCustomerOrders(): Promise<CustomerOrder[]> {
     }));
 }
 
+export async function confirmOrderDelivery(orderId: string): Promise<void> {
+    await fetcher<void>(`/customer/me/order/${orderId}/delivered/`, {
+        method: 'POST',
+    });
+}
+
+
 export async function getOrderDetails(orderId: string): Promise<OrderDetail> {
     return fetcher<OrderDetail>(`/orders/${orderId}/`);
 }
