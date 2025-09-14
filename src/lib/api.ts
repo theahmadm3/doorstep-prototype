@@ -205,5 +205,5 @@ export async function deleteVendorRider(riderName: string): Promise<void> {
 
 // Vendor Analytics API
 export async function getVendorAnalytics(): Promise<VendorAnalyticsData> {
-    return fetcher<VendorAnalyticsData>('/restaurants/me/analytics/');
+    return fetcher<VendorAnalyticsData>('/restaurants/me/analytics');
 }
