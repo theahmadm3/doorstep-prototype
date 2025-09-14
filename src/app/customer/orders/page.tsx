@@ -2,13 +2,75 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getCustomerOrders, confirmOrderDelivery } from "@/lib/api";
-import type { CustomerOrder } from "@/lib/types";
+import { getCustomerOrders, confirmOrderDelivery, getOrderDetails } from "@/lib/api";
+import type { CustomerOrder, OrderDetail } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import CustomerOrderTimeline from "@/components/dashboard/customer-order-timeline";
-import { Accordion } from "@/components/ui/accordion";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder, isLoading }) => {
+    if (isLoading) {
+        return (
+            <div>
+                <h2 className="text-2xl font-bold font-headline mt-8 mb-4">{title}</h2>
+                <div className="space-y-4">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-20 w-full" />
+                </div>
+            </div>
+        );
+    }
+
+    if (orders.length === 0) {
+        return (
+            <div>
+                <h2 className="text-2xl font-bold font-headline mt-8 mb-4">{title}</h2>
+                <p className="text-muted-foreground">You have no {isPastOrder ? 'past' : 'active'} orders.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            <h2 className="text-2xl font-bold font-headline mt-8 mb-4">{title}</h2>
+            <Card>
+                <CardContent className="p-0">
+                    <Accordion type="single" collapsible className="w-full">
+                        {orders.map((order) => (
+                            <AccordionItem value={order.id} key={order.id}>
+                                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                                    <div className="flex justify-between items-center w-full">
+                                        <div className="text-left">
+                                            <p className="font-bold text-lg">Order #{order.id.slice(0, 8)}</p>
+                                            <p className="text-sm text-muted-foreground">{order.restaurant_name} - {order.created_at}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <span className="font-bold text-lg hidden sm:inline-block">₦{parseFloat(order.total_amount).toFixed(2)}</span>
+                                            <Badge variant={order.status === 'Delivered' ? 'default' : 'secondary'} className={order.status === 'Delivered' ? "bg-green-600 text-white" : ""}>
+                                                {order.status}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-6 pb-6">
+                                     <CustomerOrderTimeline
+                                        order={order}
+                                        onConfirmDelivery={onConfirmDelivery}
+                                        isConfirming={isConfirming === order.id}
+                                    />
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
+                </CardContent>
+            </Card>
+        </div>
+    );
+};
+
 
 export default function CustomerOrdersPage() {
     const { toast } = useToast();
@@ -74,45 +136,22 @@ export default function CustomerOrdersPage() {
     return (
         <div className="container py-12">
             <h1 className="text-3xl font-bold font-headline mb-8">Your Orders</h1>
+            
+            <OrderList
+                title="Active Orders"
+                orders={activeOrders}
+                onConfirmDelivery={handleConfirmDelivery}
+                isConfirming={confirmingOrderId}
+                isPastOrder={false}
+                isLoading={isLoading}
+            />
 
-            <h2 className="text-2xl font-bold font-headline mt-8 mb-4">Active Orders</h2>
-            {isLoading ? (
-                <div className="space-y-6">
-                    <Skeleton className="h-48 w-full" />
-                    <Skeleton className="h-48 w-full" />
-                </div>
-            ) : activeOrders.length > 0 ? (
-                 <div className="space-y-6">
-                    {activeOrders.map((order) => (
-                        <CustomerOrderTimeline
-                            key={order.id}
-                            order={order}
-                            onConfirmDelivery={handleConfirmDelivery}
-                            isConfirming={confirmingOrderId === order.id}
-                        />
-                    ))}
-                </div>
-            ) : <p className="text-muted-foreground">You have no active orders.</p>}
-
-
-             <h2 className="text-2xl font-bold font-headline mt-12 mb-4">Past Orders</h2>
-             {isLoading ? (
-                <Skeleton className="h-24 w-full" />
-             ) : pastOrders.length > 0 ? (
-                <Card>
-                    <CardContent className="p-0">
-                    <Accordion type="single" collapsible className="w-full">
-                       {pastOrders.map((order) => (
-                           <CustomerOrderTimeline
-                                key={order.id}
-                                order={order}
-                                isPastOrder
-                           />
-                        ))}
-                    </Accordion>
-                    </CardContent>
-                </Card>
-            ): <p className="text-muted-foreground">You have no past orders.</p>}
+            <OrderList
+                title="Past Orders"
+                orders={pastOrders}
+                isPastOrder={true}
+                isLoading={isLoading}
+            />
         </div>
     );
 }

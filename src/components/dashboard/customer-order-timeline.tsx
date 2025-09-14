@@ -2,11 +2,9 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import type { CustomerOrder, OrderStatus } from "@/lib/types";
+import type { CustomerOrder } from "@/lib/types";
 import { orderStatusSteps } from "@/lib/data";
 import { Check, CheckCircle, CircleDotDashed } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,37 +13,22 @@ interface CustomerOrderTimelineProps {
     order: CustomerOrder;
     onConfirmDelivery?: (orderId: string) => void;
     isConfirming?: boolean;
-    isPastOrder?: boolean;
 }
 
-export default function CustomerOrderTimeline({ order, onConfirmDelivery, isConfirming, isPastOrder }: CustomerOrderTimelineProps) {
+export default function CustomerOrderTimeline({ order, onConfirmDelivery, isConfirming }: CustomerOrderTimelineProps) {
     const currentStatusIndex = orderStatusSteps.indexOf(order.status);
     
-    const Timeline = (
-        <Card className="shadow-md">
-            <CardHeader>
-                <div className="flex justify-between items-start">
+    return (
+        <Card className="shadow-md border-muted">
+            <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <CardTitle>Order #{order.id.slice(0, 8)}</CardTitle>
-                        <CardDescription>{order.restaurant_name}</CardDescription>
-                    </div>
-                    <div className="text-right">
-                         <p className="text-2xl font-bold text-primary">₦{parseFloat(order.total_amount).toFixed(2)}</p>
-                         <p className="text-xs text-muted-foreground">{order.created_at}</p>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-8">
-                    {order.delivery_address && (
-                        <div>
-                            <h4 className="font-semibold mb-4 text-md">Delivery To</h4>
-                            <div className="text-sm p-3 bg-muted rounded-md border">
-                                <p className="font-semibold">{order.delivery_address.address_nickname || 'Address Details'}</p>
-                                <p>{order.delivery_address.street_address}, {order.delivery_address.city}</p>
-                            </div>
+                        <h4 className="font-semibold mb-4 text-md">Delivery To</h4>
+                        <div className="text-sm p-3 bg-muted rounded-md border">
+                            <p className="font-semibold">{order.delivery_address.address_nickname || 'Address Details'}</p>
+                            <p>{order.delivery_address.street_address}, {order.delivery_address.city}</p>
                         </div>
-                    )}
+                    </div>
                      <div>
                         <h4 className="font-semibold mb-6 text-md">Status</h4>
                         <ol className="relative border-s border-gray-200 dark:border-gray-700">                  
@@ -71,8 +54,7 @@ export default function CustomerOrderTimeline({ order, onConfirmDelivery, isConf
                 </div>
             </CardContent>
              {order.status === 'On the Way' && onConfirmDelivery && (
-                <CardFooter className="flex-col items-stretch">
-                    <Separator className="mb-4" />
+                <CardFooter className="flex-col items-stretch pt-4 border-t">
                     <Button
                         onClick={() => onConfirmDelivery(order.id)}
                         disabled={isConfirming}
@@ -84,30 +66,4 @@ export default function CustomerOrderTimeline({ order, onConfirmDelivery, isConf
             )}
         </Card>
     );
-    
-    if (isPastOrder) {
-        return (
-            <AccordionItem value={order.id}>
-                <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                     <div className="flex justify-between items-center w-full">
-                        <div className="text-left">
-                            <p className="font-bold text-lg">Order #{order.id.slice(0, 8)}</p>
-                            <p className="text-sm text-muted-foreground">{order.restaurant_name} - {order.created_at}</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <span className="font-bold text-lg">₦{parseFloat(order.total_amount).toFixed(2)}</span>
-                            <Badge variant={order.status === 'Delivered' ? 'default' : 'secondary'} className={order.status === 'Delivered' ? "bg-green-600 text-white" : ""}>
-                                {order.status}
-                            </Badge>
-                        </div>
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-6 pb-6">
-                    {Timeline}
-                </AccordionContent>
-            </AccordionItem>
-        );
-    }
-
-    return Timeline;
 }
