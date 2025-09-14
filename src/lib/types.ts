@@ -1,4 +1,5 @@
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -112,7 +113,7 @@ export interface AdminUser {
 
 
 // Order Management Types
-export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup';
+export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way';
 
 export interface OrderItem extends MenuItem {
   quantity: number;
@@ -152,6 +153,7 @@ export interface CustomerOrder {
     total_amount: string;
     status: OrderStatus;
     created_at: string;
+    delivery_address: OrderDetailAddress;
 }
 
 export interface OrderItemDetail {
@@ -206,9 +208,27 @@ export interface AdminOrder {
     created_at: string;
 }
 
+// Vendor Rider Types
+export interface Rider {
+    name: string;
+    phone: string;
+}
+
+export interface RiderListResponse {
+    drivers: Rider[];
+}
+
+const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
+
+export const riderSchema = z.object({
+    name: z.string().min(2, "Name must be at least 2 characters."),
+    phone: z.string().regex(nigerianPhoneRegex, "Please enter a valid Nigerian phone number."),
+});
+
+export type RiderPayload = z.infer<typeof riderSchema>;
+
 
 // Profile Page Schemas
-const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
 
 export const profileSchema = z.object({
     full_name: z.string().min(2, "Full name must be at least 2 characters long."),
@@ -251,4 +271,19 @@ export interface ProfileUpdatePayload {
   phone_number?: string;
 }
 
-    
+// Analytics Types
+export interface TopSellingItem {
+    item_name: string;
+    orders: number;
+}
+
+export interface VendorAnalyticsData {
+    restaurant: string;
+    total_revenue: string;
+    platform_revenue_from_this_restaurant: string;
+    total_orders: number;
+    active_orders: number;
+    delivered_orders: number;
+    cancelled_orders: number;
+    top_items: TopSellingItem[];
+}

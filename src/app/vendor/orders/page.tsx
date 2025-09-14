@@ -6,12 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getVendorOrders, updateVendorOrderStatus } from "@/lib/api";
-import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown } from "lucide-react";
+import { getVendorOrders, updateVendorOrderStatus, getVendorRiders, assignRiderToOrder } from "@/lib/api";
+import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown, Send } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import type { VendorOrder } from "@/lib/types";
+import type { VendorOrder, Rider } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+
 
 const ITEMS_PER_PAGE = 5;
 
@@ -139,6 +156,13 @@ export default function VendorOrdersPage() {
     const [isUpdating, setIsUpdating] = useState<string | null>(null);
     const { toast } = useToast();
     
+    // State for rider assignment modal
+    const [isAssignModalOpen, setAssignModalOpen] = useState(false);
+    const [riders, setRiders] = useState<Rider[]>([]);
+    const [selectedOrder, setSelectedOrder] = useState<VendorOrder | null>(null);
+    const [selectedRiderName, setSelectedRiderName] = useState<string>("");
+    const [isAssigning, setIsAssigning] = useState(false);
+
     const fetchOrders = useCallback(async () => {
         // Only show main loading skeleton on initial load
         if (orders.length === 0) setIsLoading(true);
@@ -185,6 +209,40 @@ export default function VendorOrdersPage() {
         }
     };
 
+    const handleOpenAssignModal = async (order: VendorOrder) => {
+        setSelectedOrder(order);
+        try {
+            const fetchedRiders = await getVendorRiders();
+            setRiders(fetchedRiders);
+            if (fetchedRiders.length > 0) {
+                setSelectedRiderName(fetchedRiders[0].name);
+            }
+            setAssignModalOpen(true);
+        } catch (error) {
+            toast({ title: "Error", description: "Could not fetch your list of riders." });
+        }
+    };
+
+    const handleConfirmAssignment = async () => {
+        if (!selectedOrder || !selectedRiderName) {
+            toast({ title: "Error", description: "Please select a rider." });
+            return;
+        }
+        setIsAssigning(true);
+        try {
+            await assignRiderToOrder(selectedOrder.id, selectedRiderName);
+            toast({ title: "Success!", description: `${selectedRiderName} has been assigned to the order.` });
+            setAssignModalOpen(false);
+            await fetchOrders();
+        } catch (error) {
+             const message = error instanceof Error ? error.message : "Assignment failed.";
+             toast({ title: "Error", description: message, variant: "destructive" });
+        } finally {
+            setIsAssigning(false);
+        }
+    };
+
+
     const statusOrder = { 'Accepted': 1, 'Preparing': 2 };
 
     const incomingOrders = orders.filter(o => o.status === "Pending");
@@ -192,12 +250,14 @@ export default function VendorOrdersPage() {
         .filter(o => o.status === "Accepted" || o.status === "Preparing")
         .sort((a, b) => (statusOrder[a.status as keyof typeof statusOrder] || 0) - (statusOrder[b.status as keyof typeof statusOrder] || 0));
     const readyForPickupOrders = orders.filter(o => o.status === "Ready for Pickup");
-    const pastOrders = orders.filter(o => !["Pending", "Accepted", "Preparing", "Ready for Pickup"].includes(o.status));
+    const onTheWayOrders = orders.filter(o => o.status === "On the Way");
+    const pastOrders = orders.filter(o => !["Pending", "Accepted", "Preparing", "Ready for Pickup", "On the Way"].includes(o.status));
 
     const [pages, setPages] = useState({
         incoming: 1,
         ongoing: 1,
         ready: 1,
+        onTheWay: 1,
         past: 1,
     });
     
@@ -214,18 +274,52 @@ export default function VendorOrdersPage() {
     const paginatedIncoming = paginate(incomingOrders, pages.incoming);
     const paginatedOngoing = paginate(ongoingOrders, pages.ongoing);
     const paginatedReady = paginate(readyForPickupOrders, pages.ready);
+    const paginatedOnTheWay = paginate(onTheWayOrders, pages.onTheWay);
     const paginatedPast = paginate(pastOrders, pages.past);
 
     const totalPages = {
         incoming: Math.ceil(incomingOrders.length / ITEMS_PER_PAGE),
         ongoing: Math.ceil(ongoingOrders.length / ITEMS_PER_PAGE),
         ready: Math.ceil(readyForPickupOrders.length / ITEMS_PER_PAGE),
+        onTheWay: Math.ceil(onTheWayOrders.length / ITEMS_PER_PAGE),
         past: Math.ceil(pastOrders.length / ITEMS_PER_PAGE),
     };
 
 
     return (
         <div className="space-y-8">
+            <Dialog open={isAssignModalOpen} onOpenChange={setAssignModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Assign Rider to Order #{selectedOrder?.id.slice(0, 8)}</DialogTitle>
+                        <DialogDescription>
+                            Select an available rider to deliver this order.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="rider-select">Rider</Label>
+                        <Select onValueChange={setSelectedRiderName} defaultValue={selectedRiderName}>
+                            <SelectTrigger id="rider-select">
+                                <SelectValue placeholder="Select a rider" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {riders.map(rider => (
+                                    <SelectItem key={rider.name} value={rider.name}>
+                                        {rider.name} - {rider.phone}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setAssignModalOpen(false)}>Cancel</Button>
+                        <Button onClick={handleConfirmAssignment} disabled={isAssigning || riders.length === 0}>
+                            {isAssigning ? "Assigning..." : "Confirm Assignment"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
 
             <Tabs defaultValue="incoming">
@@ -235,7 +329,7 @@ export default function VendorOrdersPage() {
                     </TabsTrigger>
                     <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
                     <TabsTrigger value="ready">Ready for Pickup</TabsTrigger>
-                    <TabsTrigger value="past">Past Orders</TabsTrigger>
+                    <TabsTrigger value="onTheWay">On the Way</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="incoming">
@@ -288,36 +382,49 @@ export default function VendorOrdersPage() {
                  <TabsContent value="ready">
                     <OrderTable
                         title="Ready for Pickup"
-                        description="Orders waiting for the rider to pick up."
+                        description="Orders waiting for a rider to be assigned."
                         orders={paginatedReady}
                         currentPage={pages.ready}
                         totalPages={totalPages.ready}
                         onPageChange={(p) => handlePageChange('ready', p)}
                         isLoading={isLoading}
-                        showActions={false}
                         actions={(order) => (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Bike className="h-4 w-4" /> Waiting for rider...
-                            </div>
+                           <Button variant="outline" size="sm" onClick={() => handleOpenAssignModal(order)}>
+                                <Send className="mr-2 h-4 w-4" /> Assign Rider
+                            </Button>
                         )}
                     />
                 </TabsContent>
-                 <TabsContent value="past">
+                 <TabsContent value="onTheWay">
                     <OrderTable
-                        title="Past Orders"
-                        description="Completed or cancelled orders."
-                        orders={paginatedPast}
-                        currentPage={pages.past}
-                        totalPages={totalPages.past}
-                        onPageChange={(p) => handlePageChange('past', p)}
+                        title="On the Way"
+                        description="Orders currently out for delivery."
+                        orders={paginatedOnTheWay}
+                        currentPage={pages.onTheWay}
+                        totalPages={totalPages.onTheWay}
+                        onPageChange={(p) => handlePageChange('onTheWay', p)}
                         isLoading={isLoading}
                         showActions={false}
-                        actions={(order) => (
-                            <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>
-                        )}
+                        actions={() => null}
                     />
                 </TabsContent>
             </Tabs>
+
+            <div className="mt-12">
+                 <OrderTable
+                    title="Past Orders"
+                    description="Completed or cancelled orders."
+                    orders={paginatedPast}
+                    currentPage={pages.past}
+                    totalPages={totalPages.past}
+                    onPageChange={(p) => handlePageChange('past', p)}
+                    isLoading={isLoading}
+                    showActions={false}
+                    actions={(order) => (
+                        <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>
+                    )}
+                />
+            </div>
         </div>
     );
 }

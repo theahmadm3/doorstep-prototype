@@ -53,6 +53,7 @@ export default function VendorItemManagement() {
   const { toast } = useToast();
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, ItemUpdateStatus>>({});
   const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   const fetchItems = async () => {
     setIsLoading(true);
@@ -76,6 +77,7 @@ export default function VendorItemManagement() {
 
   const handleSaveItem = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsSaving(true);
     const formData = new FormData(event.currentTarget);
     
     const payload: MenuItemPayload = {
@@ -95,14 +97,15 @@ export default function VendorItemManagement() {
             setItems([newItem, ...items]); // Add new item to the top of the list
             toast({ title: "Item Added", description: `${payload.name} has been successfully added.` });
         }
+        setDialogOpen(false);
+        setEditingItem(null);
     } catch (error) {
         const message = error instanceof Error ? error.message : "An unexpected error occurred.";
         const action = editingItem ? 'Update' : 'Add';
         toast({ title: `Failed to ${action} Item`, description: message, variant: "destructive" });
+    } finally {
+        setIsSaving(false);
     }
-    
-    setDialogOpen(false);
-    setEditingItem(null);
   };
   
   const handleDeleteItem = async () => {
@@ -311,7 +314,9 @@ export default function VendorItemManagement() {
               </div>
           </form>
           <DialogFooter>
-              <Button type="submit" form="item-form">Save changes</Button>
+              <Button type="submit" form="item-form" disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save changes"}
+              </Button>
           </DialogFooter>
       </DialogContent>
     </Dialog>
