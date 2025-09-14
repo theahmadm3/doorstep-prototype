@@ -1,6 +1,6 @@
 
 
-import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder, Rider, RiderPayload, RiderListResponse, VendorAnalyticsData } from "./types";
+import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder, Rider, RiderPayload, RiderListResponse, VendorAnalyticsData, InitializePaymentPayload, InitializePaymentResponse } from "./types";
 import {format} from "date-fns"
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -206,4 +206,12 @@ export async function deleteVendorRider(riderName: string): Promise<void> {
 // Vendor Analytics API
 export async function getVendorAnalytics(): Promise<VendorAnalyticsData> {
     return fetcher<VendorAnalyticsData>('/restaurant/me/analytics');
+}
+
+// Payment API
+export async function initializePayment(payload: InitializePaymentPayload): Promise<InitializePaymentResponse> {
+    return fetcher<InitializePaymentResponse>('/payments/initialize/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    });
 }

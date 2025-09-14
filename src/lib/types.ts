@@ -287,3 +287,19 @@ export interface VendorAnalyticsData {
     cancelled_orders: number;
     top_items: TopSellingItem[];
 }
+
+// Payment Types
+export interface InitializePaymentPayload {
+  amount: number; // in kobo
+  email: string;
+  metadata?: {
+    order_payload: OrderPayload;
+    user_id: string;
+  };
+}
+
+export interface InitializePaymentResponse {
+  authorization_url: string;
+  access_code: string;
+  reference: string;
+}
