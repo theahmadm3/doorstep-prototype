@@ -3,7 +3,6 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import OrderStatusTracker from "@/components/dashboard/order-status";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +10,11 @@ import { useOrder } from "@/hooks/use-order";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
 import { getCustomerOrders, getOrderDetails } from "@/lib/api";
-import type { Order, CustomerOrder, OrderDetail } from "@/lib/types";
+import type { Order, CustomerOrder, OrderDetail, OrderStatus } from "@/lib/types";
 import CheckoutModal from "@/components/checkout/checkout-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { CheckCircle } from "lucide-react";
 
 
 export default function CustomerOrdersPage() {
@@ -25,6 +25,7 @@ export default function CustomerOrdersPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isDetailsLoading, setIsDetailsLoading] = useState<string | null>(null);
     const [isFetching, setIsFetching] = useState(false);
+    const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
 
     const [isCheckoutOpen, setCheckoutOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -57,6 +58,34 @@ export default function CustomerOrdersPage() {
     const handleCheckout = (order: Order) => {
         setSelectedOrder(order);
         setCheckoutOpen(true);
+    };
+
+    const handleConfirmDelivery = async (orderId: string) => {
+        setConfirmingOrderId(orderId);
+        try {
+            // Placeholder for API call
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Optimistic UI update
+            setFetchedOrders(prevOrders =>
+                prevOrders.map(o =>
+                    o.id === orderId ? { ...o, status: 'Delivered' as OrderStatus } : o
+                )
+            );
+
+            toast({
+                title: "Delivery Confirmed",
+                description: "Thank you for confirming your delivery!",
+            });
+        } catch (error) {
+            toast({
+                title: "Confirmation Failed",
+                description: "Could not confirm delivery. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setConfirmingOrderId(null);
+        }
     };
 
     const handleAccordionChange = async (orderId: string) => {
@@ -121,6 +150,7 @@ export default function CustomerOrdersPage() {
                     <CardContent className="p-0">
                     <Accordion type="single" collapsible className="w-full" onValueChange={handleAccordionChange}>
                         {activeOrders.map((order) => {
+                        const isConfirming = confirmingOrderId === order.id;
                         return (
                             <AccordionItem value={order.id} key={order.id}>
                             <AccordionTrigger className="px-6 py-4 hover:no-underline">
@@ -131,7 +161,21 @@ export default function CustomerOrdersPage() {
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <span className="font-bold text-primary text-lg">₦{parseFloat(order.total_amount).toFixed(2)}</span>
-                                        <Badge variant="secondary">{order.status}</Badge>
+                                        {order.status === 'Rider on the Way' ? (
+                                             <Button
+                                                size="sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleConfirmDelivery(order.id);
+                                                }}
+                                                disabled={isConfirming}
+                                            >
+                                                <CheckCircle className="mr-2 h-4 w-4" />
+                                                {isConfirming ? "Confirming..." : "Confirm Delivery"}
+                                            </Button>
+                                        ) : (
+                                            <Badge variant="secondary">{order.status}</Badge>
+                                        )}
                                     </div>
                                 </div>
                             </AccordionTrigger>
