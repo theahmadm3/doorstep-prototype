@@ -270,3 +270,20 @@ export interface ProfileUpdatePayload {
   full_name: string;
   phone_number?: string;
 }
+
+// Analytics Types
+export interface TopSellingItem {
+    item_name: string;
+    orders: number;
+}
+
+export interface VendorAnalyticsData {
+    restaurant: string;
+    total_revenue: string;
+    platform_revenue_from_this_restaurant: string;
+    total_orders: number;
+    active_orders: number;
+    delivered_orders: number;
+    cancelled_orders: number;
+    top_items: TopSellingItem[];
+}
