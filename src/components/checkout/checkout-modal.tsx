@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
-import type { User, Order, GuestCart, Address, OrderPayload, OrderItemPayload, InitializePaymentPayload } from "@/lib/types";
+import type { User, Order, GuestCart, Address, OrderPayload, OrderItemPayload } from "@/lib/types";
+import type { PaystackConfig, PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +22,8 @@ import {
 import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Minus, Plus } from "lucide-react";
-import type { PaystackPop } from "@paystack/inline-js/dist/types";
+import { usePaystackPayment } from "react-paystack";
+
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -39,7 +41,8 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [paystack, setPaystack] = useState<PaystackPop | null>(null);
+  
+  const [paystackConfig, setPaystackConfig] = useState<PaystackConfig | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -48,10 +51,6 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
     }
-
-    import('@paystack/inline-js').then(({ default: PaystackPop }) => {
-        setPaystack(new PaystackPop());
-    });
   }, []);
 
   useEffect(() => {
@@ -93,13 +92,60 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     };
   }, [checkoutItems]);
 
+  const handlePlaceOrder = async (transaction: PaystackTransaction) => {
+    if (!order) return;
+
+    try {
+      const orderItemsPayload: OrderItemPayload[] = order.items.map(item => ({
+        menu_item_id: item.id,
+        quantity: item.quantity,
+      }));
+
+      const orderPayload: OrderPayload = {
+        restaurant_id: order.restaurantId,
+        delivery_address_id: selectedAddressId,
+        items: orderItemsPayload,
+        payment_reference: transaction.reference,
+      };
+
+      await placeOrder(orderPayload);
+      updateOrderStatus(order.id, 'Order Placed');
+      
+      toast({
+        title: "Order Placed!",
+        description: "Your order has been submitted. We're on it!",
+      });
+
+      onClose();
+      router.push(`/customer/orders`);
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to place order after payment.";
+      toast({
+        title: "Order Creation Failed",
+        description: message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const onSuccess = (transaction: PaystackTransaction) => {
+    handlePlaceOrder(transaction);
+  };
+
+  const onClosePaymentModal = () => {
+    setPaystackConfig(null); // Clear config to allow re-initialization
+    toast({
+        title: "Payment Cancelled",
+        description: "You have cancelled the payment process.",
+    });
+  };
+
+  const initializePaystackPayment = usePaystackPayment(paystackConfig!);
+
   const handlePayment = async () => {
     if (!user) {
-        toast({
-            title: "Please Log In",
-            description: "You need to be logged in to place an order.",
-            variant: "destructive"
-        });
+        toast({ title: "Please Log In", description: "You need to be logged in to place an order.", variant: "destructive" });
         clearGuestCart();
         onClose();
         router.push(`/login?redirect=/customer/dashboard`);
@@ -107,13 +153,8 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     }
     
     if (!order) {
-         if (guestCart && guestCart.items.length > 0) {
-            // This case handles a guest trying to check out from the main header cart
-            toast({
-                title: "Please Log In to Continue",
-                description: "Your cart is saved. Log in to complete your purchase.",
-                variant: "default",
-            });
+        if (guestCart && guestCart.items.length > 0) {
+            toast({ title: "Please Log In to Continue", description: "Your cart is saved. Log in to complete your purchase.", variant: "default" });
             onClose();
             router.push(`/login?redirect=/customer/dashboard`);
         }
@@ -121,22 +162,14 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     }
 
     if (!user.phone_number) {
-        toast({
-            title: "Phone Number Required",
-            description: "Please add a phone number to your profile before placing an order.",
-            variant: "destructive",
-        });
+        toast({ title: "Phone Number Required", description: "Please add a phone number to your profile before placing an order.", variant: "destructive" });
         onClose();
         router.push('/customer/profile');
         return;
     }
 
     if (!selectedAddressId) {
-        toast({
-            title: "Address Required",
-            description: "Please select a delivery address.",
-            variant: "destructive",
-        });
+        toast({ title: "Address Required", description: "Please select a delivery address.", variant: "destructive" });
         return;
     }
 
@@ -146,70 +179,28 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         const paymentPayload: InitializePaymentPayload = { amount: totalInKobo };
         const paymentResponse = await initializePayment(paymentPayload);
         
-        if (!paystack) {
-            throw new Error("Paystack library not loaded.");
-        }
-
-        paystack.newTransaction({
-            key: paymentResponse.public_key,
-            email: user.email,
+        const config: PaystackConfig = {
+            publicKey: paymentResponse.public_key,
+            reference: paymentResponse.reference,
             amount: totalInKobo,
-            ref: paymentResponse.reference,
-            onSuccess: async (transaction) => {
-                try {
-                    const orderItemsPayload: OrderItemPayload[] = order.items.map(item => ({
-                        menu_item_id: item.id,
-                        quantity: item.quantity,
-                    }));
-
-                    const orderPayload: OrderPayload = {
-                        restaurant_id: order.restaurantId,
-                        delivery_address_id: selectedAddressId,
-                        items: orderItemsPayload,
-                        payment_reference: transaction.reference,
-                    };
-
-                    const newOrder = await placeOrder(orderPayload);
-                    updateOrderStatus(order.id, 'Order Placed');
-                    
-                    toast({
-                        title: "Order Placed!",
-                        description: "Your order has been submitted. We're on it!",
-                    });
-
-                    onClose();
-                    router.push(`/customer/orders`);
-
-                } catch (error) {
-                    const message = error instanceof Error ? error.message : "Failed to place order after payment.";
-                    toast({
-                        title: "Order Creation Failed",
-                        description: message,
-                        variant: "destructive",
-                    });
-                } finally {
-                     setIsPlacingOrder(false);
-                }
-            },
-            onCancel: () => {
-                toast({
-                    title: "Payment Cancelled",
-                    description: "You have cancelled the payment process.",
-                });
-                setIsPlacingOrder(false);
-            },
-        });
+            email: user.email,
+        };
+        setPaystackConfig(config);
 
     } catch (error) {
         const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-        toast({
-            title: "Payment Error",
-            description: `Failed to initialize payment: ${message}`,
-            variant: "destructive",
-        });
+        toast({ title: "Payment Error", description: `Failed to initialize payment: ${message}`, variant: "destructive" });
         setIsPlacingOrder(false);
     }
   }
+
+  useEffect(() => {
+    if (paystackConfig) {
+      initializePaystackPayment(onSuccess, onClosePaymentModal);
+      setIsPlacingOrder(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paystackConfig]);
   
   const handleIncrease = (itemId: string) => {
     if (order) {
