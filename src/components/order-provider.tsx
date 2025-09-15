@@ -5,15 +5,15 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 import type { MenuItem, Order, OrderStatus, OrderItem } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
-// Renamed CartItem to OrderItem for clarity
-// export interface OrderItem extends MenuItem {
-//   quantity: number;
-// }
-
 // New interface for the Guest Cart
 interface GuestCart {
   restaurantId: string | null;
   items: OrderItem[];
+}
+
+interface StoredOrders {
+  timestamp: number;
+  orders: Order[];
 }
 
 interface OrderContextType {
@@ -33,6 +33,10 @@ interface OrderContextType {
 
 export const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
+const GUEST_CART_STORAGE_KEY = 'doorstepGuestCart';
+const USER_ORDERS_STORAGE_KEY = 'doorstepOrders';
+const EXPIRY_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
 export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [guestCart, setGuestCart] = useState<GuestCart>({ restaurantId: null, items: [] });
@@ -41,25 +45,53 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   // Load state from localStorage on mount
   useEffect(() => {
     try {
-      const storedGuestCart = localStorage.getItem('doorstepGuestCart');
+      // Load guest cart
+      const storedGuestCart = localStorage.getItem(GUEST_CART_STORAGE_KEY);
       if (storedGuestCart) {
         setGuestCart(JSON.parse(storedGuestCart));
       }
+
+      // Load user orders
+      const storedUserOrders = localStorage.getItem(USER_ORDERS_STORAGE_KEY);
+      if (storedUserOrders) {
+          const { timestamp, orders: savedOrders } = JSON.parse(storedUserOrders) as StoredOrders;
+          if (Date.now() - timestamp > EXPIRY_DURATION) {
+              // Orders have expired, clear them
+              localStorage.removeItem(USER_ORDERS_STORAGE_KEY);
+          } else {
+              setOrders(savedOrders.filter(o => o.status === 'unsubmitted'));
+          }
+      }
+
     } catch (error) {
       console.error("Failed to parse data from localStorage", error);
     }
     setIsInitialLoad(false);
   }, []);
 
-  // Save guest cart state to localStorage on change
+  // Save state to localStorage on change
   useEffect(() => {
     if (isInitialLoad) return;
     try {
-      localStorage.setItem('doorstepGuestCart', JSON.stringify(guestCart));
+      // Save guest cart
+      localStorage.setItem(GUEST_CART_STORAGE_KEY, JSON.stringify(guestCart));
+
+      // Save user orders
+      const unsubmittedOrders = orders.filter(o => o.status === 'unsubmitted');
+      if (unsubmittedOrders.length > 0) {
+        const dataToStore: StoredOrders = {
+            timestamp: Date.now(),
+            orders: unsubmittedOrders
+        };
+        localStorage.setItem(USER_ORDERS_STORAGE_KEY, JSON.stringify(dataToStore));
+      } else {
+        localStorage.removeItem(USER_ORDERS_STORAGE_KEY);
+      }
+
     } catch (error) {
-      console.error("Failed to save guest cart data to localStorage", error);
+      console.error("Failed to save data to localStorage", error);
     }
-  }, [guestCart, isInitialLoad]);
+  }, [guestCart, orders, isInitialLoad]);
   
 
   // --- Logged-in User Order Management ---
