@@ -5,7 +5,6 @@ export interface InitializePaymentPayload {
 }
 
 export interface InitializePaymentResponse {
-  public_key: string;
   reference: string;
 }
 

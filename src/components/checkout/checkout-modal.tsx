@@ -173,6 +173,11 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         return;
     }
 
+    if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
+        toast({ title: "Configuration Error", description: "Paystack public key is not configured.", variant: "destructive" });
+        return;
+    }
+
     setIsPlacingOrder(true);
 
     try {
@@ -180,7 +185,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         const paymentResponse = await initializePayment(paymentPayload);
         
         const config: PaystackConfig = {
-            publicKey: paymentResponse.public_key,
+            publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
             reference: paymentResponse.reference,
             amount: totalInKobo,
             email: user.email,
