@@ -22,6 +22,7 @@ interface OrderContextType {
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   increaseOrderItemQuantity: (orderId: string, itemId: string) => void;
   decreaseOrderItemQuantity: (orderId: string, itemId: string) => void;
+  removeUnsubmittedOrder: (orderId: string) => void;
   
   guestCart: GuestCart;
   addToGuestCart: (item: MenuItem) => boolean;
@@ -158,6 +159,10 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
         return order;
     }));
   };
+  
+  const removeUnsubmittedOrder = (orderId: string) => {
+    setOrders(prevOrders => prevOrders.filter(order => order.id !== orderId));
+  };
 
 
   // --- Guest User Cart Management ---
@@ -223,7 +228,7 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
 
 
   return (
-    <OrderContext.Provider value={{ orders, addOrUpdateOrder, updateOrderStatus, guestCart, addToGuestCart, clearGuestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem, increaseOrderItemQuantity, decreaseOrderItemQuantity }}>
+    <OrderContext.Provider value={{ orders, addOrUpdateOrder, updateOrderStatus, guestCart, addToGuestCart, clearGuestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem, increaseOrderItemQuantity, decreaseOrderItemQuantity, removeUnsubmittedOrder }}>
       {children}
     </OrderContext.Provider>
   );
