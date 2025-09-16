@@ -41,6 +41,7 @@ export default function LogoutButton() {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('doorstepOrders');
         localStorage.removeItem('doorstepGuestCart');
+        localStorage.clear();
         router.push("/login");
     }
   };

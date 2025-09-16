@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useOrder } from "@/hooks/use-order";
@@ -10,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import type { User, Order, GuestCart, Address, OrderPayload, OrderItemPayload } from "@/lib/types";
 import type { PaystackConfig, PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
 import {
@@ -23,7 +22,6 @@ import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Minus, Plus } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
-
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -92,10 +90,12 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     };
   }, [checkoutItems]);
 
-  const handlePlaceOrder = async (transaction: PaystackTransaction) => {
+  // Use useCallback to memoize the handlePlaceOrder function
+  const handlePlaceOrder = useCallback(async (transaction: PaystackTransaction) => {
     if (!order) return;
 
     try {
+      setIsPlacingOrder(true);
       const orderItemsPayload: OrderItemPayload[] = order.items.map(item => ({
         menu_item_id: item.id,
         quantity: item.quantity,
@@ -126,22 +126,41 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         description: message,
         variant: "destructive",
       });
+    } finally {
+      setIsPlacingOrder(false);
     }
-  };
+  }, [order, selectedAddressId, updateOrderStatus, toast, onClose, router]);
 
-  const onSuccess = (transaction: PaystackTransaction) => {
-    handlePlaceOrder(transaction);
-  };
+  const onSuccess = useCallback((transaction: PaystackTransaction) => {
+    // Verify the transaction was successful
+    if (transaction.status === 'success') {
+      handlePlaceOrder(transaction);
+    } else {
+      toast({
+        title: "Payment Failed",
+        description: transaction.message || "Payment was not successful.",
+        variant: "destructive",
+      });
+    }
+  }, [handlePlaceOrder, toast]);
 
-  const onClosePaymentModal = () => {
-    setPaystackConfig(null); // Clear config to allow re-initialization
+  const onClosePaymentModal = useCallback(() => {
+    setPaystackConfig(null);
     toast({
         title: "Payment Cancelled",
         description: "You have cancelled the payment process.",
     });
-  };
+  }, [toast]);
 
-  const initializePaystackPayment = usePaystackPayment(paystackConfig!);
+  // Initialize Paystack payment with proper configuration
+  const initializePaystackPayment = usePaystackPayment({
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+    email: user?.email || '',
+    amount: totalInKobo,
+    reference: paystackConfig?.reference || '',
+    onSuccess,
+    onClose: onClosePaymentModal,
+  });
 
   const handlePayment = async () => {
     if (!user) {
@@ -184,13 +203,18 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         const paymentPayload: InitializePaymentPayload = { amount: totalInKobo };
         const paymentResponse = await initializePayment(paymentPayload);
         
+        // Set the config and immediately initialize payment
         const config: PaystackConfig = {
             publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
             reference: paymentResponse.reference,
             amount: totalInKobo,
             email: user.email,
         };
+        
         setPaystackConfig(config);
+        
+        // Initialize payment immediately after getting the reference
+        initializePaystackPayment();
 
     } catch (error) {
         const message = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -199,14 +223,9 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     }
   }
 
-  useEffect(() => {
-    if (paystackConfig) {
-      initializePaystackPayment(onSuccess, onClosePaymentModal);
-      setIsPlacingOrder(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paystackConfig]);
-  
+  // Remove the useEffect that was triggering the payment initialization
+  // This is now handled directly in handlePayment after getting the reference
+
   const handleIncrease = (itemId: string) => {
     if (order) {
       increaseOrderItemQuantity(order.id, itemId);
