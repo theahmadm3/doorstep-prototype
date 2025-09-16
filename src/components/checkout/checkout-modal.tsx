@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useOrder } from "@/hooks/use-order";
@@ -10,17 +9,19 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import type { User, Order, GuestCart, Address, OrderPayload, OrderItemPayload } from "@/lib/types";
+import type { PaystackConfig, PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getAddresses, placeOrder } from "@/lib/api";
+import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Minus, Plus } from "lucide-react";
+import { usePaystackPayment } from "react-paystack";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -38,6 +39,8 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  
+  const [paymentReference, setPaymentReference] = useState<string>('');
 
   useEffect(() => {
     setIsClient(true);
@@ -71,88 +74,149 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     }
   }, [isOpen, user, toast]);
 
-  if (!isClient) return null;
+  const checkoutItems = useMemo(() => order?.items || guestCart?.items || [], [order, guestCart]);
 
-  const checkoutItems = order?.items || guestCart?.items || [];
-  if (checkoutItems.length === 0) {
-      return null;
-  }
-  
-  const selectedAddress = addresses.find(a => a.id === selectedAddressId);
+  const { subtotal, taxes, deliveryFee, total, totalInKobo } = useMemo(() => {
+    const sub = checkoutItems.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
+    const tax = sub * 0.05;
+    const delivery = 10;
+    const grandTotal = sub + tax + delivery;
+    return {
+        subtotal: sub,
+        taxes: tax,
+        deliveryFee: delivery,
+        total: grandTotal,
+        totalInKobo: Math.round(grandTotal * 100),
+    };
+  }, [checkoutItems]);
 
-  const subtotal = checkoutItems.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
-  const taxes = subtotal * 0.05;
-  const deliveryFee = 2.99;
-  const total = subtotal + taxes + deliveryFee;
+  // Use useCallback to memoize the handlePlaceOrder function
+  const handlePlaceOrder = useCallback(async (transaction: PaystackTransaction) => {
+    if (!order) return;
 
-  const handlePlaceOrder = async () => {
-    if (user && order) {
-        if (!user.phone_number) {
-            toast({
-                title: "Phone Number Required",
-                description: "Please add a phone number to your profile before placing an order.",
-                variant: "destructive",
-            });
-            onClose();
-            router.push('/customer/profile');
-            return;
-        }
+    try {
+      setIsPlacingOrder(true);
+      const orderItemsPayload: OrderItemPayload[] = order.items.map(item => ({
+        menu_item_id: item.id,
+        quantity: item.quantity,
+      }));
 
-        if (!selectedAddressId) {
-            toast({
-                title: "Address Required",
-                description: "Please select a delivery address.",
-                variant: "destructive",
-            });
-            return;
-        }
+      const orderPayload: OrderPayload = {
+        restaurant_id: order.restaurantId,
+        delivery_address_id: selectedAddressId,
+        items: orderItemsPayload,
+        payment_reference: transaction.reference,
+      };
 
-        setIsPlacingOrder(true);
+      await placeOrder(orderPayload);
+      updateOrderStatus(order.id, 'Order Placed');
+      
+      toast({
+        title: "Order Placed!",
+        description: "Your order has been submitted. We're on it!",
+      });
 
-        const orderItemsPayload: OrderItemPayload[] = order.items.map(item => ({
-            menu_item_id: item.id,
-            quantity: item.quantity,
-        }));
+      onClose();
+      router.push(`/customer/orders`);
 
-        const orderPayload: OrderPayload = {
-            restaurant_id: order.restaurantId,
-            delivery_address_id: selectedAddressId,
-            items: orderItemsPayload,
-        };
-        
-        try {
-            await placeOrder(orderPayload);
-            toast({
-                title: "Order Placed!",
-                description: "Your order has been submitted. We're on it!",
-            });
-            updateOrderStatus(order.id, 'Order Placed');
-            onClose();
-            router.push('/customer/orders');
-        } catch (error) {
-             const message = error instanceof Error ? error.message : "Failed to place order.";
-             toast({
-                title: "Order Failed",
-                description: message,
-                variant: "destructive",
-            });
-        } finally {
-            setIsPlacingOrder(false);
-        }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to place order after payment.";
+      toast({
+        title: "Order Creation Failed",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsPlacingOrder(false);
+    }
+  }, [order, selectedAddressId, updateOrderStatus, toast, onClose, router]);
 
+  const onSuccess = useCallback((transaction: PaystackTransaction) => {
+    // Verify the transaction was successful
+    if (transaction.status === 'success') {
+      handlePlaceOrder(transaction);
     } else {
-        // This was a guest cart
-        toast({
-            title: "Please Log In",
-            description: "You need to be logged in to place an order.",
-            variant: "destructive"
-        });
+      toast({
+        title: "Payment Failed",
+        description: transaction.message || "Payment was not successful.",
+        variant: "destructive",
+      });
+    }
+  }, [handlePlaceOrder, toast]);
+
+  const onClosePaymentModal = useCallback(() => {
+    setPaymentReference('');
+    toast({
+        title: "Payment Cancelled",
+        description: "You have cancelled the payment process.",
+    });
+  }, [toast]);
+
+  // Initialize Paystack payment
+  const initializePaystackPayment = usePaystackPayment({
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+    email: user?.email || '',
+    amount: totalInKobo,
+    reference: paymentReference,
+  });
+
+  const handlePayment = async () => {
+    if (!user) {
+        toast({ title: "Please Log In", description: "You need to be logged in to place an order.", variant: "destructive" });
         clearGuestCart();
         onClose();
-        router.push('/login?redirect=/customer/orders');
+        router.push(`/login?redirect=/customer/dashboard`);
+        return;
+    }
+    
+    if (!order) {
+        if (guestCart && guestCart.items.length > 0) {
+            toast({ title: "Please Log In to Continue", description: "Your cart is saved. Log in to complete your purchase.", variant: "default" });
+            onClose();
+            router.push(`/login?redirect=/customer/dashboard`);
+        }
+        return;
+    }
+
+    if (!user.phone_number) {
+        toast({ title: "Phone Number Required", description: "Please add a phone number to your profile before placing an order.", variant: "destructive" });
+        onClose();
+        router.push('/customer/profile');
+        return;
+    }
+
+    if (!selectedAddressId) {
+        toast({ title: "Address Required", description: "Please select a delivery address.", variant: "destructive" });
+        return;
+    }
+
+    if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
+        toast({ title: "Configuration Error", description: "Paystack public key is not configured.", variant: "destructive" });
+        return;
+    }
+
+    setIsPlacingOrder(true);
+
+    try {
+        const paymentPayload: InitializePaymentPayload = { amount: totalInKobo };
+        const paymentResponse = await initializePayment(paymentPayload);
+        
+        // Set the reference and initialize payment
+        setPaymentReference(paymentResponse.reference);
+        
+        // Initialize payment with the new reference
+        initializePaystackPayment({
+            onSuccess,
+            onClose: onClosePaymentModal
+        });
+
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+        toast({ title: "Payment Error", description: `Failed to initialize payment: ${message}`, variant: "destructive" });
+        setIsPlacingOrder(false);
     }
   }
-  
+
   const handleIncrease = (itemId: string) => {
     if (order) {
       increaseOrderItemQuantity(order.id, itemId);
@@ -169,6 +233,11 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     }
   };
 
+  if (!isClient || checkoutItems.length === 0) {
+      return null;
+  }
+  
+  const selectedAddress = addresses.find(a => a.id === selectedAddressId);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -280,8 +349,8 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                     </CardContent>
                 </Card>
                 <CardFooter className="p-1 mt-auto">
-                    <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
-                        {isPlacingOrder ? "Placing Order..." : "Place Order"}
+                    <Button className="w-full" onClick={handlePayment} disabled={isPlacingOrder}>
+                        {isPlacingOrder ? "Initializing Payment..." : `Proceed to Pay ₦${total.toFixed(2)}`}
                     </Button>
                 </CardFooter>
             </div>

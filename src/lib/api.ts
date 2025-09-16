@@ -1,6 +1,6 @@
 
-
-import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder, Rider, RiderPayload, RiderListResponse, VendorAnalyticsData, InitializePaymentPayload, InitializePaymentResponse } from "./types";
+import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder, Rider, RiderPayload, RiderListResponse, VendorAnalyticsData } from "./types";
+import type { InitializePaymentPayload, InitializePaymentResponse } from "./types/paystack";
 import {format} from "date-fns"
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -11,9 +11,8 @@ if (!BASE_URL) {
 
 async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-    const headers = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...options.headers,
     };
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -103,7 +102,11 @@ export async function confirmOrderDelivery(orderId: string): Promise<void> {
 
 
 export async function getOrderDetails(orderId: string): Promise<OrderDetail> {
-    return fetcher<OrderDetail>(`/orders/${orderId}/`);
+    const order = await fetcher<OrderDetail>(`/orders/${orderId}/`);
+    return {
+        ...order,
+        created_at: format(new Date(order.created_at), "dd MMMM yyyy, h:mm:ss a"),
+    };
 }
 
 // Admin API calls
@@ -210,7 +213,7 @@ export async function getVendorAnalytics(): Promise<VendorAnalyticsData> {
 
 // Payment API
 export async function initializePayment(payload: InitializePaymentPayload): Promise<InitializePaymentResponse> {
-    return fetcher<InitializePaymentResponse>('/payments/initialize/', {
+    return fetcher<InitializePaymentResponse>('/initialize/', {
         method: 'POST',
         body: JSON.stringify(payload)
     });

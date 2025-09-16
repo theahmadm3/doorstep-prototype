@@ -1,5 +1,4 @@
 
-
 export interface Owner {
     id: string;
     full_name: string;
@@ -73,7 +72,7 @@ export const signupSchema = z.object({
   email: z.string().email("Please enter a valid email."),
   password: z.string().min(8, "Password must be at least 8 characters."),
   confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
+}).refine(data => data.password === data.password, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
 });
@@ -144,6 +143,7 @@ export interface OrderPayload {
   restaurant_id: string;
   delivery_address_id: string;
   items: OrderItemPayload[];
+  payment_reference: string;
 }
 
 // Customer Order Types from API
@@ -286,20 +286,4 @@ export interface VendorAnalyticsData {
     delivered_orders: number;
     cancelled_orders: number;
     top_items: TopSellingItem[];
-}
-
-// Payment Types
-export interface InitializePaymentPayload {
-  amount: number; // in kobo
-  email: string;
-  metadata?: {
-    order_payload: OrderPayload;
-    user_id: string;
-  };
-}
-
-export interface InitializePaymentResponse {
-  authorization_url: string;
-  access_code: string;
-  reference: string;
 }
