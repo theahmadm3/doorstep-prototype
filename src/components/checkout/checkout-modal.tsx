@@ -40,7 +40,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   
-  const [paystackConfig, setPaystackConfig] = useState<PaystackConfig | null>(null);
+  const [paymentReference, setPaymentReference] = useState<string>('');
 
   useEffect(() => {
     setIsClient(true);
@@ -145,21 +145,19 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   }, [handlePlaceOrder, toast]);
 
   const onClosePaymentModal = useCallback(() => {
-    setPaystackConfig(null);
+    setPaymentReference('');
     toast({
         title: "Payment Cancelled",
         description: "You have cancelled the payment process.",
     });
   }, [toast]);
 
-  // Initialize Paystack payment with proper configuration
+  // Initialize Paystack payment
   const initializePaystackPayment = usePaystackPayment({
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
     email: user?.email || '',
     amount: totalInKobo,
-    reference: paystackConfig?.reference || '',
-    onSuccess,
-    onClose: onClosePaymentModal,
+    reference: paymentReference,
   });
 
   const handlePayment = async () => {
@@ -203,18 +201,14 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         const paymentPayload: InitializePaymentPayload = { amount: totalInKobo };
         const paymentResponse = await initializePayment(paymentPayload);
         
-        // Set the config and immediately initialize payment
-        const config: PaystackConfig = {
-            publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-            reference: paymentResponse.reference,
-            amount: totalInKobo,
-            email: user.email,
-        };
+        // Set the reference and initialize payment
+        setPaymentReference(paymentResponse.reference);
         
-        setPaystackConfig(config);
-        
-        // Initialize payment immediately after getting the reference
-        initializePaystackPayment();
+        // Initialize payment with the new reference
+        initializePaystackPayment({
+            onSuccess,
+            onClose: onClosePaymentModal
+        });
 
     } catch (error) {
         const message = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -222,9 +216,6 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         setIsPlacingOrder(false);
     }
   }
-
-  // Remove the useEffect that was triggering the payment initialization
-  // This is now handled directly in handlePayment after getting the reference
 
   const handleIncrease = (itemId: string) => {
     if (order) {
