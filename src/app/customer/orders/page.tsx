@@ -81,7 +81,7 @@ const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder
 
 export default function CustomerOrdersPage() {
     const { toast } = useToast();
-    const { orders: unplacedOrders } = useOrder();
+    const { orders: unplacedOrders, removeUnsubmittedOrder } = useOrder();
     const [fetchedOrders, setFetchedOrders] = useState<CustomerOrder[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isFetching, setIsFetching] = useState(false);
@@ -166,6 +166,14 @@ export default function CustomerOrdersPage() {
         setOrderForCheckout(order);
         setCheckoutOpen(true);
     }
+    
+    const handleDeleteOrder = (orderId: string) => {
+        removeUnsubmittedOrder(orderId);
+        toast({
+            title: "Order Removed",
+            description: "The unplaced order has been removed.",
+        });
+    }
 
     const activeOrders = fetchedOrders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled');
     const pastOrders = fetchedOrders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled');
@@ -208,9 +216,12 @@ export default function CustomerOrdersPage() {
                                        <span>₦{order.total.toFixed(2)}</span>
                                     </div>
                                 </CardContent>
-                                <CardFooter>
+                                <CardFooter className="flex flex-col sm:flex-row gap-2">
                                     <Button className="w-full" onClick={() => handleCompleteOrder(order)}>
                                         Complete Order
+                                    </Button>
+                                    <Button variant="destructive" className="w-full" onClick={() => handleDeleteOrder(order.id)}>
+                                        Cancel Order
                                     </Button>
                                 </CardFooter>
                             </Card>
