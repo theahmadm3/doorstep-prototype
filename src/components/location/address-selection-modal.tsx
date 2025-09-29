@@ -68,8 +68,8 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
         setIsSaving(true);
 
         const payload: AddressPostData = {
-            latitude: newLocation.latitude,
-            longitude: newLocation.longitude,
+            latitude: Number(newLocation.latitude.toFixed(6)),
+            longitude: Number(newLocation.longitude.toFixed(6)),
             address_nickname: nickname || `My Location`,
             is_default: false,
         };
