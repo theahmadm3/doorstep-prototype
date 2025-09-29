@@ -246,6 +246,8 @@ export const addressSchema = z.object({
     nearest_landmark: z.string().optional(),
     address_nickname: z.string().optional(),
     is_default: z.boolean().optional(),
+    latitude: z.number().optional(),
+    longitude: z.number().optional(),
 });
 export type AddressFormData = z.infer<typeof addressSchema>;
 
@@ -257,6 +259,7 @@ export interface AddressPostData extends AddressFormData {
 // This represents a saved address object received from the API.
 export interface Address extends AddressPostData {
   id: string;
+  user: string;
 }
 
 export const passwordSchema = z.object({

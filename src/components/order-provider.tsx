@@ -2,8 +2,11 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import type { MenuItem, Order, OrderStatus, OrderItem } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, OrderItem, Address } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
+import { getAddresses } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+
 
 // New interface for the Guest Cart
 interface GuestCart {
@@ -30,18 +33,66 @@ interface OrderContextType {
   increaseGuestItemQuantity: (itemId: string) => void;
   decreaseGuestItemQuantity: (itemId: string) => void;
   removeGuestItem: (itemId: string) => void;
+
+  addresses: Address[];
+  selectedAddress: Address | null;
+  setSelectedAddress: (address: Address | null) => void;
+  isAddressesLoading: boolean;
+  refetchAddresses: () => void;
 }
 
 export const OrderContext = createContext<OrderContextType | undefined>(undefined);
 
 const GUEST_CART_STORAGE_KEY = 'doorstepGuestCart';
 const USER_ORDERS_STORAGE_KEY = 'doorstepOrders';
+const SELECTED_ADDRESS_STORAGE_KEY = 'doorstepSelectedAddress';
 const EXPIRY_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [guestCart, setGuestCart] = useState<GuestCart>({ restaurantId: null, items: [] });
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddress, setSelectedAddressState] = useState<Address | null>(null);
+  const [isAddressesLoading, setAddressesLoading] = useState(false);
+  const { toast } = useToast();
+
+  const fetchUserAddresses = useCallback(async () => {
+    setAddressesLoading(true);
+    try {
+        const user = localStorage.getItem('user');
+        if (!user) { // Don't fetch if no user is logged in
+             setAddresses([]);
+             return;
+        };
+
+        const fetchedAddresses = await getAddresses();
+        setAddresses(fetchedAddresses);
+
+        // Logic to set the default selected address
+        const storedAddressId = localStorage.getItem(SELECTED_ADDRESS_STORAGE_KEY);
+        const storedAddress = fetchedAddresses.find(a => a.id === storedAddressId);
+        
+        if (storedAddress) {
+            setSelectedAddressState(storedAddress);
+        } else if (fetchedAddresses.length > 0) {
+            const defaultAddress = fetchedAddresses.find(a => a.is_default) || fetchedAddresses[0];
+            setSelectedAddressState(defaultAddress);
+        } else {
+            setSelectedAddressState(null);
+        }
+    } catch (error) {
+        toast({
+            title: "Could not load addresses",
+            description: "Failed to fetch your saved addresses.",
+            variant: "destructive"
+        });
+    } finally {
+        setAddressesLoading(false);
+    }
+  }, [toast]);
+  
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -64,11 +115,23 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
           }
       }
 
+      fetchUserAddresses();
+
     } catch (error) {
       console.error("Failed to parse data from localStorage", error);
     }
     setIsInitialLoad(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const setSelectedAddress = (address: Address | null) => {
+    setSelectedAddressState(address);
+    if (address) {
+        localStorage.setItem(SELECTED_ADDRESS_STORAGE_KEY, address.id);
+    } else {
+        localStorage.removeItem(SELECTED_ADDRESS_STORAGE_KEY);
+    }
+  };
 
   // Save state to localStorage on change
   useEffect(() => {
@@ -227,8 +290,28 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
 
+  const contextValue: OrderContextType = {
+    orders,
+    addOrUpdateOrder,
+    updateOrderStatus,
+    guestCart,
+    addToGuestCart,
+    clearGuestCart,
+    increaseGuestItemQuantity,
+    decreaseGuestItemQuantity,
+    removeGuestItem,
+    increaseOrderItemQuantity,
+    decreaseOrderItemQuantity,
+    removeUnsubmittedOrder,
+    addresses,
+    selectedAddress,
+    setSelectedAddress,
+    isAddressesLoading,
+    refetchAddresses: fetchUserAddresses,
+  };
+
   return (
-    <OrderContext.Provider value={{ orders, addOrUpdateOrder, updateOrderStatus, guestCart, addToGuestCart, clearGuestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem, increaseOrderItemQuantity, decreaseOrderItemQuantity, removeUnsubmittedOrder }}>
+    <OrderContext.Provider value={contextValue}>
       {children}
     </OrderContext.Provider>
   );
