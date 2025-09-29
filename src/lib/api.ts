@@ -1,4 +1,5 @@
 
+
 import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder, Rider, RiderPayload, RiderListResponse, VendorAnalyticsData } from "./types";
 import type { InitializePaymentPayload, InitializePaymentResponse } from "./types/paystack";
 import {format} from "date-fns"
@@ -58,7 +59,7 @@ export async function getAddresses(): Promise<Address[]> {
     return data.results;
 }
 
-export async function addAddress(addressData: AddressPostData): Promise<Address> {
+export async function addAddress(addressData: Partial<AddressPostData>): Promise<Address> {
     return fetcher<Address>('/addresses/', {
         method: 'POST',
         body: JSON.stringify(addressData),

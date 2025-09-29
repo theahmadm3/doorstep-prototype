@@ -1,4 +1,5 @@
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -241,8 +242,8 @@ export const profileSchema = z.object({
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
 export const addressSchema = z.object({
-    street_address: z.string().min(5, "House number and street name is too short."),
-    city: z.string().min(2, "District/Town is too short."),
+    street_address: z.string().min(5, "House number and street name is too short.").optional(),
+    city: z.string().min(2, "District/Town is too short.").optional(),
     nearest_landmark: z.string().optional(),
     address_nickname: z.string().optional(),
     is_default: z.boolean().optional(),
@@ -252,7 +253,7 @@ export const addressSchema = z.object({
 export type AddressFormData = z.infer<typeof addressSchema>;
 
 // This represents the data sent to the POST /addresses/ endpoint
-export interface AddressPostData extends AddressFormData {
+export interface AddressPostData extends Partial<AddressFormData> {
   is_default: boolean;
 }
 
