@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Edit } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
+import AddressSelectionModal from "../location/address-selection-modal";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -40,6 +41,8 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   
   const [paymentReference, setPaymentReference] = useState<string>('');
+  const [isAddressModalOpen, setAddressModalOpen] = useState(false);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -214,6 +217,10 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
+      <AddressSelectionModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+      />
         <DialogContent className="max-w-4xl grid-cols-1 md:grid-cols-3 gap-8 p-0">
             <div className="md:col-span-2 p-6">
                  <DialogHeader className="mb-6">
@@ -239,13 +246,20 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                             <Label>Delivery Address</Label>
                              <div className="text-sm p-3 bg-muted rounded-md border">
                                 {selectedAddress ? (
-                                    <>
-                                        <p className="font-semibold">{selectedAddress.address_nickname || 'Selected Address'}</p>
-                                        <p>{selectedAddress.street_address}, {selectedAddress.city}</p>
-                                        {selectedAddress.nearest_landmark && <p className="text-xs text-muted-foreground">Landmark: {selectedAddress.nearest_landmark}</p>}
-                                    </>
+                                    <div className="flex justify-between items-center">
+                                      <div>
+                                          <p className="font-semibold">{selectedAddress.address_nickname || 'Selected Address'}</p>
+                                          <p>{selectedAddress.street_address ? `${selectedAddress.street_address}, ${selectedAddress.city}` : `GPS: ${selectedAddress.latitude?.toFixed(4)}, ${selectedAddress.longitude?.toFixed(4)}`}</p>
+                                          {selectedAddress.nearest_landmark && <p className="text-xs text-muted-foreground">Landmark: {selectedAddress.nearest_landmark}</p>}
+                                      </div>
+                                      <Button variant="ghost" size="icon" onClick={() => setAddressModalOpen(true)}>
+                                          <Edit className="h-4 w-4"/>
+                                      </Button>
+                                    </div>
                                 ) : (
-                                    <p className="text-muted-foreground">Please select an address from the header.</p>
+                                    <Button variant="outline" className="w-full" onClick={() => setAddressModalOpen(true)}>
+                                      Select a delivery address
+                                    </Button>
                                 )}
                             </div>
                         </div>
@@ -313,3 +327,5 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     </Dialog>
   );
 }
+
+    

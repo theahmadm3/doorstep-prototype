@@ -291,3 +291,5 @@ export interface VendorAnalyticsData {
     cancelled_orders: number;
     top_items: TopSellingItem[];
 }
+
+    
