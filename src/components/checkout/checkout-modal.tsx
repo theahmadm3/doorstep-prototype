@@ -249,7 +249,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                                     <div className="flex justify-between items-center">
                                       <div>
                                           <p className="font-semibold">{selectedAddress.address_nickname || 'Selected Address'}</p>
-                                          <p>{selectedAddress.street_address ? `${selectedAddress.street_address}, ${selectedAddress.city}` : `GPS: ${selectedAddress.latitude?.toFixed(4)}, ${selectedAddress.longitude?.toFixed(4)}`}</p>
+                                          <p>{selectedAddress.street_address ? `${selectedAddress.street_address}, ${selectedAddress.city}` : `GPS: ${Number(selectedAddress.latitude)?.toFixed(4)}, ${Number(selectedAddress.longitude)?.toFixed(4)}`}</p>
                                           {selectedAddress.nearest_landmark && <p className="text-xs text-muted-foreground">Landmark: {selectedAddress.nearest_landmark}</p>}
                                       </div>
                                       <Button variant="ghost" size="icon" onClick={() => setAddressModalOpen(true)}>
