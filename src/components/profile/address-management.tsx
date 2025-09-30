@@ -232,7 +232,7 @@ export default function AddressManagement() {
                         <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
                         <div className="flex-grow">
                             <p className="font-semibold">{address.address_nickname || `${address.street_address || `Location @ ${address.latitude?.toFixed(2)}, ${address.longitude?.toFixed(2)}`}`}</p>
-                            <p className="text-sm text-muted-foreground">{address.street_address ? `${address.street_address}, ${address.city}` : "GPS Location"}</p>
+                            <p className="text-sm text-muted-foreground">{address.street_address ? `${address.street_address}, ${address.city || ''}`.trim().replace(/,$/, '') : "GPS Location"}</p>
                         </div>
                         <div className="flex gap-1">
                              <Button variant="ghost" size="icon" onClick={() => handleEditClick(address)}>
