@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Address, AddressFormData, AddressPostData } from "@/lib/types";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import AddressForm from "./address-form";
-import { getAddresses, addAddress, updateAddress, deleteAddress } from "@/lib/api";
+import { addAddress, updateAddress, deleteAddress } from "@/lib/api";
 import { Skeleton } from "../ui/skeleton";
 import {
   AlertDialog,
@@ -35,45 +35,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useOrder } from "@/hooks/use-order";
 
 
 export default function AddressManagement() {
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const { addresses, isAddressesLoading, refetchAddresses, selectedAddress, setSelectedAddress } = useOrder();
   const [isModalOpen, setModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchAddresses = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const fetchedAddresses = await getAddresses(); 
-      setAddresses(fetchedAddresses);
-      if (fetchedAddresses.length > 0) {
-        const defaultAddress = fetchedAddresses.find(a => a.is_default);
-        // Set selected to default or first address only on initial load or after list changes
-        if (!selectedAddressId) {
-            setSelectedAddressId(defaultAddress?.id || fetchedAddresses[0].id);
-        }
-      } else {
-        setSelectedAddressId(null);
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load addresses.";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
+  const selectedAddressId = selectedAddress?.id || null;
 
   useEffect(() => {
-    fetchAddresses();
-  }, [fetchAddresses]);
+    refetchAddresses();
+  }, [refetchAddresses]);
 
   
   const handleAddClick = () => {
@@ -94,7 +69,7 @@ export default function AddressManagement() {
      try {
         await deleteAddress(selectedAddressId);
         toast({ title: "Address Deleted", description: "The selected address has been removed." });
-        await fetchAddresses(); // Refetch after delete
+        await refetchAddresses(); // Refetch after delete
      } catch (error) {
         const message = error instanceof Error ? error.message : "Failed to delete address.";
         toast({
@@ -117,7 +92,7 @@ export default function AddressManagement() {
         await addAddress(payload); 
         toast({ title: "Address Added", description: "Your new address has been saved." });
       }
-      await fetchAddresses(); // Refetch after save
+      await refetchAddresses(); // Refetch after save
     } catch (error) {
        const message = error instanceof Error ? error.message : "Failed to save address.";
        toast({
@@ -131,9 +106,16 @@ export default function AddressManagement() {
     }
   };
 
-  const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
+  const handleSelectAddress = (addressId: string) => {
+      const address = addresses.find(a => a.id === addressId);
+      if (address) {
+          setSelectedAddress(address);
+      }
+  }
+
+  const currentSelectedAddress = addresses.find(addr => addr.id === selectedAddressId);
   
-  if (isLoading) {
+  if (isAddressesLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-full" />
@@ -149,7 +131,7 @@ export default function AddressManagement() {
         <label className="text-sm font-medium">Saved Addresses</label>
         {addresses.length > 0 ? (
           <div className="flex items-center gap-2">
-            <Select onValueChange={setSelectedAddressId} value={selectedAddressId || ''}>
+            <Select onValueChange={handleSelectAddress} value={selectedAddressId || ''}>
               <SelectTrigger>
                 <SelectValue placeholder="Select an address" />
               </SelectTrigger>
@@ -190,12 +172,12 @@ export default function AddressManagement() {
         )}
       </div>
 
-       {selectedAddress && (
+       {currentSelectedAddress && (
         <div className="text-sm p-3 bg-muted rounded-md border">
-            <p className="font-semibold">{selectedAddress.address_nickname || 'Address Details'}</p>
-            <p>{selectedAddress.street_address}</p>
-            <p>{selectedAddress.city}</p>
-            {selectedAddress.nearest_landmark && <p className="text-muted-foreground">Landmark: {selectedAddress.nearest_landmark}</p>}
+            <p className="font-semibold">{currentSelectedAddress.address_nickname || 'Address Details'}</p>
+            <p>{currentSelectedAddress.street_address}</p>
+            <p>{currentSelectedAddress.city}</p>
+            {currentSelectedAddress.nearest_landmark && <p className="text-muted-foreground">Landmark: {currentSelectedAddress.nearest_landmark}</p>}
         </div>
        )}
 

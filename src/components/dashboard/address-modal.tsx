@@ -89,7 +89,7 @@ export default function AddressModal({ isOpen, onClose, onSave }: AddressModalPr
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
-                        District/Town
+                        District/LGA/Town
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>

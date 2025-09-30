@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useOrder } from "@/hooks/use-order";
@@ -20,8 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Edit } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
+import AddressSelectionModal from "../location/address-selection-modal";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -31,16 +33,16 @@ interface CheckoutModalProps {
 }
 
 export default function CheckoutModal({ isOpen, onClose, order, guestCart }: CheckoutModalProps) {
-  const { clearGuestCart, updateOrderStatus, increaseGuestItemQuantity, decreaseGuestItemQuantity, increaseOrderItemQuantity, decreaseOrderItemQuantity } = useOrder();
+  const { clearGuestCart, updateOrderStatus, increaseGuestItemQuantity, decreaseGuestItemQuantity, increaseOrderItemQuantity, decreaseOrderItemQuantity, selectedAddress } = useOrder();
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   
   const [paymentReference, setPaymentReference] = useState<string>('');
+  const [isAddressModalOpen, setAddressModalOpen] = useState(false);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -50,30 +52,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         setUser(parsedUser);
     }
   }, []);
-
-  useEffect(() => {
-    if (isOpen && user) {
-        const fetchUserAddresses = async () => {
-            try {
-                const fetchedAddresses = await getAddresses();
-                setAddresses(fetchedAddresses);
-                const defaultAddress = fetchedAddresses.find(a => a.is_default) || fetchedAddresses[0];
-                if (defaultAddress) {
-                    setSelectedAddressId(defaultAddress.id);
-                }
-            } catch (error) {
-                console.error("Failed to fetch addresses:", error);
-                toast({
-                    title: "Could not load addresses",
-                    description: "Please try again or enter your address manually.",
-                    variant: "destructive"
-                });
-            }
-        };
-        fetchUserAddresses();
-    }
-  }, [isOpen, user, toast]);
-
+  
   const checkoutItems = useMemo(() => order?.items || guestCart?.items || [], [order, guestCart]);
 
   const { subtotal, taxes, deliveryFee, total, totalInKobo } = useMemo(() => {
@@ -92,7 +71,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
 
   // Use useCallback to memoize the handlePlaceOrder function
   const handlePlaceOrder = useCallback(async (transaction: PaystackTransaction) => {
-    if (!order) return;
+    if (!order || !selectedAddress) return;
 
     try {
       setIsPlacingOrder(true);
@@ -103,7 +82,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
 
       const orderPayload: OrderPayload = {
         restaurant_id: order.restaurantId,
-        delivery_address_id: selectedAddressId,
+        delivery_address_id: selectedAddress.id,
         items: orderItemsPayload,
         payment_reference: transaction.reference,
       };
@@ -129,7 +108,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     } finally {
       setIsPlacingOrder(false);
     }
-  }, [order, selectedAddressId, updateOrderStatus, toast, onClose, router]);
+  }, [order, selectedAddress, updateOrderStatus, toast, onClose, router]);
 
   const onSuccess = useCallback((transaction: PaystackTransaction) => {
     // Verify the transaction was successful
@@ -185,7 +164,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         return;
     }
 
-    if (!selectedAddressId) {
+    if (!selectedAddress) {
         toast({ title: "Address Required", description: "Please select a delivery address.", variant: "destructive" });
         return;
     }
@@ -201,10 +180,9 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
         const paymentPayload: InitializePaymentPayload = { amount: totalInKobo };
         const paymentResponse = await initializePayment(paymentPayload);
         
-        // Set the reference and initialize payment
         setPaymentReference(paymentResponse.reference);
         
-        // Initialize payment with the new reference
+        onClose(); // Close the checkout modal before opening Paystack
         initializePaystackPayment({
             onSuccess,
             onClose: onClosePaymentModal
@@ -237,10 +215,12 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
       return null;
   }
   
-  const selectedAddress = addresses.find(a => a.id === selectedAddressId);
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
+      <AddressSelectionModal
+        isOpen={isAddressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+      />
         <DialogContent className="max-w-4xl grid-cols-1 md:grid-cols-3 gap-8 p-0">
             <div className="md:col-span-2 p-6">
                  <DialogHeader className="mb-6">
@@ -262,36 +242,25 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                             </div>
                         </div>
 
-                        {user && addresses.length > 0 ? (
-                            <div className="space-y-2">
-                                <Label>Select Address</Label>
-                                <Select value={selectedAddressId} onValueChange={setSelectedAddressId}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Choose a delivery address" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {addresses.map(addr => (
-                                            <SelectItem key={addr.id} value={addr.id}>
-                                                {addr.address_nickname ? `${addr.address_nickname} - ${addr.street_address}` : addr.street_address}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        ) : null}
-
                         <div className="space-y-2">
-                            <Label htmlFor="address">Street Address</Label>
-                            <Input id="address" placeholder="123 Allen Avenue" value={selectedAddress?.street_address || ''} readOnly />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                            <Label htmlFor="city">District/Town</Label>
-                            <Input id="city" placeholder="Ikeja" value={selectedAddress?.city || ''} readOnly />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="landmark">Nearest Landmark</Label>
-                                <Input id="landmark" placeholder="Near the market" value={selectedAddress?.nearest_landmark || ''} readOnly />
+                            <Label>Delivery Address</Label>
+                             <div className="text-sm p-3 bg-muted rounded-md border">
+                                {selectedAddress ? (
+                                    <div className="flex justify-between items-center">
+                                      <div>
+                                          <p className="font-semibold">{selectedAddress.address_nickname || 'Selected Address'}</p>
+                                          <p>{selectedAddress.street_address ? `${selectedAddress.street_address}, ${selectedAddress.city}` : `GPS: ${Number(selectedAddress.latitude)?.toFixed(6)}, ${Number(selectedAddress.longitude)?.toFixed(6)}`}</p>
+                                          {selectedAddress.nearest_landmark && <p className="text-xs text-muted-foreground">Landmark: {selectedAddress.nearest_landmark}</p>}
+                                      </div>
+                                      <Button variant="ghost" size="icon" onClick={() => setAddressModalOpen(true)}>
+                                          <Edit className="h-4 w-4"/>
+                                      </Button>
+                                    </div>
+                                ) : (
+                                    <Button variant="outline" className="w-full" onClick={() => setAddressModalOpen(true)}>
+                                      Select a delivery address
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </CardContent>
@@ -358,3 +327,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     </Dialog>
   );
 }
+
+    
+
+    
