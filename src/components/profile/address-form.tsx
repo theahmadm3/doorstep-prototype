@@ -19,12 +19,14 @@ interface AddressFormProps {
 export default function AddressForm({ onSubmit, defaultValues, isEditing = false }: AddressFormProps) {
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
-    defaultValues: defaultValues || {
-      street_address: "",
-      city: "",
-      nearest_landmark: "",
-      address_nickname: "",
-      is_default: false,
+    defaultValues: {
+      street_address: defaultValues?.street_address || "",
+      city: defaultValues?.city || "",
+      nearest_landmark: defaultValues?.nearest_landmark || "",
+      address_nickname: defaultValues?.address_nickname || "",
+      is_default: defaultValues?.is_default || false,
+      latitude: defaultValues?.latitude,
+      longitude: defaultValues?.longitude,
     },
     mode: "onChange",
   });
