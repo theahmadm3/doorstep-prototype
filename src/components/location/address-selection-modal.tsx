@@ -23,6 +23,8 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
     const [isAddingCurrentLocation, setIsAddingCurrentLocation] = useState(false);
     const [newLocation, setNewLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [nickname, setNickname] = useState("");
+    const [streetAddress, setStreetAddress] = useState("");
+    const [city, setCity] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
 
@@ -63,6 +65,14 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
         );
     };
 
+    const resetAddLocationState = () => {
+        setIsAddingCurrentLocation(false);
+        setNewLocation(null);
+        setNickname("");
+        setStreetAddress("");
+        setCity("");
+    }
+
     const handleSaveNewLocation = async () => {
         if (!newLocation) return;
         setIsSaving(true);
@@ -71,6 +81,8 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
             latitude: Number(newLocation.latitude.toFixed(6)),
             longitude: Number(newLocation.longitude.toFixed(6)),
             address_nickname: nickname || `My Location`,
+            street_address: streetAddress || undefined,
+            city: city || undefined,
             is_default: false,
         };
 
@@ -81,10 +93,7 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
                 description: "Your current location has been added to your addresses.",
             });
             await refetchAddresses();
-            // Reset state
-            setIsAddingCurrentLocation(false);
-            setNewLocation(null);
-            setNickname("");
+            resetAddLocationState();
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to save location.";
             toast({
@@ -98,10 +107,7 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
     };
     
     const handleClose = () => {
-        // Reset state when closing the modal
-        setIsAddingCurrentLocation(false);
-        setNewLocation(null);
-        setNickname("");
+        resetAddLocationState();
         onClose();
     }
     
@@ -126,18 +132,30 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
                             Use your current location
                         </Button>
                     ) : newLocation ? (
-                        <div className="space-y-2">
-                             <p className="text-sm text-center text-muted-foreground">Location captured. Add a nickname to save.</p>
-                            <div className="flex gap-2">
+                        <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+                             <p className="text-sm text-center text-muted-foreground">Location captured. Add details to save.</p>
+                            <div className="space-y-2">
                                 <Input 
-                                    placeholder="e.g. Home, Work"
-                                    value={nickname}
-                                    onChange={(e) => setNickname(e.target.value)}
+                                    placeholder="House number & street name (Optional)"
+                                    value={streetAddress}
+                                    onChange={(e) => setStreetAddress(e.target.value)}
                                 />
-                                <Button onClick={handleSaveNewLocation} disabled={isSaving}>
-                                    <Save className="mr-2 h-4 w-4" />
-                                    {isSaving ? "Saving..." : "Save"}
-                                </Button>
+                                <Input 
+                                    placeholder="District/LGA/Town (Optional)"
+                                    value={city}
+                                    onChange={(e) => setCity(e.target.value)}
+                                />
+                                <div className="flex gap-2">
+                                    <Input 
+                                        placeholder="Nickname (e.g. Home, Work)"
+                                        value={nickname}
+                                        onChange={(e) => setNickname(e.target.value)}
+                                    />
+                                    <Button onClick={handleSaveNewLocation} disabled={isSaving}>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        {isSaving ? "Saving..." : "Save"}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     ) : (
