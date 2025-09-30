@@ -1,14 +1,17 @@
 
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { addressSchema, type AddressFormData } from "@/lib/types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Info, LocateFixed } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
+import { Button } from "../ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface AddressFormProps {
   onSubmit: (data: AddressFormData) => void;
@@ -17,6 +20,9 @@ interface AddressFormProps {
 }
 
 export default function AddressForm({ onSubmit, defaultValues, isEditing = false }: AddressFormProps) {
+    const { toast } = useToast();
+    const [isGettingLocation, setIsGettingLocation] = useState(false);
+
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
@@ -31,9 +37,47 @@ export default function AddressForm({ onSubmit, defaultValues, isEditing = false
     mode: "onChange",
   });
 
+  const handleUseCurrentLocation = () => {
+    setIsGettingLocation(true);
+    if (!navigator.geolocation) {
+        toast({
+            title: "Geolocation Not Supported",
+            description: "Your browser does not support geolocation.",
+            variant: "destructive",
+        });
+        setIsGettingLocation(false);
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const { latitude, longitude } = position.coords;
+            form.setValue("latitude", Number(latitude.toFixed(6)));
+            form.setValue("longitude", Number(longitude.toFixed(6)));
+            toast({
+                title: "Location Captured",
+                description: "Your current location has been set. Please fill in the rest of the details.",
+            });
+            setIsGettingLocation(false);
+        },
+        () => {
+            toast({
+                title: "Geolocation Error",
+                description: "Unable to retrieve your location. Please ensure location services are enabled.",
+                variant: "destructive",
+            });
+            setIsGettingLocation(false);
+        }
+    );
+  };
+
   return (
     <Form {...form}>
       <form id="address-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+        <Button type="button" variant="outline" className="w-full" onClick={handleUseCurrentLocation} disabled={isGettingLocation}>
+            <LocateFixed className="mr-2 h-4 w-4" />
+            {isGettingLocation ? "Getting Location..." : "Use my current location"}
+        </Button>
         <FormField
           control={form.control}
           name="street_address"
@@ -41,7 +85,7 @@ export default function AddressForm({ onSubmit, defaultValues, isEditing = false
             <FormItem>
               <FormLabel>House number and street name</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. 123 Allen Avenue" {...field} />
+                <Input placeholder="e.g. 123 Allen Avenue" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -53,7 +97,7 @@ export default function AddressForm({ onSubmit, defaultValues, isEditing = false
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex items-center gap-2">
-                    District/Town
+                    District/LGA/Town
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -66,7 +110,7 @@ export default function AddressForm({ onSubmit, defaultValues, isEditing = false
                     </TooltipProvider>
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. Ikeja" {...field} />
+                  <Input placeholder="e.g. Ikeja" {...field} value={field.value ?? ''}/>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -79,7 +123,7 @@ export default function AddressForm({ onSubmit, defaultValues, isEditing = false
             <FormItem>
               <FormLabel>Nearest Landmark (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Opposite the big mosque" {...field} />
+                <Input placeholder="e.g. Opposite the big mosque" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -92,7 +136,7 @@ export default function AddressForm({ onSubmit, defaultValues, isEditing = false
             <FormItem>
               <FormLabel>Address Nickname (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Home, Work" {...field} />
+                <Input placeholder="e.g. Home, Work" {...field} value={field.value ?? ''} />
               </FormControl>
               <FormMessage />
             </FormItem>
