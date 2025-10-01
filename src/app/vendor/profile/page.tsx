@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Star, MapPin, LocateFixed, Search, Save } from "lucide-react";
+import { Edit, Star, MapPin, LocateFixed, Search, Save, PlusCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { getRestaurantProfile, updateRestaurantProfile } from "@/lib/api";
 import { VendorProfile, VendorProfileUpdatePayload } from "@/lib/types";
@@ -293,7 +293,13 @@ function VendorProfilePage() {
                                 <CardTitle>Address</CardTitle>
                                 <CardDescription>Your restaurant's location.</CardDescription>
                             </div>
-                            <Button variant="outline" size="sm" onClick={openAddressModal}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                            <Button variant="outline" size="sm" onClick={openAddressModal}>
+                                {profile.address ? (
+                                    <><Edit className="mr-2 h-4 w-4" /> Edit</>
+                                ) : (
+                                    <><PlusCircle className="mr-2 h-4 w-4" /> Add Address</>
+                                )}
+                            </Button>
                         </CardHeader>
                         <CardContent>
                              <div className="space-y-2 text-sm">
@@ -418,3 +424,5 @@ export default function VendorProfilePageWrapper() {
 
     return <VendorProfilePage />;
 }
+
+    
