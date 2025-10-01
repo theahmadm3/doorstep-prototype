@@ -159,16 +159,16 @@ export default function VendorProfilePage() {
                                     <div className="space-y-4 py-4">
                                         <div className="space-y-2">
                                             <Label>Street Name</Label>
-                                            <Input defaultValue={profile.address.street_name || ''} />
+                                            <Input defaultValue={profile.address?.street_name || ''} />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <Label>Latitude</Label>
-                                                <Input type="number" defaultValue={profile.address.latitude} />
+                                                <Input type="number" defaultValue={profile.address?.latitude} />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Longitude</Label>
-                                                <Input type="number" defaultValue={profile.address.longitude} />
+                                                <Input type="number" defaultValue={profile.address?.longitude} />
                                             </div>
                                         </div>
                                     </div>
@@ -177,8 +177,8 @@ export default function VendorProfilePage() {
                         </CardHeader>
                         <CardContent>
                              <div className="space-y-2 text-sm">
-                                <p><strong>Street:</strong> {profile.address.street_name || 'N/A'}</p>
-                                <p><strong>Coordinates:</strong> {profile.address.latitude}, {profile.address.longitude}</p>
+                                <p><strong>Street:</strong> {profile.address?.street_name || 'N/A'}</p>
+                                <p><strong>Coordinates:</strong> {profile.address ? `${profile.address.latitude}, ${profile.address.longitude}` : 'N/A'}</p>
                              </div>
                         </CardContent>
                     </Card>
