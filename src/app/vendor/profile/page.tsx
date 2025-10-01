@@ -305,7 +305,7 @@ function VendorProfilePage() {
                         </CardHeader>
                         <CardContent>
                              <div className="space-y-2 text-sm">
-                                <p><strong>Street:</strong> {profile.address?.street_name || 'N/A'}</p>
+                                <p><strong>Address:</strong> {profile.address?.street_name || 'N/A'}</p>
                              </div>
                         </CardContent>
                     </Card>
