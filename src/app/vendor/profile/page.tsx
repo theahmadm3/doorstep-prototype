@@ -226,8 +226,14 @@ export default function VendorProfilePage() {
                             </div>
                             <div className="space-y-2 text-sm">
                                 <p><strong>Phone:</strong> {profile.owner.phone_number || 'N/A'}</p>
-                                <p><strong>Role:</strong> <Badge variant="secondary" className="capitalize">{profile.owner.role}</Badge></p>
-                                <p><strong>Account Status:</strong> <Badge className="capitalize">{profile.owner.status}</Badge></p>
+                                <div className="flex items-center gap-2">
+                                    <strong>Role:</strong>
+                                    <Badge variant="secondary" className="capitalize">{profile.owner.role}</Badge>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <strong>Account Status:</strong>
+                                    <Badge className="capitalize">{profile.owner.status}</Badge>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -235,4 +241,5 @@ export default function VendorProfilePage() {
             </div>
         </div>
     );
-}
+
+    
