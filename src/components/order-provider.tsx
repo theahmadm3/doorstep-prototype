@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import type { MenuItem, Order, OrderStatus, OrderItem, Address } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, OrderItem, Address, User } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { getAddresses } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -61,11 +61,19 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchUserAddresses = useCallback(async () => {
     setAddressesLoading(true);
     try {
-        const user = localStorage.getItem('user');
-        if (!user) { // Don't fetch if no user is logged in
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) { // Don't fetch if no user is logged in
              setAddresses([]);
+             setSelectedAddressState(null);
              return;
         };
+        
+        const user: User = JSON.parse(storedUser);
+        if (user.role !== 'customer') {
+            setAddresses([]);
+            setSelectedAddressState(null);
+            return;
+        }
 
         const fetchedAddresses = await getAddresses();
         setAddresses(fetchedAddresses);
