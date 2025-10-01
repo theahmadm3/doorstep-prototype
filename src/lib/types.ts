@@ -1,5 +1,6 @@
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -296,4 +297,32 @@ export interface VendorAnalyticsData {
     delivered_orders: number;
     cancelled_orders: number;
     top_items: TopSellingItem[];
+}
+
+// Vendor Profile Type
+export interface VendorProfileOwner {
+    id: string;
+    full_name: string;
+    email: string;
+    phone_number: string | null;
+    role: "restaurant";
+    status: "Pending" | "Active" | "Suspended";
+    avatar_url: string | null;
+}
+
+export interface VendorProfileAddress {
+    street_name: string | null;
+    latitude: number;
+    longitude: number;
+}
+
+export interface VendorProfile {
+    id: string;
+    owner: VendorProfileOwner;
+    name: string;
+    description: string | null;
+    address: VendorProfileAddress;
+    image_url: string | null;
+    rating: string;
+    is_active: boolean;
 }
