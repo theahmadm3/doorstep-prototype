@@ -1,6 +1,7 @@
 
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -321,8 +322,19 @@ export interface VendorProfile {
     owner: VendorProfileOwner;
     name: string;
     description: string | null;
-    address: VendorProfileAddress;
+    address: VendorProfileAddress | null;
     image_url: string | null;
     rating: string;
     is_active: boolean;
+}
+
+export interface VendorProfileUpdatePayload {
+    name?: string;
+    description?: string;
+    is_active?: boolean;
+    address?: {
+        street_name: string | null;
+        latitude: number;
+        longitude: number;
+    };
 }

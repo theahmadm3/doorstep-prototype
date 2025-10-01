@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +10,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Star } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getRestaurantProfile } from "@/lib/api";
-import { VendorProfile } from "@/lib/types";
+import { Edit, Star, MapPin, LocateFixed, Search, Save } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { getRestaurantProfile, updateRestaurantProfile } from "@/lib/api";
+import { VendorProfile, VendorProfileUpdatePayload } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
+import { useLoadScript } from "@react-google-maps/api";
+import usePlacesAutocomplete, { getGeocode, getLatLng } from "use-places-autocomplete";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+const libraries: ("places")[] = ['places'];
 
 const StarRating = ({ rating }: { rating: number }) => {
     const totalStars = 5;
@@ -33,28 +38,190 @@ const StarRating = ({ rating }: { rating: number }) => {
     );
 };
 
-export default function VendorProfilePage() {
+const GooglePlacesAutocomplete = ({ onPlaceSelect, initialValue = "" }) => {
+    const {
+        ready,
+        value,
+        suggestions: { status, data },
+        setValue,
+        clearSuggestions,
+    } = usePlacesAutocomplete({
+        requestOptions: { /* Define search scope here */ },
+        debounce: 300,
+        defaultValue: initialValue,
+    });
+
+    const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setValue(e.target.value);
+        onPlaceSelect(null, e.target.value);
+    };
+
+    const handleSelect = (suggestion) => () => {
+        setValue(suggestion.description, false);
+        clearSuggestions();
+
+        getGeocode({ address: suggestion.description }).then((results) => {
+            const { lat, lng } = getLatLng(results[0]);
+            onPlaceSelect({
+                street_name: suggestion.description,
+                latitude: lat,
+                longitude: lng,
+            });
+        });
+    };
+    
+    return (
+        <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+                value={value}
+                onChange={handleInput}
+                disabled={!ready}
+                placeholder="Search for an address..."
+                className="pl-10"
+            />
+            {status === "OK" && (
+                 <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg">
+                    <ScrollArea className="h-auto max-h-60">
+                        {data.map((suggestion) => (
+                            <div key={suggestion.place_id} onClick={handleSelect(suggestion)} className="p-3 hover:bg-muted cursor-pointer text-sm">
+                                <strong>{suggestion.structured_formatting.main_text}</strong> <small>{suggestion.structured_formatting.secondary_text}</small>
+                            </div>
+                        ))}
+                    </ScrollArea>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+function VendorProfilePage() {
     const [profile, setProfile] = useState<VendorProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // State for modals
+    const [isInfoModalOpen, setInfoModalOpen] = useState(false);
+    const [isAddressModalOpen, setAddressModalOpen] = useState(false);
+
+    // State for forms
+    const [name, setName] = useState("");
+    const [description, setDescription] = useState("");
+    const [isActive, setIsActive] = useState(true);
+    const [addressState, setAddressState] = useState<{ street_name: string | null; latitude: number; longitude: number; }>({ street_name: null, latitude: 0, longitude: 0 });
+
     const { toast } = useToast();
 
-    useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const data = await getRestaurantProfile();
-                setProfile(data);
-            } catch (error) {
-                toast({
-                    title: "Failed to fetch profile",
-                    description: "Could not load your restaurant profile data.",
-                    variant: "destructive",
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchProfile();
+    const fetchProfile = useCallback(async () => {
+        try {
+            const data = await getRestaurantProfile();
+            setProfile(data);
+            setName(data.name);
+            setDescription(data.description || "");
+            setIsActive(data.is_active);
+            setAddressState(data.address || { street_name: "", latitude: 0, longitude: 0 });
+        } catch (error) {
+            toast({
+                title: "Failed to fetch profile",
+                description: "Could not load your restaurant profile data.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     }, [toast]);
+
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
+    
+    const openInfoModal = () => {
+        if (!profile) return;
+        setName(profile.name);
+        setDescription(profile.description || "");
+        setIsActive(profile.is_active);
+        setInfoModalOpen(true);
+    };
+    
+    const openAddressModal = () => {
+        if (!profile) return;
+        setAddressState(profile.address || { street_name: "", latitude: 0, longitude: 0 });
+        setAddressModalOpen(true);
+    };
+
+    const handleInfoSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const payload: VendorProfileUpdatePayload = {};
+            if (name !== profile?.name) payload.name = name;
+            if (description !== profile?.description) payload.description = description;
+            if (isActive !== profile?.is_active) payload.is_active = isActive;
+
+            if (Object.keys(payload).length > 0) {
+                 await updateRestaurantProfile(payload);
+                 toast({ title: "Success", description: "Restaurant information updated."});
+                 await fetchProfile();
+            }
+            setInfoModalOpen(false);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+            toast({ title: "Update Failed", description: message, variant: "destructive"});
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const handleAddressSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const payload: VendorProfileUpdatePayload = { address: addressState };
+            await updateRestaurantProfile(payload);
+            toast({ title: "Success", description: "Address updated."});
+            await fetchProfile();
+            setAddressModalOpen(false);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+            toast({ title: "Update Failed", description: message, variant: "destructive"});
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handlePlaceSelect = (place: { street_name: string; latitude: number; longitude: number } | null, manualStreetName?: string) => {
+        if (place) {
+            setAddressState({
+                street_name: place.street_name,
+                latitude: Number(place.latitude.toFixed(6)),
+                longitude: Number(place.longitude.toFixed(6))
+            });
+        } else {
+            // Manual input
+            setAddressState(prev => ({
+                ...prev,
+                street_name: manualStreetName || "",
+                latitude: 0,
+                longitude: 0,
+            }));
+        }
+    };
+
+    const handleUseCurrentLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                setAddressState({
+                    street_name: "Current Location",
+                    latitude: Number(position.coords.latitude.toFixed(6)),
+                    longitude: Number(position.coords.longitude.toFixed(6))
+                });
+                toast({ title: "Location Updated", description: "Current location captured. Save to confirm." });
+            }, () => {
+                toast({ title: "Geolocation Error", description: "Unable to retrieve your location.", variant: "destructive" });
+            });
+        }
+    };
 
     if (isLoading) {
         return (
@@ -93,29 +260,7 @@ export default function VendorProfilePage() {
                                 <CardTitle>Restaurant Information</CardTitle>
                                 <CardDescription>Your restaurant's public details.</CardDescription>
                             </div>
-                             <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Edit Restaurant Information</DialogTitle>
-                                        <DialogDescription>
-                                            Update your restaurant's public details.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="name">Restaurant Name</Label>
-                                            <Input id="name" defaultValue={profile.name} />
-                                        </div>
-                                         <div className="space-y-2">
-                                            <Label htmlFor="description">Description</Label>
-                                            <Textarea id="description" defaultValue={profile.description || ''} />
-                                        </div>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
+                            <Button variant="outline" size="sm" onClick={openInfoModal}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex flex-col md:flex-row gap-6">
@@ -131,7 +276,7 @@ export default function VendorProfilePage() {
                                     <p className="text-muted-foreground">{profile.description}</p>
                                     <StarRating rating={parseFloat(profile.rating)} />
                                      <div className="flex items-center space-x-2">
-                                        <Switch id="is_active" checked={profile.is_active} />
+                                        <Switch id="is_active" checked={profile.is_active} disabled />
                                         <Label htmlFor="is_active">
                                             {profile.is_active ? "Actively taking orders" : "Currently closed"}
                                         </Label>
@@ -148,37 +293,11 @@ export default function VendorProfilePage() {
                                 <CardTitle>Address</CardTitle>
                                 <CardDescription>Your restaurant's location.</CardDescription>
                             </div>
-                             <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Edit Address</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div className="space-y-2">
-                                            <Label>Street Name</Label>
-                                            <Input defaultValue={profile.address?.street_name || ''} />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label>Latitude</Label>
-                                                <Input type="number" defaultValue={profile.address?.latitude} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Longitude</Label>
-                                                <Input type="number" defaultValue={profile.address?.longitude} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
+                            <Button variant="outline" size="sm" onClick={openAddressModal}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
                         </CardHeader>
                         <CardContent>
                              <div className="space-y-2 text-sm">
                                 <p><strong>Street:</strong> {profile.address?.street_name || 'N/A'}</p>
-                                <p><strong>Coordinates:</strong> {profile.address ? `${profile.address.latitude}, ${profile.address.longitude}` : 'N/A'}</p>
                              </div>
                         </CardContent>
                     </Card>
@@ -187,31 +306,9 @@ export default function VendorProfilePage() {
                 {/* Owner Info Card */}
                 <div className="space-y-8">
                     <Card>
-                         <CardHeader className="flex flex-row justify-between items-start">
-                             <div>
-                                <CardTitle>Owner Information</CardTitle>
-                                <CardDescription>Your personal account details.</CardDescription>
-                            </div>
-                             <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Edit Owner Information</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                         <div className="space-y-2">
-                                            <Label>Full Name</Label>
-                                            <Input defaultValue={profile.owner.full_name} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Phone Number</Label>
-                                            <Input defaultValue={profile.owner.phone_number || ''} />
-                                        </div>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
+                         <CardHeader>
+                             <CardTitle>Owner Information</CardTitle>
+                             <CardDescription>Your personal account details.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center gap-4">
@@ -239,7 +336,85 @@ export default function VendorProfilePage() {
                     </Card>
                 </div>
             </div>
+            
+            {/* Modals */}
+            <Dialog open={isInfoModalOpen} onOpenChange={setInfoModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Restaurant Information</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleInfoSubmit} className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Restaurant Name</Label>
+                            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Switch id="modal-is_active" checked={isActive} onCheckedChange={setIsActive} />
+                            <Label htmlFor="modal-is_active">Actively taking orders</Label>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save"}</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+             <Dialog open={isAddressModalOpen} onOpenChange={setAddressModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Address</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleAddressSubmit} className="space-y-4 py-4">
+                         <div className="space-y-2">
+                            <Label>Search for an address or enter manually</Label>
+                            <GooglePlacesAutocomplete onPlaceSelect={handlePlaceSelect} initialValue={profile.address?.street_name || ""} />
+                        </div>
+                        <Button type="button" variant="outline" className="w-full" onClick={handleUseCurrentLocation}>
+                            <LocateFixed className="mr-2 h-4 w-4" /> Use current location
+                        </Button>
+                         <p className="text-sm text-muted-foreground">
+                            Selected Address: <span className="font-medium text-foreground">{addressState.street_name || "None"}</span>
+                         </p>
+                        <DialogFooter>
+                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Address"}</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 
+}
+
+export default function VendorProfilePageWrapper() {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    const { isLoaded } = useLoadScript({
+      googleMapsApiKey: apiKey || "",
+      libraries,
+    });
     
+    if (!apiKey) {
+        console.error("Google Maps API key is missing. Address search will not work.");
+        return <VendorProfilePage />;
+    }
+
+    if (!isLoaded) return (
+         <div className="space-y-8">
+            <h1 className="text-3xl font-bold font-headline">Your Restaurant Profile</h1>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-8"><Skeleton className="h-96 w-full" /></div>
+                <div className="space-y-8"><Skeleton className="h-64 w-full" /></div>
+            </div>
+        </div>
+    );
+
+    return <VendorProfilePage />;
+}
