@@ -8,23 +8,111 @@ import { Input } from "@/components/ui/input";
 import { MapPin, LocateFixed, Search, Save } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Skeleton } from "../ui/skeleton";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { addAddress } from "@/lib/api";
 import { AddressPostData } from "@/lib/types";
+import { useLoadScript } from "@react-google-maps/api";
+import usePlacesAutocomplete, {
+  getGeocode,
+  getLatLng,
+} from "use-places-autocomplete";
+
+const libraries: ("places")[] = ['places'];
 
 interface AddressSelectionModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
 
-export default function AddressSelectionModal({ isOpen, onClose }: AddressSelectionModalProps) {
+const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
+    const {
+        ready,
+        value,
+        suggestions: { status, data },
+        setValue,
+        clearSuggestions,
+    } = usePlacesAutocomplete({
+        requestOptions: { /* Define search scope here */ },
+        debounce: 300,
+    });
+
+    const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setValue(e.target.value);
+    };
+
+    const handleSelect = ({ description, place_id }) => () => {
+        setValue(description, false);
+        clearSuggestions();
+
+        getGeocode({ address: description }).then((results) => {
+            const { lat, lng } = getLatLng(results[0]);
+            console.log("📍 Coordinates: ", { lat, lng });
+
+            // Fetch Place Details
+            const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+            service.getDetails({ placeId: place_id }, (place, status) => {
+                if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+                    onPlaceSelect(place);
+                } else {
+                    console.error('Failed to fetch place details:', status);
+                }
+            });
+        });
+    };
+
+    const renderSuggestions = () =>
+        data.map((suggestion) => {
+            const {
+                place_id,
+                structured_formatting: { main_text, secondary_text },
+            } = suggestion;
+
+            return (
+                <div
+                    key={place_id}
+                    onClick={handleSelect(suggestion)}
+                    className="p-3 hover:bg-muted cursor-pointer text-sm"
+                >
+                    <strong>{main_text}</strong> <small>{secondary_text}</small>
+                </div>
+            );
+        });
+
+    return (
+        <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+                value={value}
+                onChange={handleInput}
+                disabled={!ready}
+                placeholder="Search for a location..."
+                className="pl-10"
+            />
+            {status === "OK" && (
+                 <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg">
+                    <ScrollArea className="h-auto max-h-60">
+                        {renderSuggestions()}
+                    </ScrollArea>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+const AddressSelectionContent = ({ isOpen, onClose }: AddressSelectionModalProps) => {
     const { addresses, setSelectedAddress, isAddressesLoading, refetchAddresses } = useOrder();
+    const { toast } = useToast();
+
     const [isAddingCurrentLocation, setIsAddingCurrentLocation] = useState(false);
-    const [newLocation, setNewLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null);
     const [nickname, setNickname] = useState("");
     const [isSaving, setIsSaving] = useState(false);
-    const { toast } = useToast();
+    const [newLocation, setNewLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+    const [streetAddress, setStreetAddress] = useState("");
+    const [city, setCity] = useState("");
+
 
     const handleSelectAddress = (addressId: string) => {
         const address = addresses.find(a => a.id === addressId);
@@ -36,14 +124,9 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
 
     const handleUseCurrentLocation = () => {
         if (!navigator.geolocation) {
-            toast({
-                title: "Geolocation Not Supported",
-                description: "Your browser does not support geolocation.",
-                variant: "destructive",
-            });
+            toast({ title: "Geolocation Not Supported", variant: "destructive" });
             return;
         }
-
         setIsAddingCurrentLocation(true);
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -51,59 +134,73 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
                 });
+                setIsAddingCurrentLocation(false);
             },
             () => {
-                toast({
-                    title: "Geolocation Error",
-                    description: "Unable to retrieve your location. Please ensure location services are enabled.",
-                    variant: "destructive",
-                });
+                toast({ title: "Geolocation Error", description: "Unable to retrieve your location.", variant: "destructive" });
                 setIsAddingCurrentLocation(false);
             }
         );
     };
 
+    const handlePlaceSelect = useCallback((place: google.maps.places.PlaceResult) => {
+        setSelectedPlace(place);
+        setNewLocation(null);
+    }, []);
+
     const handleSaveNewLocation = async () => {
-        if (!newLocation) return;
+        let payload: AddressPostData;
+        if (selectedPlace?.geometry?.location) {
+            const lat = selectedPlace.geometry.location.lat();
+            const lng = selectedPlace.geometry.location.lng();
+            payload = {
+                latitude: Number(lat.toFixed(6)),
+                longitude: Number(lng.toFixed(6)),
+                address_nickname: nickname || undefined,
+                street_address: selectedPlace.formatted_address,
+                is_default: false,
+            };
+        } else if (newLocation) {
+            payload = {
+                latitude: Number(newLocation.latitude.toFixed(6)),
+                longitude: Number(newLocation.longitude.toFixed(6)),
+                address_nickname: nickname || undefined,
+                street_address: streetAddress || undefined,
+                city: city || undefined,
+                is_default: false,
+            };
+        } else {
+            return;
+        }
+        
         setIsSaving(true);
-
-        const payload: AddressPostData = {
-            latitude: Number(newLocation.latitude.toFixed(6)),
-            longitude: Number(newLocation.longitude.toFixed(6)),
-            address_nickname: nickname || `My Location`,
-            is_default: false,
-        };
-
         try {
             await addAddress(payload);
-            toast({
-                title: "Location Saved",
-                description: "Your current location has been added to your addresses.",
-            });
+            toast({ title: "Location Saved" });
             await refetchAddresses();
-            // Reset state
-            setIsAddingCurrentLocation(false);
-            setNewLocation(null);
-            setNickname("");
+            resetAddLocationState();
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to save location.";
-            toast({
-                title: "Error",
-                description: message,
-                variant: "destructive",
-            });
+            toast({ title: "Error", description: message, variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
     };
     
-    const handleClose = () => {
-        // Reset state when closing the modal
-        setIsAddingCurrentLocation(false);
+    const resetAddLocationState = () => {
+        setSelectedPlace(null);
         setNewLocation(null);
         setNickname("");
+        setStreetAddress("");
+        setCity("");
+    }
+
+    const handleClose = () => {
+        resetAddLocationState();
         onClose();
     }
+    
+    const canSave = selectedPlace || newLocation;
     
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -115,37 +212,42 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input placeholder="Search for a location..." className="pl-10" />
-                    </div>
-
-                    {!isAddingCurrentLocation ? (
-                        <Button variant="outline" className="w-full" onClick={handleUseCurrentLocation}>
-                            <LocateFixed className="mr-2 h-4 w-4" />
-                            Use your current location
-                        </Button>
-                    ) : newLocation ? (
-                        <div className="space-y-2">
-                             <p className="text-sm text-center text-muted-foreground">Location captured. Add a nickname to save.</p>
-                            <div className="flex gap-2">
+                   <GooglePlacesAutocomplete onPlaceSelect={handlePlaceSelect} />
+                    
+                    {(selectedPlace || newLocation) && (
+                        <div className="space-y-3 p-4 border rounded-lg bg-muted/50">
+                             {newLocation && (
+                                <div className="space-y-2">
+                                     <Input 
+                                        placeholder="House number & street name (Optional)"
+                                        value={streetAddress}
+                                        onChange={(e) => setStreetAddress(e.target.value)}
+                                    />
+                                    <Input 
+                                        placeholder="District/LGA/Town (Optional)"
+                                        value={city}
+                                        onChange={(e) => setCity(e.target.value)}
+                                    />
+                                </div>
+                             )}
+                             <div className="flex gap-2">
                                 <Input 
-                                    placeholder="e.g. Home, Work"
+                                    placeholder="Nickname (e.g. Home, Work)"
                                     value={nickname}
                                     onChange={(e) => setNickname(e.target.value)}
                                 />
-                                <Button onClick={handleSaveNewLocation} disabled={isSaving}>
+                                <Button onClick={handleSaveNewLocation} disabled={isSaving || !canSave}>
                                     <Save className="mr-2 h-4 w-4" />
                                     {isSaving ? "Saving..." : "Save"}
                                 </Button>
                             </div>
                         </div>
-                    ) : (
-                        <Button variant="outline" className="w-full" disabled>
-                            <LocateFixed className="mr-2 h-4 w-4 animate-pulse" />
-                            Getting your location...
-                        </Button>
                     )}
+
+                    <Button variant="outline" className="w-full" onClick={handleUseCurrentLocation} disabled={isAddingCurrentLocation}>
+                        <LocateFixed className="mr-2 h-4 w-4" />
+                        {isAddingCurrentLocation ? "Getting your location..." : "Use your current location"}
+                    </Button>
 
                      <ScrollArea className="h-64 border rounded-md p-2">
                         {isAddressesLoading ? (
@@ -160,14 +262,14 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
                                     <MapPin className="h-5 w-5 text-primary" />
                                     <div>
                                         <p className="font-semibold">{address.address_nickname || `${address.street_address || `Location @ ${address.latitude?.toFixed(2)}, ${address.longitude?.toFixed(2)}`}`}</p>
-                                        <p className="text-sm text-muted-foreground">{address.street_address ? `${address.street_address}, ${address.city}` : "GPS Location"}</p>
+                                        <p className="text-sm text-muted-foreground">{address.street_address ? `${address.street_address}, ${address.city || ''}`.trim().replace(/,$/, '') : "GPS Location"}</p>
                                     </div>
                                 </div>
                             ))
                         ) : (
                             <div className="text-center text-muted-foreground py-10">
                                 <p>You have no saved addresses.</p>
-                                <p className="text-xs">Try adding one using your current location.</p>
+                                <p className="text-xs">Try adding one using search or your current location.</p>
                             </div>
                         )}
                     </ScrollArea>
@@ -175,4 +277,23 @@ export default function AddressSelectionModal({ isOpen, onClose }: AddressSelect
             </DialogContent>
         </Dialog>
     );
+}
+
+export default function AddressSelectionModalWrapper(props: AddressSelectionModalProps) {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    const { isLoaded } = useLoadScript({
+      googleMapsApiKey: apiKey || "",
+      libraries,
+    });
+    
+    if (!apiKey) {
+        console.error("Google Maps API key is missing. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.");
+        // Render a version without Google Maps functionality
+        return <AddressSelectionContent {...props} />;
+    }
+
+    if (!isLoaded) return <Dialog open={props.isOpen} onOpenChange={props.onClose}><DialogContent><Skeleton className="h-96 w-full" /></DialogContent></Dialog>;
+
+    return <AddressSelectionContent {...props} />;
 }

@@ -1,5 +1,7 @@
 
 
+
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -173,10 +175,12 @@ export interface OrderDetailRestaurant {
 }
 
 export interface OrderDetailAddress {
-    street_address: string;
-    city: string;
-    nearest_landmark: string;
-    address_nickname: string;
+    street_address: string | null;
+    city: string | null;
+    nearest_landmark: string | null;
+    address_nickname: string | null;
+    latitude: string | null;
+    longitude: string | null;
 }
 
 export interface OrderDetail {
@@ -249,6 +253,9 @@ export const addressSchema = z.object({
     is_default: z.boolean().optional(),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
+}).refine(data => data.street_address || (data.latitude && data.longitude), {
+    message: "Either a street address or GPS coordinates must be provided.",
+    path: ["street_address"],
 });
 export type AddressFormData = z.infer<typeof addressSchema>;
 
@@ -258,9 +265,10 @@ export interface AddressPostData extends Partial<AddressFormData> {
 }
 
 // This represents a saved address object received from the API.
-export interface Address extends AddressPostData {
+export interface Address extends OrderDetailAddress {
   id: string;
   user: string;
+  is_default: boolean;
 }
 
 export const passwordSchema = z.object({
@@ -292,4 +300,41 @@ export interface VendorAnalyticsData {
     top_items: TopSellingItem[];
 }
 
-    
+// Vendor Profile Type
+export interface VendorProfileOwner {
+    id: string;
+    full_name: string;
+    email: string;
+    phone_number: string | null;
+    role: "restaurant";
+    status: "Pending" | "Active" | "Suspended";
+    avatar_url: string | null;
+}
+
+export interface VendorProfileAddress {
+    street_name: string | null;
+    latitude: number;
+    longitude: number;
+}
+
+export interface VendorProfile {
+    id: string;
+    owner: VendorProfileOwner;
+    name: string;
+    description: string | null;
+    address: VendorProfileAddress | null;
+    image_url: string | null;
+    rating: string;
+    is_active: boolean;
+}
+
+export interface VendorProfileUpdatePayload {
+    name?: string;
+    description?: string;
+    is_active?: boolean;
+    address?: {
+        street_name: string | null;
+        latitude: number;
+        longitude: number;
+    };
+}
