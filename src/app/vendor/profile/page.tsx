@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,24 +146,22 @@ function VendorProfilePage() {
     
     const openAddressModal = () => {
         if (!profile) return;
-        setAddressState(profile.address || { street_name: "", latitude: 0, longitude: 0 });
+        setAddressState(profile.address || { street_name: null, latitude: 0, longitude: 0 });
         setAddressModalOpen(true);
     };
 
     const handleInfoSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!profile) return;
         setIsSubmitting(true);
         try {
-            const payload: VendorProfileUpdatePayload = {};
-            if (name !== profile?.name) payload.name = name;
-            if (description !== profile?.description) payload.description = description;
-            if (isActive !== profile?.is_active) payload.is_active = isActive;
+            const payload: VendorProfileUpdatePayload = { name };
+            if (description !== profile.description) payload.description = description;
+            if (isActive !== profile.is_active) payload.is_active = isActive;
 
-            if (Object.keys(payload).length > 0) {
-                 await updateRestaurantProfile(payload);
-                 toast({ title: "Success", description: "Restaurant information updated."});
-                 await fetchProfile();
-            }
+            await updateRestaurantProfile(payload);
+            toast({ title: "Success", description: "Restaurant information updated."});
+            await fetchProfile(); // Refetch data
             setInfoModalOpen(false);
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -175,12 +173,16 @@ function VendorProfilePage() {
     
     const handleAddressSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!profile) return;
         setIsSubmitting(true);
         try {
-            const payload: VendorProfileUpdatePayload = { address: addressState };
+            const payload: VendorProfileUpdatePayload = {
+                name: profile.name,
+                address: addressState
+            };
             await updateRestaurantProfile(payload);
             toast({ title: "Success", description: "Address updated."});
-            await fetchProfile();
+            await fetchProfile(); // Refetch data
             setAddressModalOpen(false);
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -384,7 +386,7 @@ function VendorProfilePage() {
                             <LocateFixed className="mr-2 h-4 w-4" /> Use current location
                         </Button>
                          <p className="text-sm text-muted-foreground">
-                            Selected Address: <span className="font-medium text-foreground">{addressState.street_name || "None"}</span>
+                            Selected Address: <span className="font-medium text-foreground">{addressState?.street_name || "None"}</span>
                          </p>
                         <DialogFooter>
                             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
@@ -424,5 +426,3 @@ export default function VendorProfilePageWrapper() {
 
     return <VendorProfilePage />;
 }
-
-    
