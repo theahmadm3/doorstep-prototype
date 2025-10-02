@@ -11,7 +11,7 @@ import { useLoadScript } from "@react-google-maps/api";
 import usePlacesAutocomplete, { getGeocode, getLatLng } from "use-places-autocomplete";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { updateRestaurantProfile } from "@/lib/api";
+import { updateRestaurantProfile, getRestaurantProfile } from "@/lib/api";
 import { VendorProfileUpdatePayload } from "@/lib/types";
 
 interface VendorAddressModalProps {
@@ -124,9 +124,10 @@ function VendorAddressModalContent({ onAddressSaved }: VendorAddressModalProps) 
     
     setIsSubmitting(true);
     try {
+        const currentProfile = await getRestaurantProfile();
+        
         const payload: VendorProfileUpdatePayload = {
-            // As per the requirement, we should ideally send the name, but we don't have it here.
-            // The backend should be resilient to handle an address-only update for a vendor.
+            name: currentProfile.name,
             address: addressState
         };
         await updateRestaurantProfile(payload);
@@ -195,4 +196,3 @@ export default function VendorAddressModal({ isOpen, onAddressSaved }: VendorAdd
         </Dialog>
     );
 }
-
