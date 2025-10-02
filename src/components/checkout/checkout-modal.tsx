@@ -118,7 +118,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
 
   const { subtotal, taxes, total, totalInKobo } = useMemo(() => {
     const sub = checkoutItems.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
-    const tax = sub * 0.05;
+    const tax = Math.min(sub * 0.05, 500);
     const grandTotal = sub + tax + deliveryFee;
     return {
         subtotal: sub,
@@ -394,7 +394,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         <span>₦{subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                        <span>Taxes (5%)</span>
+                        <span>Taxes</span>
                         <span>₦{taxes.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -426,3 +426,5 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     </Dialog>
   );
 }
+
+    
