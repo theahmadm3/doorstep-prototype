@@ -39,6 +39,7 @@ interface OrderContextType {
   setSelectedAddress: (address: Address | null) => void;
   isAddressesLoading: boolean;
   refetchAddresses: () => void;
+  clearUserSpecificData: () => void;
 }
 
 export const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -101,6 +102,13 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [toast]);
   
+  const clearUserSpecificData = useCallback(() => {
+    setOrders([]);
+    setAddresses([]);
+    setSelectedAddressState(null);
+    localStorage.removeItem(USER_ORDERS_STORAGE_KEY);
+    localStorage.removeItem(SELECTED_ADDRESS_STORAGE_KEY);
+  }, []);
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -338,6 +346,7 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
     setSelectedAddress,
     isAddressesLoading,
     refetchAddresses: fetchUserAddresses,
+    clearUserSpecificData,
   };
 
   return (
