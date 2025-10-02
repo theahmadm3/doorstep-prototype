@@ -394,7 +394,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         <span>₦{subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                        <span>Taxes</span>
+                        <span>Service charge</span>
                         <span>₦{taxes.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between items-center">
