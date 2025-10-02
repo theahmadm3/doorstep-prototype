@@ -29,11 +29,21 @@ interface CheckoutModalProps {
     isOpen: boolean;
     onClose: () => void;
     order?: Order | null;
-    guestCart?: GuestCart | null;
 }
 
-export default function CheckoutModal({ isOpen, onClose, order, guestCart }: CheckoutModalProps) {
-  const { clearGuestCart, updateOrderStatus, increaseGuestItemQuantity, decreaseGuestItemQuantity, increaseOrderItemQuantity, decreaseOrderItemQuantity, selectedAddress } = useOrder();
+export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: CheckoutModalProps) {
+  const { 
+    orders,
+    guestCart,
+    clearGuestCart, 
+    updateOrderStatus, 
+    increaseGuestItemQuantity, 
+    decreaseGuestItemQuantity, 
+    increaseOrderItemQuantity, 
+    decreaseOrderItemQuantity, 
+    selectedAddress 
+  } = useOrder();
+  
   const router = useRouter();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
@@ -42,6 +52,12 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
   
   const [paymentReference, setPaymentReference] = useState<string>('');
   const [isAddressModalOpen, setAddressModalOpen] = useState(false);
+
+  // Find the live order from the context using the initial order's ID
+  const order = useMemo(() => 
+    initialOrder ? orders.find(o => o.id === initialOrder.id) : null,
+    [orders, initialOrder]
+  );
 
 
   useEffect(() => {
@@ -53,7 +69,10 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     }
   }, []);
   
-  const checkoutItems = useMemo(() => order?.items || guestCart?.items || [], [order, guestCart]);
+  const checkoutItems = useMemo(() => {
+    // If it's a logged-in user, use the live order data. Otherwise, use guest cart.
+    return user ? order?.items || [] : guestCart?.items || [];
+  }, [order, guestCart, user]);
 
   const { subtotal, taxes, deliveryFee, total, totalInKobo } = useMemo(() => {
     const sub = checkoutItems.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
@@ -211,8 +230,13 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     }
   };
 
-  if (!isClient || checkoutItems.length === 0) {
-      return null;
+  if (!isClient || !isOpen || checkoutItems.length === 0) {
+    // Return null if not open or if there are no items
+    if (isOpen && checkoutItems.length === 0) {
+        // If the modal was open but the cart became empty, close it.
+        onClose();
+    }
+    return null;
   }
   
   return (
@@ -281,7 +305,7 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
                                 <div>
                                     <p className="font-medium text-sm">{item.name}</p>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleDecrease(item.id)} disabled={item.quantity <= 1}>
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleDecrease(item.id)}>
                                             <Minus className="h-3 w-3" />
                                         </Button>
                                         <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
@@ -327,9 +351,3 @@ export default function CheckoutModal({ isOpen, onClose, order, guestCart }: Che
     </Dialog>
   );
 }
-
-    
-
-    
-
-    
