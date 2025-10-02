@@ -2,6 +2,7 @@
 
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -13,12 +14,19 @@ export interface Owner {
     created_at: string;
 }
 
+export interface RestaurantAddress {
+    id: string;
+    street_name: string;
+    latitude: string;
+    longitude: string;
+}
+
 export interface Restaurant {
     id: string;
     owner: Owner;
     name: string;
     description: string | null;
-    address: string;
+    address: RestaurantAddress | null;
     image_url: string | null;
     rating: string;
     is_active: boolean;

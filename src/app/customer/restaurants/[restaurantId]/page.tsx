@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -71,22 +72,21 @@ export default function RestaurantMenuPage() {
 				try {
 					const menuData = await getRestaurantMenu(restaurantId);
 					setMenuItems(menuData);
+					// The API for menu items doesn't return the full restaurant object.
+					// In a real app, you might fetch the restaurant details separately.
 					if (menuData.length > 0) {
-						// This is a mock restaurant object. In a real app, you'd fetch this.
-						const firstItem = menuData[0];
-						const restaurantData = {
-							id: firstItem.restaurant,
-							name: "Restaurant",
-							rating: "4.5",
-							address: "123 Foodie Lane, Ikeja, Lagos",
-							description: "Delicious meals just for you",
+						setRestaurant({
+							id: restaurantId,
+							name: "Restaurant", // Placeholder
+							rating: "N/A",
+							address: null,
+							description: "",
 							image_url: "",
 							owner: {} as any,
 							is_active: true,
 							created_at: "",
 							updated_at: "",
-						};
-						setRestaurant(restaurantData);
+						});
 					}
 				} catch (error) {
 					console.error("Failed to fetch restaurant data:", error);
