@@ -37,8 +37,10 @@ export default function CustomerLayout({
   const [user, setUser] = useState<UserType | null>(null);
   const { addresses, isAddressesLoading } = useOrder();
   const [isAddressModalRequired, setAddressModalRequired] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -105,19 +107,21 @@ export default function CustomerLayout({
             </SidebarMenuItem>
           </SidebarMenu>
           <SidebarFooter>
-            <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
-              <Avatar>
-                 <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Customer"} />
-                <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'C'}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold">{user?.full_name || "Customer User"}</span>
-                <span className="text-xs text-muted-foreground">
-                  {user?.email || "customer@doorstep.com"}
-                </span>
+            {isClient && user && (
+              <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
+                <Avatar>
+                  <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Customer"} />
+                  <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'C'}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold">{user?.full_name || "Customer User"}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {user?.email || "customer@doorstep.com"}
+                  </span>
+                </div>
+                <LogoutButton />
               </div>
-              <LogoutButton />
-            </div>
+            )}
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
