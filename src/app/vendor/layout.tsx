@@ -16,17 +16,17 @@ import {
   Home,
   LineChart,
   Settings,
-  Users,
-  Utensils,
-  LogOut,
   ShoppingBag,
   User,
+  Utensils,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LogoutButton from '@/components/auth/logout-button';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { User as UserType } from '@/lib/types';
+import { getRestaurantProfile } from '@/lib/api';
+import VendorAddressModal from '@/components/vendor/vendor-address-modal';
 
 export default function VendorLayout({
   children,
@@ -34,17 +34,41 @@ export default function VendorLayout({
   children: React.ReactNode;
 }) {
   const [user, setUser] = useState<UserType | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+
+  const checkVendorAddress = useCallback(async () => {
+    try {
+      const profile = await getRestaurantProfile();
+      if (!profile.address) {
+        setShowAddressModal(true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch vendor profile:", error);
+      // Handle error, maybe show a toast
+    }
+  }, []);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      if(parsedUser.role === 'restaurant') {
+        checkVendorAddress();
+      }
     }
-  }, []);
+  }, [checkVendorAddress]);
+  
+  const handleAddressSaved = () => {
+    setShowAddressModal(false);
+    // Optionally, you can re-verify or simply trust the modal did its job.
+    // For a better UX, we can just close it.
+  };
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
+        <VendorAddressModal isOpen={showAddressModal} onAddressSaved={handleAddressSaved} />
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center gap-2">

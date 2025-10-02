@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import type { MenuItem, Order, OrderStatus, OrderItem, Address, User } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, OrderItem, Address, User, Restaurant } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { getAddresses } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +39,10 @@ interface OrderContextType {
   setSelectedAddress: (address: Address | null) => void;
   isAddressesLoading: boolean;
   refetchAddresses: () => void;
+  clearUserSpecificData: () => void;
+
+  viewedRestaurant: Restaurant | null;
+  setViewedRestaurant: (restaurant: Restaurant | null) => void;
 }
 
 export const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -46,6 +50,7 @@ export const OrderContext = createContext<OrderContextType | undefined>(undefine
 const GUEST_CART_STORAGE_KEY = 'doorstepGuestCart';
 const USER_ORDERS_STORAGE_KEY = 'doorstepOrders';
 const SELECTED_ADDRESS_STORAGE_KEY = 'doorstepSelectedAddress';
+const VIEWED_RESTAURANT_STORAGE_KEY = 'doorstepViewedRestaurant';
 const EXPIRY_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
@@ -57,6 +62,8 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   const [selectedAddress, setSelectedAddressState] = useState<Address | null>(null);
   const [isAddressesLoading, setAddressesLoading] = useState(false);
   const { toast } = useToast();
+
+  const [viewedRestaurant, setViewedRestaurantState] = useState<Restaurant | null>(null);
 
   const fetchUserAddresses = useCallback(async () => {
     setAddressesLoading(true);
@@ -101,6 +108,15 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [toast]);
   
+  const clearUserSpecificData = useCallback(() => {
+    setOrders([]);
+    setAddresses([]);
+    setSelectedAddressState(null);
+    setViewedRestaurantState(null);
+    localStorage.removeItem(USER_ORDERS_STORAGE_KEY);
+    localStorage.removeItem(SELECTED_ADDRESS_STORAGE_KEY);
+    localStorage.removeItem(VIEWED_RESTAURANT_STORAGE_KEY);
+  }, []);
 
   // Load state from localStorage on mount
   useEffect(() => {
@@ -123,6 +139,13 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
           }
       }
 
+      // Load viewed restaurant
+      const storedViewedRestaurant = localStorage.getItem(VIEWED_RESTAURANT_STORAGE_KEY);
+      if (storedViewedRestaurant) {
+        setViewedRestaurantState(JSON.parse(storedViewedRestaurant));
+      }
+
+
       fetchUserAddresses();
 
     } catch (error) {
@@ -140,6 +163,15 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem(SELECTED_ADDRESS_STORAGE_KEY);
     }
   };
+
+  const setViewedRestaurant = (restaurant: Restaurant | null) => {
+    setViewedRestaurantState(restaurant);
+    if (restaurant) {
+      localStorage.setItem(VIEWED_RESTAURANT_STORAGE_KEY, JSON.stringify(restaurant));
+    } else {
+      localStorage.removeItem(VIEWED_RESTAURANT_STORAGE_KEY);
+    }
+  }
 
   // Save state to localStorage on change
   useEffect(() => {
@@ -220,15 +252,37 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const decreaseOrderItemQuantity = (orderId: string, itemId: string) => {
-    setOrders(prevOrders => prevOrders.map(order => {
-        if (order.id === orderId) {
-            const newItems = order.items.map(item =>
-                item.id === itemId ? { ...item, quantity: Math.max(1, item.quantity - 1) } : item
+    setOrders(prevOrders => {
+        const orderToUpdate = prevOrders.find(order => order.id === orderId);
+        if (!orderToUpdate) return prevOrders;
+
+        const itemToUpdate = orderToUpdate.items.find(item => item.id === itemId);
+        if (!itemToUpdate) return prevOrders;
+        
+        // If quantity is 1, remove the item.
+        if (itemToUpdate.quantity === 1) {
+            const newItems = orderToUpdate.items.filter(item => item.id !== itemId);
+            // If the cart becomes empty, remove the whole order
+            if (newItems.length === 0) {
+                return prevOrders.filter(order => order.id !== orderId);
+            }
+            return prevOrders.map(order => 
+                order.id === orderId 
+                    ? { ...order, items: newItems, total: calculateOrderTotal(newItems) } 
+                    : order
             );
-            return { ...order, items: newItems, total: calculateOrderTotal(newItems) };
+        } else {
+            // Otherwise, just decrease the quantity
+            const newItems = orderToUpdate.items.map(item =>
+                item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item
+            );
+            return prevOrders.map(order => 
+                order.id === orderId 
+                    ? { ...order, items: newItems, total: calculateOrderTotal(newItems) }
+                    : order
+            );
         }
-        return order;
-    }));
+    });
   };
   
   const removeUnsubmittedOrder = (orderId: string) => {
@@ -316,6 +370,9 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
     setSelectedAddress,
     isAddressesLoading,
     refetchAddresses: fetchUserAddresses,
+    clearUserSpecificData,
+    viewedRestaurant,
+    setViewedRestaurant,
   };
 
   return (

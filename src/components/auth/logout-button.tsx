@@ -16,19 +16,20 @@ import {
 } from "@/components/ui/alert-dialog";
 import { LogOut } from "lucide-react";
 import { Button } from "../ui/button";
-import { logoutUser } from "@/lib/auth-api";
 import { useToast } from "@/hooks/use-toast";
+import { useOrder } from "@/hooks/use-order";
 
 export default function LogoutButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { clearUserSpecificData } = useOrder();
 
   const handleLogout = async () => {
     try {
+      // In a real app, you might call an API endpoint to invalidate the token on the server.
       // await logoutUser();
     } catch (error) {
-      // Log the error but proceed with client-side logout
       console.error("An error occurred during API logout:", error);
        toast({
         title: "Logout Error",
@@ -36,11 +37,8 @@ export default function LogoutButton() {
         variant: "destructive",
       });
     } finally {
-        // Always clear local storage and redirect
-        localStorage.removeItem('user');
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('doorstepOrders');
-        localStorage.removeItem('doorstepGuestCart');
+        // Clear all application state and local storage before redirecting.
+        clearUserSpecificData();
         localStorage.clear();
         router.push("/login");
     }

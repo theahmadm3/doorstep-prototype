@@ -231,7 +231,7 @@ export default function AddressManagement() {
                     <div key={address.id} className="flex items-center gap-4 p-3 rounded-md border hover:bg-muted">
                         <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
                         <div className="flex-grow">
-                            <p className="font-semibold">{address.address_nickname || `${address.street_address || `Location @ ${address.latitude?.toFixed(2)}, ${address.longitude?.toFixed(2)}`}`}</p>
+                            <p className="font-semibold">{address.address_nickname || `${address.street_address || `Location @ ${Number(address.latitude)?.toFixed(2)}, ${Number(address.longitude)?.toFixed(2)}`}`}</p>
                             <p className="text-sm text-muted-foreground">{address.street_address ? `${address.street_address}, ${address.city || ''}`.trim().replace(/,$/, '') : "GPS Location"}</p>
                         </div>
                         <div className="flex gap-1">

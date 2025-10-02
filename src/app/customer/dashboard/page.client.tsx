@@ -5,44 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Image from "next/image";
 import Link from "next/link";
 import { Utensils } from "lucide-react";
-import { useEffect, useState } from "react";
-import type { Restaurant, User, AddressFormData } from "@/lib/types";
-import AddressModal from "@/components/dashboard/address-modal";
+import type { Restaurant } from "@/lib/types";
+import { useOrder } from "@/hooks/use-order";
 
 interface CustomerDashboardClientProps {
     restaurants: Restaurant[];
 }
 
 export default function CustomerDashboardClient({ restaurants }: CustomerDashboardClientProps) {
-    const [showAddressModal, setShowAddressModal] = useState(false);
-
-    useEffect(() => {
-        const checkFirstLogin = () => {
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                const user: User = JSON.parse(storedUser);
-                if (user.login_count < 2) {
-                    setShowAddressModal(true);
-                }
-            }
-        };
-        
-        checkFirstLogin();
-    }, []);
-
-    const handleSaveAddress = (data: AddressFormData) => {
-        // In a real app, you would also update the user object in localStorage or refetch it.
-        console.log("Address saved in dashboard:", data);
-        setShowAddressModal(false);
-    };
+    const { setViewedRestaurant } = useOrder();
 
     return (
         <div className="space-y-12">
-            <AddressModal 
-                isOpen={showAddressModal}
-                onClose={() => setShowAddressModal(false)}
-                onSave={handleSaveAddress}
-            />
             <div className="text-left">
                 <h1 className="text-4xl font-bold font-headline">Explore & Order</h1>
                 <p className="text-muted-foreground mt-2 text-lg">Find your next favorite meal from our curated list of restaurants.</p>
@@ -50,7 +24,7 @@ export default function CustomerDashboardClient({ restaurants }: CustomerDashboa
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {restaurants.map((restaurant) => (
-                <Link key={restaurant.id} href={`/customer/restaurants/${restaurant.id}`} passHref>
+                <Link key={restaurant.id} href={`/customer/restaurants/${restaurant.id}`} passHref onClick={() => setViewedRestaurant(restaurant)}>
                     <Card className="flex flex-col h-full overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1">
                     <CardHeader className="p-0">
                         <Image
