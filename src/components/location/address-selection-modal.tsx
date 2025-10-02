@@ -112,6 +112,9 @@ const AddressSelectionContent = ({ isOpen, onClose }: AddressSelectionModalProps
     const [newLocation, setNewLocation] = useState<{ latitude: number, longitude: number } | null>(null);
     const [streetAddress, setStreetAddress] = useState("");
     const [city, setCity] = useState("");
+    
+    // The modal is mandatory if the user has no addresses.
+    const isMandatory = addresses.length === 0 && isAddressesLoading === false;
 
 
     const handleSelectAddress = (addressId: string) => {
@@ -158,7 +161,7 @@ const AddressSelectionContent = ({ isOpen, onClose }: AddressSelectionModalProps
                 longitude: Number(lng.toFixed(6)),
                 address_nickname: nickname || undefined,
                 street_address: selectedPlace.formatted_address,
-                is_default: false,
+                is_default: isMandatory, // Make first address default
             };
         } else if (newLocation) {
             payload = {
@@ -167,7 +170,7 @@ const AddressSelectionContent = ({ isOpen, onClose }: AddressSelectionModalProps
                 address_nickname: nickname || undefined,
                 street_address: streetAddress || undefined,
                 city: city || undefined,
-                is_default: false,
+                is_default: isMandatory, // Make first address default
             };
         } else {
             return;
@@ -179,6 +182,10 @@ const AddressSelectionContent = ({ isOpen, onClose }: AddressSelectionModalProps
             toast({ title: "Location Saved" });
             await refetchAddresses();
             resetAddLocationState();
+            // If the modal was mandatory, it will now close because addresses.length > 0
+            if (isMandatory) {
+                onClose();
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to save location.";
             toast({ title: "Error", description: message, variant: "destructive" });
@@ -196,6 +203,8 @@ const AddressSelectionContent = ({ isOpen, onClose }: AddressSelectionModalProps
     }
 
     const handleClose = () => {
+        // Prevent closing the mandatory modal
+        if (isMandatory) return;
         resetAddLocationState();
         onClose();
     }
@@ -204,11 +213,17 @@ const AddressSelectionContent = ({ isOpen, onClose }: AddressSelectionModalProps
     
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent 
+                className="sm:max-w-md"
+                onInteractOutside={(e) => { if (isMandatory) e.preventDefault(); }}
+                onEscapeKeyDown={(e) => { if (isMandatory) e.preventDefault(); }}
+            >
                 <DialogHeader>
-                    <DialogTitle>Select a Delivery Address</DialogTitle>
+                    <DialogTitle>{isMandatory ? "Add a Delivery Address" : "Select a Delivery Address"}</DialogTitle>
                     <DialogDescription>
-                        Choose where you'd like your order to be delivered.
+                         {isMandatory 
+                            ? "You need to add at least one address to continue."
+                            : "Choose where you'd like your order to be delivered or add a new one."}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">

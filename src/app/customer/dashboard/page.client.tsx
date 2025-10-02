@@ -5,44 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Image from "next/image";
 import Link from "next/link";
 import { Utensils } from "lucide-react";
-import { useEffect, useState } from "react";
-import type { Restaurant, User, AddressFormData } from "@/lib/types";
-import AddressModal from "@/components/dashboard/address-modal";
+import type { Restaurant } from "@/lib/types";
 
 interface CustomerDashboardClientProps {
     restaurants: Restaurant[];
 }
 
 export default function CustomerDashboardClient({ restaurants }: CustomerDashboardClientProps) {
-    const [showAddressModal, setShowAddressModal] = useState(false);
-
-    useEffect(() => {
-        const checkFirstLogin = () => {
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                const user: User = JSON.parse(storedUser);
-                if (user.login_count < 2) {
-                    setShowAddressModal(true);
-                }
-            }
-        };
-        
-        checkFirstLogin();
-    }, []);
-
-    const handleSaveAddress = (data: AddressFormData) => {
-        // In a real app, you would also update the user object in localStorage or refetch it.
-        console.log("Address saved in dashboard:", data);
-        setShowAddressModal(false);
-    };
 
     return (
         <div className="space-y-12">
-            <AddressModal 
-                isOpen={showAddressModal}
-                onClose={() => setShowAddressModal(false)}
-                onSave={handleSaveAddress}
-            />
             <div className="text-left">
                 <h1 className="text-4xl font-bold font-headline">Explore & Order</h1>
                 <p className="text-muted-foreground mt-2 text-lg">Find your next favorite meal from our curated list of restaurants.</p>

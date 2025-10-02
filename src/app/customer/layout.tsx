@@ -26,6 +26,8 @@ import ClientHeader from '@/components/layout/client-header';
 import LogoutButton from '@/components/auth/logout-button';
 import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
+import { useOrder } from '@/hooks/use-order';
+import AddressSelectionModal from '@/components/location/address-selection-modal';
 
 export default function CustomerLayout({
   children,
@@ -33,6 +35,8 @@ export default function CustomerLayout({
   children: React.ReactNode;
 }) {
   const [user, setUser] = useState<UserType | null>(null);
+  const { addresses, isAddressesLoading } = useOrder();
+  const [isAddressModalRequired, setAddressModalRequired] = useState(false);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -40,10 +44,33 @@ export default function CustomerLayout({
       setUser(JSON.parse(storedUser));
     }
   }, []);
+  
+  useEffect(() => {
+    // Only trigger for logged-in customers after initial address load has finished
+    if (user && user.role === 'customer' && !isAddressesLoading) {
+      if (addresses.length === 0) {
+        setAddressModalRequired(true);
+      } else {
+        setAddressModalRequired(false);
+      }
+    }
+  }, [user, addresses, isAddressesLoading]);
+
+  const handleModalClose = () => {
+    // Prevent closing if no addresses are saved
+    if (addresses.length > 0) {
+      setAddressModalRequired(false);
+    }
+  };
+
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
+        <AddressSelectionModal 
+            isOpen={isAddressModalRequired}
+            onClose={handleModalClose}
+        />
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center gap-2">

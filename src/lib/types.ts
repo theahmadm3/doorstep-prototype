@@ -3,6 +3,7 @@
 
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -269,7 +270,7 @@ export type AddressFormData = z.infer<typeof addressSchema>;
 
 // This represents the data sent to the POST /addresses/ endpoint
 export interface AddressPostData extends Partial<AddressFormData> {
-  is_default: boolean;
+  is_default?: boolean;
 }
 
 // This represents a saved address object received from the API.
