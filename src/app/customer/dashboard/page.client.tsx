@@ -6,12 +6,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { Utensils } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
+import { useOrder } from "@/hooks/use-order";
 
 interface CustomerDashboardClientProps {
     restaurants: Restaurant[];
 }
 
 export default function CustomerDashboardClient({ restaurants }: CustomerDashboardClientProps) {
+    const { setViewedRestaurant } = useOrder();
 
     return (
         <div className="space-y-12">
@@ -22,7 +24,7 @@ export default function CustomerDashboardClient({ restaurants }: CustomerDashboa
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {restaurants.map((restaurant) => (
-                <Link key={restaurant.id} href={`/customer/restaurants/${restaurant.id}`} passHref>
+                <Link key={restaurant.id} href={`/customer/restaurants/${restaurant.id}`} passHref onClick={() => setViewedRestaurant(restaurant)}>
                     <Card className="flex flex-col h-full overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1">
                     <CardHeader className="p-0">
                         <Image

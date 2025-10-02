@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import type { MenuItem, Order, OrderStatus, OrderItem, Address, User } from '@/lib/types';
+import type { MenuItem, Order, OrderStatus, OrderItem, Address, User, Restaurant } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { getAddresses } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,9 @@ interface OrderContextType {
   isAddressesLoading: boolean;
   refetchAddresses: () => void;
   clearUserSpecificData: () => void;
+
+  viewedRestaurant: Restaurant | null;
+  setViewedRestaurant: (restaurant: Restaurant | null) => void;
 }
 
 export const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -47,6 +50,7 @@ export const OrderContext = createContext<OrderContextType | undefined>(undefine
 const GUEST_CART_STORAGE_KEY = 'doorstepGuestCart';
 const USER_ORDERS_STORAGE_KEY = 'doorstepOrders';
 const SELECTED_ADDRESS_STORAGE_KEY = 'doorstepSelectedAddress';
+const VIEWED_RESTAURANT_STORAGE_KEY = 'doorstepViewedRestaurant';
 const EXPIRY_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
@@ -58,6 +62,8 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   const [selectedAddress, setSelectedAddressState] = useState<Address | null>(null);
   const [isAddressesLoading, setAddressesLoading] = useState(false);
   const { toast } = useToast();
+
+  const [viewedRestaurant, setViewedRestaurantState] = useState<Restaurant | null>(null);
 
   const fetchUserAddresses = useCallback(async () => {
     setAddressesLoading(true);
@@ -106,8 +112,10 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
     setOrders([]);
     setAddresses([]);
     setSelectedAddressState(null);
+    setViewedRestaurantState(null);
     localStorage.removeItem(USER_ORDERS_STORAGE_KEY);
     localStorage.removeItem(SELECTED_ADDRESS_STORAGE_KEY);
+    localStorage.removeItem(VIEWED_RESTAURANT_STORAGE_KEY);
   }, []);
 
   // Load state from localStorage on mount
@@ -131,6 +139,13 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
           }
       }
 
+      // Load viewed restaurant
+      const storedViewedRestaurant = localStorage.getItem(VIEWED_RESTAURANT_STORAGE_KEY);
+      if (storedViewedRestaurant) {
+        setViewedRestaurantState(JSON.parse(storedViewedRestaurant));
+      }
+
+
       fetchUserAddresses();
 
     } catch (error) {
@@ -148,6 +163,15 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem(SELECTED_ADDRESS_STORAGE_KEY);
     }
   };
+
+  const setViewedRestaurant = (restaurant: Restaurant | null) => {
+    setViewedRestaurantState(restaurant);
+    if (restaurant) {
+      localStorage.setItem(VIEWED_RESTAURANT_STORAGE_KEY, JSON.stringify(restaurant));
+    } else {
+      localStorage.removeItem(VIEWED_RESTAURANT_STORAGE_KEY);
+    }
+  }
 
   // Save state to localStorage on change
   useEffect(() => {
@@ -347,6 +371,8 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
     isAddressesLoading,
     refetchAddresses: fetchUserAddresses,
     clearUserSpecificData,
+    viewedRestaurant,
+    setViewedRestaurant,
   };
 
   return (

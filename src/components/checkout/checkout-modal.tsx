@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getAddresses, placeOrder, initializePayment, getRestaurantDetails } from "@/lib/api";
+import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Minus, Plus, Edit } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
@@ -41,6 +41,7 @@ interface CheckoutModalProps {
     isOpen: boolean;
     onClose: () => void;
     order?: Order | null;
+    guestCart?: GuestCart;
 }
 
 export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: CheckoutModalProps) {
@@ -55,6 +56,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     decreaseOrderItemQuantity, 
     selectedAddress,
     removeUnsubmittedOrder,
+    viewedRestaurant,
   } = useOrder();
   
   const router = useRouter();
@@ -66,11 +68,9 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const [paymentReference, setPaymentReference] = useState<string>('');
   const [isAddressModalOpen, setAddressModalOpen] = useState(false);
 
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [deliveryFee, setDeliveryFee] = useState<number>(0);
   const [showHighFeeModal, setShowHighFeeModal] = useState(false);
-  const [isLoadingRestaurant, setIsLoadingRestaurant] = useState(false);
 
 
   // Find the live order from the context using the initial order's ID
@@ -89,30 +89,10 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   }, []);
 
   useEffect(() => {
-    if (!isOpen || !order?.restaurantId) {
-      setRestaurant(null);
-      return;
-    };
-
-    const fetchRestaurant = async () => {
-      setIsLoadingRestaurant(true);
-      try {
-        const data = await getRestaurantDetails(order.restaurantId);
-        setRestaurant(data);
-      } catch (error) {
-        toast({ title: "Error", description: "Could not fetch restaurant details.", variant: "destructive" });
-      } finally {
-        setIsLoadingRestaurant(false);
-      }
-    };
-    fetchRestaurant();
-  }, [isOpen, order?.restaurantId, toast]);
-
-  useEffect(() => {
-    if (restaurant?.address && selectedAddress?.latitude && selectedAddress?.longitude) {
+    if (viewedRestaurant?.address && selectedAddress?.latitude && selectedAddress?.longitude) {
       const dist = haversineDistance(
-        parseFloat(restaurant.address.latitude),
-        parseFloat(restaurant.address.longitude),
+        parseFloat(viewedRestaurant.address.latitude),
+        parseFloat(viewedRestaurant.address.longitude),
         parseFloat(selectedAddress.latitude),
         parseFloat(selectedAddress.longitude)
       );
@@ -130,7 +110,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
       setDistance(null);
       setDeliveryFee(0);
     }
-  }, [restaurant, selectedAddress]);
+  }, [viewedRestaurant, selectedAddress]);
   
   const checkoutItems = useMemo(() => {
     return user ? order?.items || [] : guestCart?.items || [];
@@ -380,11 +360,9 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                 <Card className="bg-transparent border-0 shadow-none flex-grow">
                     <CardHeader className="px-1">
                       <CardTitle>Order Summary</CardTitle>
-                      {isLoadingRestaurant ? <Skeleton className="h-4 w-3/4 mt-1" /> : (
-                        <CardDescription className="text-xs">
-                          From: <span className="font-semibold">{restaurant?.name || '...'}</span>
-                        </CardDescription>
-                      )}
+                      <CardDescription className="text-xs">
+                        From: <span className="font-semibold">{viewedRestaurant?.name || '...'}</span>
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="px-1">
                     <div className="max-h-60 overflow-y-auto space-y-4">
@@ -439,7 +417,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                     </CardContent>
                 </Card>
                 <CardFooter className="p-1 mt-auto">
-                    <Button className="w-full" onClick={handlePayment} disabled={isPlacingOrder || isLoadingRestaurant || !selectedAddress}>
+                    <Button className="w-full" onClick={handlePayment} disabled={isPlacingOrder || !viewedRestaurant || !selectedAddress}>
                         {isPlacingOrder ? "Initializing Payment..." : `Proceed to Pay ₦${total.toFixed(2)}`}
                     </Button>
                 </CardFooter>

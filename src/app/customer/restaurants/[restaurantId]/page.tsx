@@ -40,13 +40,13 @@ export default function RestaurantMenuPage() {
 		addToGuestCart,
 		clearGuestCart,
 		orders,
+		viewedRestaurant,
 	} = useOrder();
 	const { toast } = useToast();
 	const params = useParams();
 	const router = useRouter();
 	const restaurantId = params.restaurantId as string;
 
-	const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
 	const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [user, setUser] = useState<User | null>(null);
@@ -72,25 +72,8 @@ export default function RestaurantMenuPage() {
 				try {
 					const menuData = await getRestaurantMenu(restaurantId);
 					setMenuItems(menuData);
-					// The API for menu items doesn't return the full restaurant object.
-					// In a real app, you might fetch the restaurant details separately.
-					if (menuData.length > 0) {
-						setRestaurant({
-							id: restaurantId,
-							name: "Restaurant", // Placeholder
-							rating: "N/A",
-							address: null,
-							description: "",
-							image_url: "",
-							owner: {} as any,
-							is_active: true,
-							created_at: "",
-							updated_at: "",
-						});
-					}
 				} catch (error) {
 					console.error("Failed to fetch restaurant data:", error);
-					setRestaurant(null);
 				} finally {
 					setIsLoading(false);
 				}
@@ -252,7 +235,7 @@ export default function RestaurantMenuPage() {
 				</div>
 				<div className="text-center mb-12">
 					<h1 className="text-4xl font-bold font-headline">
-						{restaurant?.name || "Restaurant"} Menu
+						{viewedRestaurant?.name || "Restaurant"} Menu
 					</h1>
 					<p className="text-muted-foreground mt-2 text-lg">
 						Browse through the delicious offerings.
