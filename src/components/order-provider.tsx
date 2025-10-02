@@ -220,15 +220,37 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const decreaseOrderItemQuantity = (orderId: string, itemId: string) => {
-    setOrders(prevOrders => prevOrders.map(order => {
-        if (order.id === orderId) {
-            const newItems = order.items.map(item =>
-                item.id === itemId ? { ...item, quantity: Math.max(1, item.quantity - 1) } : item
+    setOrders(prevOrders => {
+        const orderToUpdate = prevOrders.find(order => order.id === orderId);
+        if (!orderToUpdate) return prevOrders;
+
+        const itemToUpdate = orderToUpdate.items.find(item => item.id === itemId);
+        if (!itemToUpdate) return prevOrders;
+        
+        // If quantity is 1, remove the item.
+        if (itemToUpdate.quantity === 1) {
+            const newItems = orderToUpdate.items.filter(item => item.id !== itemId);
+            // If the cart becomes empty, remove the whole order
+            if (newItems.length === 0) {
+                return prevOrders.filter(order => order.id !== orderId);
+            }
+            return prevOrders.map(order => 
+                order.id === orderId 
+                    ? { ...order, items: newItems, total: calculateOrderTotal(newItems) } 
+                    : order
             );
-            return { ...order, items: newItems, total: calculateOrderTotal(newItems) };
+        } else {
+            // Otherwise, just decrease the quantity
+            const newItems = orderToUpdate.items.map(item =>
+                item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item
+            );
+            return prevOrders.map(order => 
+                order.id === orderId 
+                    ? { ...order, items: newItems, total: calculateOrderTotal(newItems) }
+                    : order
+            );
         }
-        return order;
-    }));
+    });
   };
   
   const removeUnsubmittedOrder = (orderId: string) => {
