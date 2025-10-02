@@ -308,7 +308,17 @@ export default function AddressSelectionModalWrapper(props: AddressSelectionModa
         return <AddressSelectionContent {...props} />;
     }
 
-    if (!isLoaded) return <Dialog open={props.isOpen} onOpenChange={props.onClose}><DialogContent><Skeleton className="h-96 w-full" /></DialogContent></Dialog>;
+    if (!isLoaded) return (
+        <Dialog open={props.isOpen} onOpenChange={props.onClose}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Loading Address Selector</DialogTitle>
+                    <DialogDescription>Please wait a moment...</DialogDescription>
+                </DialogHeader>
+                <Skeleton className="h-96 w-full" />
+            </DialogContent>
+        </Dialog>
+    );
 
     return <AddressSelectionContent {...props} />;
 }
