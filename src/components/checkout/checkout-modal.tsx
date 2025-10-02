@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import type { User, Order, GuestCart, Address, OrderPayload, OrderItemPayload } from "@/lib/types";
+import type { User, Order, GuestCart, Restaurant, OrderPayload, OrderItemPayload } from "@/lib/types";
 import type { PaystackConfig, PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
 import {
   Dialog,
@@ -19,11 +19,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { getAddresses, placeOrder, initializePayment, getRestaurantDetails } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Minus, Plus, Edit } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import AddressSelectionModal from "../location/address-selection-modal";
+import { haversineDistance } from "@/lib/utils";
+import { Skeleton } from "../ui/skeleton";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -41,7 +53,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     decreaseGuestItemQuantity, 
     increaseOrderItemQuantity, 
     decreaseOrderItemQuantity, 
-    selectedAddress 
+    selectedAddress,
+    removeUnsubmittedOrder,
   } = useOrder();
   
   const router = useRouter();
@@ -53,12 +66,18 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const [paymentReference, setPaymentReference] = useState<string>('');
   const [isAddressModalOpen, setAddressModalOpen] = useState(false);
 
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [deliveryFee, setDeliveryFee] = useState<number>(0);
+  const [showHighFeeModal, setShowHighFeeModal] = useState(false);
+  const [isLoadingRestaurant, setIsLoadingRestaurant] = useState(false);
+
+
   // Find the live order from the context using the initial order's ID
   const order = useMemo(() => 
     initialOrder ? orders.find(o => o.id === initialOrder.id) : null,
     [orders, initialOrder]
   );
-
 
   useEffect(() => {
     setIsClient(true);
@@ -68,27 +87,67 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
         setUser(parsedUser);
     }
   }, []);
+
+  useEffect(() => {
+    if (!isOpen || !order?.restaurantId) {
+      setRestaurant(null);
+      return;
+    };
+
+    const fetchRestaurant = async () => {
+      setIsLoadingRestaurant(true);
+      try {
+        const data = await getRestaurantDetails(order.restaurantId);
+        setRestaurant(data);
+      } catch (error) {
+        toast({ title: "Error", description: "Could not fetch restaurant details.", variant: "destructive" });
+      } finally {
+        setIsLoadingRestaurant(false);
+      }
+    };
+    fetchRestaurant();
+  }, [isOpen, order?.restaurantId, toast]);
+
+  useEffect(() => {
+    if (restaurant?.address && selectedAddress?.latitude && selectedAddress?.longitude) {
+      const dist = haversineDistance(
+        parseFloat(restaurant.address.latitude),
+        parseFloat(restaurant.address.longitude),
+        parseFloat(selectedAddress.latitude),
+        parseFloat(selectedAddress.longitude)
+      );
+      setDistance(dist);
+      
+      let fee = 0;
+      if (dist <= 2) {
+        fee = 500;
+      } else {
+        fee = Math.ceil(dist) * 500;
+      }
+      setDeliveryFee(fee);
+
+    } else {
+      setDistance(null);
+      setDeliveryFee(0);
+    }
+  }, [restaurant, selectedAddress]);
   
   const checkoutItems = useMemo(() => {
-    // If it's a logged-in user, use the live order data. Otherwise, use guest cart.
     return user ? order?.items || [] : guestCart?.items || [];
   }, [order, guestCart, user]);
 
-  const { subtotal, taxes, deliveryFee, total, totalInKobo } = useMemo(() => {
+  const { subtotal, taxes, total, totalInKobo } = useMemo(() => {
     const sub = checkoutItems.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
     const tax = sub * 0.05;
-    const delivery = 10;
-    const grandTotal = sub + tax + delivery;
+    const grandTotal = sub + tax + deliveryFee;
     return {
         subtotal: sub,
         taxes: tax,
-        deliveryFee: delivery,
         total: grandTotal,
         totalInKobo: Math.round(grandTotal * 100),
     };
-  }, [checkoutItems]);
+  }, [checkoutItems, deliveryFee]);
 
-  // Use useCallback to memoize the handlePlaceOrder function
   const handlePlaceOrder = useCallback(async (transaction: PaystackTransaction) => {
     if (!order || !selectedAddress) return;
 
@@ -130,7 +189,6 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   }, [order, selectedAddress, updateOrderStatus, toast, onClose, router]);
 
   const onSuccess = useCallback((transaction: PaystackTransaction) => {
-    // Verify the transaction was successful
     if (transaction.status === 'success') {
       handlePlaceOrder(transaction);
     } else {
@@ -150,7 +208,6 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     });
   }, [toast]);
 
-  // Initialize Paystack payment
   const initializePaystackPayment = usePaystackPayment({
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
     email: user?.email || '',
@@ -158,37 +215,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     reference: paymentReference,
   });
 
-  const handlePayment = async () => {
-    if (!user) {
-        toast({ title: "Please Log In", description: "You need to be logged in to place an order.", variant: "destructive" });
-        clearGuestCart();
-        onClose();
-        router.push(`/login?redirect=/customer/dashboard`);
-        return;
-    }
-    
-    if (!order) {
-        if (guestCart && guestCart.items.length > 0) {
-            toast({ title: "Please Log In to Continue", description: "Your cart is saved. Log in to complete your purchase.", variant: "default" });
-            onClose();
-            router.push(`/login?redirect=/customer/dashboard`);
-        }
-        return;
-    }
-
-    if (!user.phone_number) {
-        toast({ title: "Phone Number Required", description: "Please add a phone number to your profile before placing an order.", variant: "destructive" });
-        onClose();
-        router.push('/customer/profile');
-        return;
-    }
-
-    if (!selectedAddress) {
-        toast({ title: "Address Required", description: "Please select a delivery address.", variant: "destructive" });
-        return;
-    }
-
-    if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
+  const triggerPaymentInitialization = useCallback(async () => {
+     if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
         toast({ title: "Configuration Error", description: "Paystack public key is not configured.", variant: "destructive" });
         return;
     }
@@ -201,7 +229,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
         
         setPaymentReference(paymentResponse.reference);
         
-        onClose(); // Close the checkout modal before opening Paystack
+        onClose();
         initializePaystackPayment({
             onSuccess,
             onClose: onClosePaymentModal
@@ -212,6 +240,50 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
         toast({ title: "Payment Error", description: `Failed to initialize payment: ${message}`, variant: "destructive" });
         setIsPlacingOrder(false);
     }
+  }, [totalInKobo, toast, onClose, initializePaystackPayment, onSuccess, onClosePaymentModal]);
+
+  const handlePayment = async () => {
+    if (!user) {
+        toast({ title: "Please Log In", description: "You need to be logged in to place an order.", variant: "destructive" });
+        clearGuestCart();
+        onClose();
+        router.push(`/login?redirect=/customer/dashboard`);
+        return;
+    }
+    
+    if (!order) return;
+
+    if (!user.phone_number) {
+        toast({ title: "Phone Number Required", description: "Please add a phone number to your profile before placing an order.", variant: "destructive" });
+        onClose();
+        router.push('/customer/profile');
+        return;
+    }
+
+    if (!selectedAddress || distance === null) {
+        toast({ title: "Address Required", description: "Please select a delivery address.", variant: "destructive" });
+        return;
+    }
+    
+    if (deliveryFee > 2500) {
+        setShowHighFeeModal(true);
+    } else {
+        await triggerPaymentInitialization();
+    }
+  }
+
+  const handleHighFeeProceed = async () => {
+      setShowHighFeeModal(false);
+      await triggerPaymentInitialization();
+  };
+  
+  const handleFindCloserBranch = () => {
+      if (order) {
+          removeUnsubmittedOrder(order.id);
+      }
+      setShowHighFeeModal(false);
+      onClose();
+      router.push('/customer/dashboard');
   }
 
   const handleIncrease = (itemId: string) => {
@@ -231,9 +303,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   };
 
   if (!isClient || !isOpen || checkoutItems.length === 0) {
-    // Return null if not open or if there are no items
     if (isOpen && checkoutItems.length === 0) {
-        // If the modal was open but the cart became empty, close it.
         onClose();
     }
     return null;
@@ -241,6 +311,22 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialog open={showHighFeeModal} onOpenChange={setShowHighFeeModal}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>High Delivery Fee</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This branch is far from you. Your delivery fee is ₦{deliveryFee.toLocaleString()}.
+                    Would you like to order from a closer branch instead, or proceed anyway?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={handleFindCloserBranch}>Find Closer Branch</AlertDialogCancel>
+                <AlertDialogAction onClick={handleHighFeeProceed}>Proceed Anyway</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AddressSelectionModal
         isOpen={isAddressModalOpen}
         onClose={() => setAddressModalOpen(false)}
@@ -293,8 +379,12 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
             <div className="bg-muted/50 p-6 flex flex-col">
                 <Card className="bg-transparent border-0 shadow-none flex-grow">
                     <CardHeader className="px-1">
-                    <CardTitle>Order Summary</CardTitle>
-                    <CardDescription className="text-xs">Review your items before finalizing.</CardDescription>
+                      <CardTitle>Order Summary</CardTitle>
+                      {isLoadingRestaurant ? <Skeleton className="h-4 w-3/4 mt-1" /> : (
+                        <CardDescription className="text-xs">
+                          From: <span className="font-semibold">{restaurant?.name || '...'}</span>
+                        </CardDescription>
+                      )}
                     </CardHeader>
                     <CardContent className="px-1">
                     <div className="max-h-60 overflow-y-auto space-y-4">
@@ -329,9 +419,16 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         <span>Taxes (5%)</span>
                         <span>₦{taxes.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between">
-                        <span>Delivery Fee</span>
-                        <span>₦{deliveryFee.toFixed(2)}</span>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <span>Delivery Fee</span>
+                                {distance !== null && (
+                                    <p className="text-xs text-muted-foreground">({distance} km)</p>
+                                )}
+                            </div>
+                            <span>
+                                {distance === null ? 'Select address' : `₦${deliveryFee.toFixed(2)}`}
+                            </span>
                         </div>
                         <Separator className="my-2" />
                         <div className="flex justify-between font-bold text-lg">
@@ -342,7 +439,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                     </CardContent>
                 </Card>
                 <CardFooter className="p-1 mt-auto">
-                    <Button className="w-full" onClick={handlePayment} disabled={isPlacingOrder}>
+                    <Button className="w-full" onClick={handlePayment} disabled={isPlacingOrder || isLoadingRestaurant || !selectedAddress}>
                         {isPlacingOrder ? "Initializing Payment..." : `Proceed to Pay ₦${total.toFixed(2)}`}
                     </Button>
                 </CardFooter>

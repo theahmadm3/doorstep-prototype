@@ -4,6 +4,7 @@
 
 
 
+
 export interface Owner {
     id: string;
     full_name: string;
@@ -138,6 +139,8 @@ export interface Order {
   total: number;
   date?: string;
   customerId?: string;
+  distance?: number;
+  deliveryFee?: number;
 }
 
 export interface GuestCart {
@@ -178,7 +181,7 @@ export interface OrderDetailRestaurant {
     id: string;
     name: string;
     description: string;
-    address: string;
+    address: RestaurantAddress | null;
     image_url: string;
     rating: string;
 }
@@ -254,6 +257,18 @@ export const profileSchema = z.object({
 });
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
+export const passwordSchema = z.object({
+    currentPassword: z.string().min(1, "Current password is required."),
+    newPassword: z.string().min(8, "New password must be at least 8 characters."),
+});
+export type PasswordFormData = z.infer<typeof passwordSchema>;
+
+
+export interface ProfileUpdatePayload {
+  full_name: string;
+  phone_number?: string;
+}
+
 export const addressSchema = z.object({
     street_address: z.string().min(5, "House number and street name is too short.").optional(),
     city: z.string().min(2, "District/Town is too short.").optional(),
@@ -280,17 +295,6 @@ export interface Address extends OrderDetailAddress {
   is_default: boolean;
 }
 
-export const passwordSchema = z.object({
-    currentPassword: z.string().min(1, "Current password is required."),
-    newPassword: z.string().min(8, "New password must be at least 8 characters."),
-});
-export type PasswordFormData = z.infer<typeof passwordSchema>;
-
-
-export interface ProfileUpdatePayload {
-  full_name: string;
-  phone_number?: string;
-}
 
 // Analytics Types
 export interface TopSellingItem {

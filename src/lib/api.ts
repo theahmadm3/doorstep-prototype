@@ -44,6 +44,10 @@ export async function getRestaurants(): Promise<Restaurant[]> {
     return data.results;
 }
 
+export async function getRestaurantDetails(restaurantId: string): Promise<Restaurant> {
+    return fetcher<Restaurant>(`/restaurants/${restaurantId}/`);
+}
+
 export async function getRestaurantMenu(restaurantId: string): Promise<MenuItem[]> {
     const data = await fetcher<PaginatedResponse<MenuItem>>(`/restaurants/${restaurantId}/menu/`);
     // Mock categories for now as they are not in the API response
