@@ -28,6 +28,7 @@ import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
 import { useOrder } from '@/hooks/use-order';
 import AddressSelectionModal from '@/components/location/address-selection-modal';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CustomerLayout({
   children,
@@ -107,16 +108,24 @@ export default function CustomerLayout({
             </SidebarMenuItem>
           </SidebarMenu>
           <SidebarFooter>
-            {isClient && user && (
+            {!isClient || !user ? (
+              <div className="flex items-center gap-3 p-2 rounded-md">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div className="flex flex-col gap-1 w-full">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-full" />
+                  </div>
+              </div>
+            ) : (
               <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
                 <Avatar>
-                  <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Customer"} />
-                  <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'C'}</AvatarFallback>
+                  <AvatarImage src={user.avatar_url || "https://github.com/shadcn.png"} alt={user.full_name || "Customer"} />
+                  <AvatarFallback>{user.full_name?.[0]?.toUpperCase() || 'C'}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold">{user?.full_name || "Customer User"}</span>
+                  <span className="text-sm font-semibold">{user.full_name || "Customer User"}</span>
                   <span className="text-xs text-muted-foreground">
-                    {user?.email || "customer@doorstep.com"}
+                    {user.email || "customer@doorstep.com"}
                   </span>
                 </div>
                 <LogoutButton />
