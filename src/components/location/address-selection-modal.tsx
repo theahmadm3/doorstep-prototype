@@ -261,7 +261,7 @@ const AddressSelectionContent = ({ isOpen, onClose }: AddressSelectionModalProps
                                 <div key={address.id} onClick={() => handleSelectAddress(address.id)} className="flex items-center gap-4 p-3 rounded-md hover:bg-muted cursor-pointer">
                                     <MapPin className="h-5 w-5 text-primary" />
                                     <div>
-                                        <p className="font-semibold">{address.address_nickname || `${address.street_address || `Location @ ${address.latitude?.toFixed(2)}, ${address.longitude?.toFixed(2)}`}`}</p>
+                                        <p className="font-semibold">{address.address_nickname || `${address.street_address || `Location @ ${Number(address.latitude)?.toFixed(2)}, ${Number(address.longitude)?.toFixed(2)}`}`}</p>
                                         <p className="text-sm text-muted-foreground">{address.street_address ? `${address.street_address}, ${address.city || ''}`.trim().replace(/,$/, '') : "GPS Location"}</p>
                                     </div>
                                 </div>
