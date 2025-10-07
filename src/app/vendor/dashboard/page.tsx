@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useEffect, useCallback }
-from "react";
+import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
 	Card,
 	CardContent,
@@ -39,13 +39,9 @@ import {
 	DollarSign,
 	ShoppingBag,
 	CheckCircle,
-	XCircle,
-	ArrowUpRight,
-	TrendingUp,
 } from "lucide-react";
 import {
 	ChartContainer,
-	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
@@ -229,24 +225,26 @@ export default function VendorDashboardPage() {
 						</p>
 					</CardContent>
 				</Card>
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Active Orders</CardTitle>
-						<ShoppingBag className="h-4 w-4 text-blue-500" />
-					</CardHeader>
-					<CardContent>
-						{isLoading ? (
-							<Skeleton className="h-8 w-1/2" />
-						) : (
-							<div className="text-2xl font-bold">
-								+{analytics?.active_orders.toLocaleString()}
-							</div>
-						)}
-						<p className="text-xs text-muted-foreground">
-							Currently being processed
-						</p>
-					</CardContent>
-				</Card>
+				<Link href="/vendor/orders">
+					<Card className="transition-all hover:shadow-md">
+						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+							<CardTitle className="text-sm font-medium">Active Orders</CardTitle>
+							<ShoppingBag className="h-4 w-4 text-blue-500" />
+						</CardHeader>
+						<CardContent>
+							{isLoading ? (
+								<Skeleton className="h-8 w-1/2" />
+							) : (
+								<div className="text-2xl font-bold">
+									+{analytics?.active_orders.toLocaleString()}
+								</div>
+							)}
+							<p className="text-xs text-muted-foreground">
+								Currently being processed
+							</p>
+						</CardContent>
+					</Card>
+				</Link>
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
