@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
 	Card,
 	CardContent,
@@ -45,6 +44,18 @@ import {
 	ChartTooltipContent,
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
+
 
 const chartConfig = {
 	revenue: {
@@ -75,6 +86,8 @@ export default function VendorDashboardPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isToggleUpdating, setToggleUpdating] = useState(false);
 	const { toast } = useToast();
+	const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const router = useRouter();
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -136,8 +149,27 @@ export default function VendorDashboardPage() {
     })}`;
 	};
 
+	const handleGoToOrders = () => {
+        router.push('/vendor/orders');
+    }
+
 	return (
 		<div className="space-y-8">
+			<AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Navigate to Orders?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will take you to the order management page. Do you want to continue?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleGoToOrders}>Go to Orders</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
 			{/* Header Section */}
 			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 				<div>
@@ -225,26 +257,26 @@ export default function VendorDashboardPage() {
 						</p>
 					</CardContent>
 				</Card>
-				<Link href="/vendor/orders">
-					<Card className="transition-all hover:shadow-md">
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium">Active Orders</CardTitle>
-							<ShoppingBag className="h-4 w-4 text-blue-500" />
-						</CardHeader>
-						<CardContent>
-							{isLoading ? (
-								<Skeleton className="h-8 w-1/2" />
-							) : (
-								<div className="text-2xl font-bold">
-									+{analytics?.active_orders.toLocaleString()}
-								</div>
-							)}
-							<p className="text-xs text-muted-foreground">
-								Currently being processed
-							</p>
-						</CardContent>
-					</Card>
-				</Link>
+				
+				<Card className="transition-all hover:shadow-md cursor-pointer" onClick={() => setShowConfirmModal(true)}>
+					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+						<CardTitle className="text-sm font-medium">Active Orders</CardTitle>
+						<ShoppingBag className="h-4 w-4 text-blue-500" />
+					</CardHeader>
+					<CardContent>
+						{isLoading ? (
+							<Skeleton className="h-8 w-1/2" />
+						) : (
+							<div className="text-2xl font-bold">
+								+{analytics?.active_orders.toLocaleString()}
+							</div>
+						)}
+						<p className="text-xs text-muted-foreground">
+							Currently being processed
+						</p>
+					</CardContent>
+				</Card>
+			
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
