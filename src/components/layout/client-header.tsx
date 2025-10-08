@@ -16,7 +16,7 @@ import AddressSelectionModal from "../location/address-selection-modal";
 export default function ClientHeader() {
 	const orders = useCartStore(state => state.orders);
     const selectedAddress = useUIStore(state => state.selectedAddress);
-    const { addresses, isAddressesLoading } = useAddresses();
+    const { isAddressesLoading } = useAddresses();
 
 	const [user, setUser] = useState<User | null>(null);
 	const [isAddressModalOpen, setAddressModalOpen] = useState(false);
