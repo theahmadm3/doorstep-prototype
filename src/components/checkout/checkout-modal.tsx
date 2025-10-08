@@ -104,7 +104,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
       if (dist <= 2) {
         fee = 500;
       } else {
-        fee = Math.ceil(dist) * 500;
+        const additionalDistance = dist - 2;
+        fee = 500 + additionalDistance * 300;
       }
       setDeliveryFee(fee);
 
@@ -402,8 +403,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         <div className="flex justify-between items-center">
                             <div>
                                 <span>Delivery Fee</span>
-                                {distance !== null && deliveryFee <= 2500 && (
-                                    <p className="text-xs text-muted-foreground">({distance} km)</p>
+                                {distance !== null && (
+                                    <p className="text-xs text-muted-foreground">({distance.toFixed(1)} km)</p>
                                 )}
                             </div>
                              <span>
@@ -428,3 +429,5 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     </Dialog>
   );
 }
+
+    
