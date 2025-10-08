@@ -20,14 +20,14 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Menu, ShoppingCart, Utensils, Plus, Minus, Trash2 } from "lucide-react";
-import { useOrder } from "@/hooks/use-order";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
 import CheckoutModal from "../checkout/checkout-modal";
+import { useCartStore } from "@/stores/useCartStore";
 
 export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
-  const { guestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem } = useOrder();
+  const { guestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem } = useCartStore();
   const [isClient, setIsClient] = useState(false);
   const [isCheckoutOpen, setCheckoutOpen] = useState(false);
 

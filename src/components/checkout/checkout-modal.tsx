@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useOrder } from "@/hooks/use-order";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,6 +35,8 @@ import { usePaystackPayment } from "react-paystack";
 import AddressSelectionModal from "../location/address-selection-modal";
 import { haversineDistance } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
+import { useCartStore } from "@/stores/useCartStore";
+import { useUIStore } from "@/stores/useUIStore";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -54,10 +55,10 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     decreaseGuestItemQuantity, 
     increaseOrderItemQuantity, 
     decreaseOrderItemQuantity, 
-    selectedAddress,
     removeUnsubmittedOrder,
-    viewedRestaurant,
-  } = useOrder();
+  } = useCartStore();
+  
+  const { selectedAddress, viewedRestaurant } = useUIStore();
   
   const router = useRouter();
   const { toast } = useToast();
@@ -426,5 +427,3 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     </Dialog>
   );
 }
-
-    

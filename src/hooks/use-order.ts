@@ -1,39 +1,61 @@
 
 "use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { getAddresses } from '@/lib/api';
-import { useUIStore } from '@/stores/useUIStore';
-import { useEffect } from 'react';
+import { useOrder as useOrderQuery } from "@/hooks/queries/use-orders";
+import { useCartStore } from "@/stores/useCartStore";
+import { useUIStore } from "@/stores/useUIStore";
 
-export const useAddresses = () => {
-    const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ['addresses'],
-        queryKey: ['addresses'],
-        queryFn: getAddresses,
-        enabled: !!localStorage.getItem('user'), // Only fetch if user is logged in
-    });
-
-    const setSelectedAddress = useUIStore(state => state.setSelectedAddress);
-    const selectedAddress = useUIStore(state => state.selectedAddress);
-
-    useEffect(() => {
-        if (data && !selectedAddress) {
-            // Logic to set the default selected address
-            const defaultAddress = data.find(a => a.is_default) || data[0];
-            if (defaultAddress) {
-                setSelectedAddress(defaultAddress);
-            }
-        }
-    }, [data, selectedAddress, setSelectedAddress]);
+export const useOrder = () => {
+    // Zustand store for client-side cart state
+    const { 
+        orders, 
+        guestCart,
+        addOrUpdateOrder,
+        updateOrderStatus,
+        increaseOrderItemQuantity,
+        decreaseOrderItemQuantity,
+        removeUnsubmittedOrder,
+        addToGuestCart,
+        clearGuestCart,
+        increaseGuestItemQuantity,
+        decreaseGuestItemQuantity,
+        removeGuestItem,
+        clearUserOrders 
+    } = useCartStore();
     
-
-    return { 
-        addresses: data ?? [], 
-        isAddressesLoading: isLoading, 
-        isError, 
-        refetchAddresses: refetch,
+    // Zustand store for general UI state
+    const { 
+        viewedRestaurant, 
+        setViewedRestaurant,
         selectedAddress,
         setSelectedAddress
+    } = useUIStore();
+
+    // Custom hook wrapping TanStack Query for server-side order data
+    // This is just an example of how you might use it.
+    // The actual useQuery calls are now in the components themselves or in dedicated query hooks.
+    // For this refactoring, we will use the Zustand stores primarily.
+    
+    return {
+        // From useCartStore
+        orders,
+        guestCart,
+        addOrUpdateOrder,
+        updateOrderStatus,
+        increaseOrderItemQuantity,
+        decreaseOrderItemQuantity,
+        removeUnsubmittedOrder,
+        addToGuestCart,
+        clearGuestCart,
+        increaseGuestItemQuantity,
+        decreaseGuestItemQuantity,
+        removeGuestItem,
+        clearUserOrders,
+
+        // From useUIStore
+        viewedRestaurant,
+        setViewedRestaurant,
+        selectedAddress,
+        setSelectedAddress,
     };
 };

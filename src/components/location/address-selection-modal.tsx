@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useOrder } from "@/hooks/use-order";
+import { useUIStore } from "@/stores/useUIStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import usePlacesAutocomplete, {
   getGeocode,
   getLatLng,
 } from "use-places-autocomplete";
+import { useAddresses } from "@/hooks/use-addresses";
 
 const libraries: ("places")[] = ['places'];
 
@@ -102,7 +103,8 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
 
 
 const AddressSelectionContent = ({ isOpen, onClose }: AddressSelectionModalProps) => {
-    const { addresses, setSelectedAddress, isAddressesLoading, refetchAddresses } = useOrder();
+    const { addresses, isAddressesLoading, refetchAddresses } = useAddresses();
+    const { setSelectedAddress } = useUIStore();
     const { toast } = useToast();
 
     const [isAddingCurrentLocation, setIsAddingCurrentLocation] = useState(false);
@@ -308,17 +310,19 @@ export default function AddressSelectionModalWrapper(props: AddressSelectionModa
         return <AddressSelectionContent {...props} />;
     }
 
-    if (!isLoaded) return (
-        <Dialog open={props.isOpen} onOpenChange={props.onClose}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Loading Address Selector</DialogTitle>
-                    <DialogDescription>Please wait a moment...</DialogDescription>
-                </DialogHeader>
-                <Skeleton className="h-96 w-full" />
-            </DialogContent>
-        </Dialog>
-    );
+    if (!isLoaded && props.isOpen) {
+        return (
+            <Dialog open={props.isOpen} onOpenChange={props.onClose}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Loading Address Selector</DialogTitle>
+                        <DialogDescription>Please wait a moment...</DialogDescription>
+                    </DialogHeader>
+                    <Skeleton className="h-96 w-full" />
+                </DialogContent>
+            </Dialog>
+        );
+    }
 
     return <AddressSelectionContent {...props} />;
 }

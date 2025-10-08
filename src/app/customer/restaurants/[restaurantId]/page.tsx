@@ -14,7 +14,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import Image from "next/image";
-import { useOrder } from "@/hooks/use-order";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter } from "next/navigation";
@@ -32,16 +31,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import CheckoutModal from "@/components/checkout/checkout-modal";
 import { cn } from "@/lib/utils";
+import { useCartStore } from "@/stores/useCartStore";
+import { useUIStore } from "@/stores/useUIStore";
 
 export default function RestaurantMenuPage() {
-	const {
-		addOrUpdateOrder,
-		guestCart,
-		addToGuestCart,
-		clearGuestCart,
-		orders,
-		viewedRestaurant,
-	} = useOrder();
+	const { addOrUpdateOrder, addToGuestCart, clearGuestCart, orders } = useCartStore();
+    const { viewedRestaurant } = useUIStore();
 	const { toast } = useToast();
 	const params = useParams();
 	const router = useRouter();
