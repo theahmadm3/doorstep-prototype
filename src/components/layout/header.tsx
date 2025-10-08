@@ -16,6 +16,8 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
@@ -98,14 +100,18 @@ export default function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="pr-0">
-            <Link
-              href="/"
-              className="flex items-center space-x-2 mb-6"
-              onClick={() => setMenuOpen(false)}
-            >
-              <Utensils className="h-6 w-6 text-primary" />
-              <span className="font-bold font-headline">Doorstep</span>
-            </Link>
+            <SheetHeader className="text-left">
+              <SheetTitle>
+                <Link
+                  href="/"
+                  className="flex items-center space-x-2 mb-6"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Utensils className="h-6 w-6 text-primary" />
+                  <span className="font-bold font-headline">Doorstep</span>
+                </Link>
+              </SheetTitle>
+            </SheetHeader>
             <div className="flex flex-col space-y-3">
               {navLinks.map((link) => (
                 <Link
