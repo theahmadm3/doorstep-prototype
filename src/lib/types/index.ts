@@ -1,10 +1,69 @@
 
+import * as z from 'zod';
+
+// Generic
+export interface PaginatedResponse<T> {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: T[];
+}
+
+// User and Auth
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+export type LoginCredentials = z.infer<typeof loginSchema>;
+
+export interface LoginResponse {
+    access: string;
+    user: User;
+}
+
+export const signupSchema = z.object({
+  full_name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.string().email("Please enter a valid email."),
+  password: z.string().min(8, "Password must be at least 8 characters."),
+  confirmPassword: z.string(),
+}).refine(data => data.password === data.password, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+});
+
+export type SignupPayload = Omit<z.infer<typeof signupSchema>, 'confirmPassword'>;
+export type SignupCredentials = z.infer<typeof signupSchema>;
 
 
+export interface SignupResponse {
+    user: User;
+    token: string;
+}
 
 
+export interface User {
+    id: string;
+    full_name: string;
+    email: string;
+    phone_number: string | null;
+    role: "customer" | "restaurant" | "admin" | "rider";
+    status: "Pending" | "Active" | "Suspended";
+    avatar_url: string | null;
+    created_at: string;
+    login_count: number;
+}
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string;
+  phone_number: string | null;
+  role: string;
+  status: string;
+  is_active: boolean;
+}
 
+// Restaurant and Menu
 export interface Owner {
     id: string;
     full_name: string;
@@ -41,10 +100,10 @@ export interface MenuItem {
     restaurant: string;
     name: string;
     description: string | null;
-    price: string; // Comes as a string from the API
+    price: string;
     image_url: string | null;
     is_available: boolean;
-    category?: string; // Adding optional category for frontend filtering
+    category?: string;
     created_at: string;
     updated_at: string;
 }
@@ -56,73 +115,6 @@ export interface MenuItemPayload {
     is_available: boolean;
     image_url?: string;
 }
-
-
-export interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
-}
-
-import * as z from 'zod';
-
-// Login Schemas & Types
-export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-});
-export type LoginCredentials = z.infer<typeof loginSchema>;
-
-export interface LoginResponse {
-    access: string;
-    user: User;
-}
-
-// Signup Schemas & Types
-export const signupSchema = z.object({
-  full_name: z.string().min(2, "Name must be at least 2 characters."),
-  email: z.string().email("Please enter a valid email."),
-  password: z.string().min(8, "Password must be at least 8 characters."),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.password, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-});
-
-export type SignupPayload = Omit<z.infer<typeof signupSchema>, 'confirmPassword'>;
-export type SignupCredentials = z.infer<typeof signupSchema>;
-
-
-export interface SignupResponse {
-    user: User;
-    token: string;
-}
-
-
-// User Type
-export interface User {
-    id: string;
-    full_name: string;
-    email: string;
-    phone_number: string | null;
-    role: "customer" | "restaurant" | "admin" | "rider";
-    status: "Pending" | "Active" | "Suspended";
-    avatar_url: string | null;
-    created_at: string;
-    login_count: number;
-}
-
-export interface AdminUser {
-  id: string;
-  email: string;
-  full_name: string;
-  phone_number: string | null;
-  role: string;
-  status: string;
-  is_active: boolean;
-}
-
 
 // Order Management Types
 export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way';
@@ -148,7 +140,6 @@ export interface GuestCart {
   items: OrderItem[];
 }
 
-// Order API Payload Types
 export interface OrderItemPayload {
   menu_item_id: string;
   quantity: number;
@@ -161,7 +152,6 @@ export interface OrderPayload {
   payment_reference: string;
 }
 
-// Customer Order Types from API
 export interface CustomerOrder {
     id: string;
     restaurant_name: string;
@@ -205,7 +195,6 @@ export interface OrderDetail {
     created_at: string;
 }
 
-// Vendor Order Type
 export interface VendorOrder {
     id: string;
     customer_name: string;
@@ -214,7 +203,6 @@ export interface VendorOrder {
     created_at: string;
 }
 
-// Admin Order Type
 export interface AdminOrder {
     id: string;
     customer_name: string;
@@ -244,13 +232,10 @@ export const riderSchema = z.object({
 
 export type RiderPayload = z.infer<typeof riderSchema>;
 
-
 // Profile Page Schemas
-
 export const profileSchema = z.object({
     full_name: z.string().min(2, "Full name must be at least 2 characters long."),
     phone_number: z.preprocess(
-        // Strip non-numeric characters
         (val) => (typeof val === 'string' ? val.replace(/\D/g, '') : val),
         z.string().regex(nigerianPhoneRegex, "Please enter a valid Nigerian phone number (e.g., 08012345678).")
     ),
@@ -283,18 +268,15 @@ export const addressSchema = z.object({
 });
 export type AddressFormData = z.infer<typeof addressSchema>;
 
-// This represents the data sent to the POST /addresses/ endpoint
 export interface AddressPostData extends Partial<AddressFormData> {
   is_default?: boolean;
 }
 
-// This represents a saved address object received from the API.
 export interface Address extends OrderDetailAddress {
   id: string;
   user: string;
   is_default: boolean;
 }
-
 
 // Analytics Types
 export interface TopSellingItem {
