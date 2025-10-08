@@ -21,7 +21,7 @@ import {
   SheetTrigger
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, ShoppingCart, Utensils, Plus, Minus, Trash2 } from "lucide-react";
+import { Menu, ShoppingCart, Utensils, Plus, Minus, Trash2, LogIn } from "lucide-react";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
 import CheckoutModal from "../checkout/checkout-modal";
@@ -124,6 +124,14 @@ export default function Header() {
                 </Link>
               ))}
             </div>
+             <div className="absolute bottom-4 left-4 right-4 flex flex-col space-y-2">
+                <Button asChild>
+                  <Link href="/signup">Sign Up</Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link href="/login">Login</Link>
+                </Button>
+            </div>
           </SheetContent>
         </Sheet>
         <Link href="/" className="flex items-center space-x-2 md:hidden">
@@ -197,6 +205,12 @@ export default function Header() {
                 </DialogFooter>
             </DialogContent>
           </Dialog>
+           <Button asChild variant="ghost" size="icon" className="sm:hidden">
+              <Link href="/login">
+                <LogIn className="h-5 w-5" />
+                <span className="sr-only">Login</span>
+              </Link>
+            </Button>
             <div className="hidden sm:flex items-center gap-2">
                 <Button variant="ghost" asChild>
                 <Link href="/login">Login</Link>
