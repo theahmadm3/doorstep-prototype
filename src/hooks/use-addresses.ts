@@ -9,20 +9,20 @@ import { useEffect } from 'react';
 export const useAddresses = () => {
     const { data, isLoading, isError, refetch } = useQuery({
         queryKey: ['addresses'],
-        queryKey: ['addresses'],
         queryFn: getAddresses,
-        enabled: !!localStorage.getItem('user'), // Only fetch if user is logged in
+        enabled: typeof window !== 'undefined' && !!localStorage.getItem('user'),
     });
 
     const setSelectedAddress = useUIStore(state => state.setSelectedAddress);
     const selectedAddress = useUIStore(state => state.selectedAddress);
 
     useEffect(() => {
-        if (data && !selectedAddress) {
-            // Logic to set the default selected address
+        if (data && (!selectedAddress || !data.some(a => a.id === selectedAddress.id))) {
             const defaultAddress = data.find(a => a.is_default) || data[0];
             if (defaultAddress) {
                 setSelectedAddress(defaultAddress);
+            } else {
+                setSelectedAddress(null);
             }
         }
     }, [data, selectedAddress, setSelectedAddress]);

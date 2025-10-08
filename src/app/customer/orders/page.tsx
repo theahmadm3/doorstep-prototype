@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { getCustomerOrders, confirmOrderDelivery, getOrderDetails } from "@/lib/api";
 import type { CustomerOrder, OrderDetail, Order } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,12 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import CustomerOrderTimeline from "@/components/dashboard/customer-order-timeline";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { useOrder } from "@/hooks/use-order";
+import { useCartStore } from "@/stores/useCartStore";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import CheckoutModal from "@/components/checkout/checkout-modal";
 import { Badge } from "@/components/ui/badge";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder, isLoading, onToggle, orderDetails, loadingDetailsId }) => {
     if (isLoading) {
@@ -81,45 +82,41 @@ const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder
 
 export default function CustomerOrdersPage() {
     const { toast } = useToast();
-    const { orders: unplacedOrders, removeUnsubmittedOrder } = useOrder();
-    const [fetchedOrders, setFetchedOrders] = useState<CustomerOrder[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isFetching, setIsFetching] = useState(false);
-    const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
+    const { orders: unplacedOrders, removeUnsubmittedOrder } = useCartStore();
     const [orderDetails, setOrderDetails] = useState<Record<string, OrderDetail>>({});
     const [loadingDetailsId, setLoadingDetailsId] = useState<string | null>(null);
+    const queryClient = useQueryClient();
     
     const [isCheckoutOpen, setCheckoutOpen] = useState(false);
     const [orderForCheckout, setOrderForCheckout] = useState<Order | null>(null);
 
-     const fetchOrders = useCallback(async () => {
-        if (isFetching) return;
-        setIsFetching(true);
-        try {
-            const data = await getCustomerOrders();
-            setFetchedOrders(data);
-        } catch (error) {
-             toast({
-                title: "Error fetching orders",
-                description: "Could not retrieve your order history. Please try again later.",
-                variant: "destructive"
-             });
-        } finally {
-            setIsFetching(false);
-            if (isLoading) setIsLoading(false);
-        }
-    }, [isFetching, toast, isLoading]);
+    const { data: fetchedOrders = [], isLoading: isLoadingOrders } = useQuery({
+        queryKey: ['customerOrders'],
+        queryFn: getCustomerOrders,
+        refetchInterval: 30000, // Poll every 30 seconds
+    });
 
-    useEffect(() => {
-        fetchOrders(); // Initial fetch
-        const interval = setInterval(fetchOrders, 60000); // Poll every 60 seconds
-        return () => clearInterval(interval); // Cleanup on unmount
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const { mutate: confirmDeliveryMutation, isPending: isConfirming } = useMutation({
+        mutationFn: confirmOrderDelivery,
+        onSuccess: (data, orderId) => {
+            queryClient.invalidateQueries({ queryKey: ['customerOrders'] });
+            toast({
+                title: "Delivery Confirmed",
+                description: "Thank you for confirming your delivery!",
+            });
+        },
+        onError: (error) => {
+             toast({
+                title: "Confirmation Failed",
+                description: error.message,
+                variant: "destructive",
+            });
+        }
+    });
 
     const handleToggleAccordion = async (orderId: string | undefined) => {
         if (!orderId || orderDetails[orderId]) {
-            return; // Don't fetch if it's already loaded or if closing
+            return;
         }
         setLoadingDetailsId(orderId);
         try {
@@ -137,29 +134,7 @@ export default function CustomerOrdersPage() {
     };
 
     const handleConfirmDelivery = async (orderId: string) => {
-        setConfirmingOrderId(orderId);
-        try {
-            await confirmOrderDelivery(orderId);
-            
-            setFetchedOrders(prevOrders =>
-                prevOrders.map(o =>
-                    o.id === orderId ? { ...o, status: 'Delivered' } : o
-                )
-            );
-
-            toast({
-                title: "Delivery Confirmed",
-                description: "Thank you for confirming your delivery!",
-            });
-        } catch (error) {
-            toast({
-                title: "Confirmation Failed",
-                description: "Could not confirm delivery. Please try again.",
-                variant: "destructive",
-            });
-        } finally {
-            setConfirmingOrderId(null);
-        }
+        confirmDeliveryMutation(orderId);
     };
 
     const handleCompleteOrder = (order: Order) => {
@@ -234,9 +209,9 @@ export default function CustomerOrdersPage() {
                 title="Active Orders"
                 orders={activeOrders}
                 onConfirmDelivery={handleConfirmDelivery}
-                isConfirming={confirmingOrderId}
+                isConfirming={isConfirming ? (activeOrders.find(o => o.id === (isConfirming as any)))?.id : undefined}
                 isPastOrder={false}
-                isLoading={isLoading}
+                isLoading={isLoadingOrders}
                 onToggle={handleToggleAccordion}
                 orderDetails={orderDetails}
                 loadingDetailsId={loadingDetailsId}
@@ -246,7 +221,7 @@ export default function CustomerOrdersPage() {
                 title="Past Orders"
                 orders={pastOrders}
                 isPastOrder={true}
-                isLoading={isLoading}
+                isLoading={isLoadingOrders}
                 onToggle={handleToggleAccordion}
                 orderDetails={orderDetails}
                 loadingDetailsId={loadingDetailsId}

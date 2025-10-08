@@ -17,13 +17,17 @@ import {
 import { LogOut } from "lucide-react";
 import { Button } from "../ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useOrder } from "@/hooks/use-order";
+import { useCartStore } from "@/stores/useCartStore";
+import { useUIStore } from "@/stores/useUIStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function LogoutButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-  const { clearUserSpecificData } = useOrder();
+  const clearCartState = useCartStore.getState().clearUserOrders;
+  const clearUIState = useUIStore.getState().clearUIState;
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     try {
@@ -38,7 +42,9 @@ export default function LogoutButton() {
       });
     } finally {
         // Clear all application state and local storage before redirecting.
-        clearUserSpecificData();
+        clearCartState();
+        clearUIState();
+        queryClient.clear(); // Clears all TanStack Query cache
         localStorage.clear();
         router.push("/login");
     }

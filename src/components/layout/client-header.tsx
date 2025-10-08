@@ -1,9 +1,12 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SidebarTrigger } from "../ui/sidebar";
-import { useOrder } from "@/hooks/use-order";
+import { useCartStore } from "@/stores/useCartStore";
+import { useUIStore } from "@/stores/useUIStore";
+import { useAddresses } from "@/hooks/use-addresses";
 import { Package, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -11,7 +14,10 @@ import { User } from "@/lib/types";
 import AddressSelectionModal from "../location/address-selection-modal";
 
 export default function ClientHeader() {
-	const { orders, selectedAddress } = useOrder();
+	const orders = useCartStore(state => state.orders);
+    const selectedAddress = useUIStore(state => state.selectedAddress);
+    const { addresses, isAddressesLoading } = useAddresses();
+
 	const [user, setUser] = useState<User | null>(null);
 	const [isAddressModalOpen, setAddressModalOpen] = useState(false);
 
@@ -43,11 +49,12 @@ export default function ClientHeader() {
 						variant="outline"
 						className=""
 						onClick={() => setAddressModalOpen(true)}
+                        disabled={isAddressesLoading}
 					>
 						<MapPin className="mr-2 h-4 w-4" />
-						{selectedAddress
+						{isAddressesLoading ? "Loading..." : selectedAddress
 							? selectedAddress.address_nickname ||
-							  selectedAddress.street_address
+							  selectedAddress.street_address?.split(',')[0]
 							: "Select Address"}
 					</Button>
 				</div>

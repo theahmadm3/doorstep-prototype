@@ -6,14 +6,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { Utensils } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
-import { useOrder } from "@/hooks/use-order";
+import { useUIStore } from "@/stores/useUIStore";
 
 interface CustomerDashboardClientProps {
     restaurants: Restaurant[];
 }
 
 export default function CustomerDashboardClient({ restaurants }: CustomerDashboardClientProps) {
-    const { setViewedRestaurant } = useOrder();
+    const { setViewedRestaurant } = useUIStore();
 
     return (
         <div className="space-y-12">
