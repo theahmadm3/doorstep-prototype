@@ -30,13 +30,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Minus, Plus, Edit } from "lucide-react";
+import { Minus, Plus, Edit, Info } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import AddressSelectionModal from "../location/address-selection-modal";
 import { haversineDistance } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -75,10 +76,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
 
 
   // Determine the active order and cart based on whether an initialOrder (logged-in user) is passed
-  const order = useMemo(() => {
-    return initialOrder ? orders.find(o => o.id === initialOrder.id) : null
-  }, [orders, initialOrder]);
-
+  const order = initialOrder ? orders.find(o => o.id === initialOrder.id) : null;
   const guestCart = initialOrder ? null : globalGuestCart;
 
   useEffect(() => {
@@ -397,8 +395,19 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         <span>₦{subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                        <span>Service charge</span>
-                        <span>₦{taxes.toFixed(2)}</span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="flex items-center gap-1 cursor-help">
+                                  Service charge <Info className="h-3 w-3 text-muted-foreground" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>This is what we charge for maintaining this system</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <span>₦{taxes.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <div>
@@ -420,7 +429,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                     </CardContent>
                 </Card>
                 <CardFooter className="p-1 mt-auto">
-                    <Button className="w-full" onClick={handlePayment} disabled={isPlacingOrder || !viewedRestaurant || !selectedAddress}>
+                    <Button className="w-full" onClick={handlePayment} disabled={isPlacingOrder || !viewedRestaurant || !selectedAddress || deliveryFee > 2500}>
                         {isPlacingOrder ? "Initializing Payment..." : `Proceed to Pay ₦${total.toFixed(2)}`}
                     </Button>
                 </CardFooter>
@@ -429,3 +438,5 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     </Dialog>
   );
 }
+
+    
