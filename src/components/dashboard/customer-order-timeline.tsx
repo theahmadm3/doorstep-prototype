@@ -59,7 +59,7 @@ export default function CustomerOrderTimeline({ order, details, isLoadingDetails
                                 </CardHeader>
                                 <CardContent>
                                     <p className="text-sm text-muted-foreground">{details.restaurant.description}</p>
-                                    <p className="text-sm mt-2"><strong>Address:</strong> {details.restaurant.address}</p>
+                                    <p className="text-sm mt-2"><strong>Address:</strong> {details.restaurant.address?.street_name || 'N/A'}</p>
                                 </CardContent>
                             </Card>
                             
