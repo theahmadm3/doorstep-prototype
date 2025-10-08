@@ -48,7 +48,7 @@ interface CheckoutModalProps {
 export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: CheckoutModalProps) {
   const { 
     orders,
-    guestCart,
+    guestCart: globalGuestCart,
     clearGuestCart, 
     updateOrderStatus, 
     increaseGuestItemQuantity, 
@@ -74,11 +74,12 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const [showHighFeeModal, setShowHighFeeModal] = useState(false);
 
 
-  // Find the live order from the context using the initial order's ID
-  const order = useMemo(() => 
-    initialOrder ? orders.find(o => o.id === initialOrder.id) : null,
-    [orders, initialOrder]
-  );
+  // Determine the active order and cart based on whether an initialOrder (logged-in user) is passed
+  const order = useMemo(() => {
+    return initialOrder ? orders.find(o => o.id === initialOrder.id) : null
+  }, [orders, initialOrder]);
+
+  const guestCart = initialOrder ? null : globalGuestCart;
 
   useEffect(() => {
     setIsClient(true);
@@ -114,7 +115,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   }, [viewedRestaurant, selectedAddress]);
   
   const checkoutItems = useMemo(() => {
-    return user ? order?.items || [] : guestCart?.items || [];
+    return user && order ? order.items : guestCart?.items || [];
   }, [order, guestCart, user]);
 
   const { subtotal, taxes, total, totalInKobo } = useMemo(() => {
@@ -401,12 +402,12 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         <div className="flex justify-between items-center">
                             <div>
                                 <span>Delivery Fee</span>
-                                {distance !== null && (
+                                {distance !== null && deliveryFee <= 2500 && (
                                     <p className="text-xs text-muted-foreground">({distance} km)</p>
                                 )}
                             </div>
-                            <span>
-                                {distance === null ? 'Select address' : `₦${deliveryFee.toFixed(2)}`}
+                             <span>
+                                {distance === null ? 'Select address' : deliveryFee > 2500 ? 'Distance too far' : `₦${deliveryFee.toFixed(2)}`}
                             </span>
                         </div>
                         <Separator className="my-2" />

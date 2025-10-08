@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
-import { Utensils } from "lucide-react";
+import { Utensils, MapPin } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import { useUIStore } from "@/stores/useUIStore";
 
@@ -38,10 +38,16 @@ export default function CustomerDashboardClient({ restaurants }: CustomerDashboa
                     </CardHeader>
                     <CardContent className="pt-6 flex-grow flex flex-col">
                         <CardTitle className="font-headline text-xl">{restaurant.name}</CardTitle>
-                        <CardDescription className="mt-2 flex items-center gap-2">
-                            <Utensils className="h-4 w-4" />
-                            View Menu
+                         <CardDescription className="mt-2 flex items-start gap-2 text-sm">
+                            <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
+                            <span>{restaurant.address?.street_name || 'Address not available'}</span>
                         </CardDescription>
+                        <div className="mt-auto pt-4">
+                            <CardDescription className="flex items-center gap-2">
+                                <Utensils className="h-4 w-4" />
+                                View Menu
+                            </CardDescription>
+                        </div>
                     </CardContent>
                     </Card>
                 </Link>
