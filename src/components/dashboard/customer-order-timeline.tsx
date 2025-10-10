@@ -44,7 +44,7 @@ export default function CustomerOrderTimeline({ order, details, isLoadingDetails
                             <Card>
                                 <CardHeader className="flex flex-row items-center gap-4">
                                     <Image 
-                                        src={details.restaurant.image_url || "https://placehold.co/64x64.png"}
+                                        src={(details.restaurant.image_url && details.restaurant.image_url.startsWith('http')) ? details.restaurant.image_url : "https://placehold.co/64x64.png"}
                                         alt={details.restaurant.name}
                                         width={64}
                                         height={64}
