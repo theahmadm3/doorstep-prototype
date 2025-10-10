@@ -250,6 +250,11 @@ function VendorProfilePage() {
         );
     }
 
+    const profileImageUrl =
+        profile.image_url && profile.image_url.startsWith("http")
+            ? profile.image_url
+            : "https://placehold.co/200x200.png";
+
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Your Restaurant Profile</h1>
@@ -267,7 +272,7 @@ function VendorProfilePage() {
                         <CardContent className="space-y-6">
                             <div className="flex flex-col md:flex-row gap-6">
                                 <Image
-                                    src={profile.image_url || "https://placehold.co/200x200.png"}
+                                    src={profileImageUrl}
                                     alt={profile.name}
                                     width={200}
                                     height={200}
@@ -426,3 +431,5 @@ export default function VendorProfilePageWrapper() {
 
     return <VendorProfilePage />;
 }
+
+    

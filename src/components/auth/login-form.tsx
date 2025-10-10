@@ -69,7 +69,7 @@ export default function LoginForm() {
         case 'restaurant':
           router.push('/vendor/dashboard');
           break;
-        case 'rider':
+        case 'driver':
           router.push('/rider/dashboard');
           break;
         case 'customer':
@@ -77,6 +77,9 @@ export default function LoginForm() {
           break;
         default:
           router.push('/login');
+          toast({
+            title: "User Type not found",
+          });
           break;
       }
 
