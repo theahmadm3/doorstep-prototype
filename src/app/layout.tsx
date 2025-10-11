@@ -15,7 +15,10 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: 'Doorstep',
   description: 'Your favorite food, delivered.',
-  icons: null,
+  manifest: '/manifest.json',
+  icons: {
+    apple: '/icons/icon-192x192.png'
+  }
 };
 
 export default function RootLayout({
