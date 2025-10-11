@@ -23,7 +23,6 @@ type PWASupport = 'native' | 'ios' | 'unsupported';
 
 export const usePWAInstall = () => {
   const [isIOS, setIsIOS] = useState(false);
-  const [canInstall, setCanInstall] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIOSModal, setShowIOSModal] = useState(false);
@@ -42,7 +41,6 @@ export const usePWAInstall = () => {
     const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
       event.preventDefault();
       setInstallPromptEvent(event);
-      setCanInstall(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -63,7 +61,6 @@ export const usePWAInstall = () => {
         console.log('User dismissed the PWA installation');
       }
       setInstallPromptEvent(null);
-      setCanInstall(false);
     } else if (isIOS) {
       // For iOS, show a helpful modal
       setShowIOSModal(true);

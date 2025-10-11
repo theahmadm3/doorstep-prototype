@@ -107,7 +107,7 @@ export default function AdminLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
-            <div className="md:hidden mb-4 px-2">
+            <div className="mb-4 px-2">
               <InstallPWAButton />
             </div>
             <div className="flex items-center gap-3 p-2 rounded-md bg-muted">

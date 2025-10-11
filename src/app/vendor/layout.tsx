@@ -126,7 +126,7 @@ export default function VendorLayout({
 						</SidebarMenu>
 					</SidebarContent>
 					<SidebarFooter className="mt-auto">
-						<div className="md:hidden mb-4 px-2">
+						<div className="mb-4 px-2">
 							<InstallPWAButton />
 						</div>
 						<div className="flex flex-col items-center gap-3 p-2 rounded-md bg-muted">
