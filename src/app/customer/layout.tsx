@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -67,7 +68,7 @@ export default function CustomerLayout({
 			/>
 			
 			<div className="flex min-h-screen w-full">
-				<Sidebar className="flex flex-col">
+				<Sidebar className="hidden md:flex md:flex-col">
 					<SidebarHeader className="p-4 border-b">
 						<div className="flex items-center gap-2">
 							<Utensils className="w-8 h-8 text-primary" />
@@ -140,12 +141,12 @@ export default function CustomerLayout({
 					</SidebarFooter>
 				</Sidebar>
 				
-				<SidebarInset className="flex-1 flex flex-col">
+				<div className="flex flex-1 flex-col">
 					<ClientHeader />
-					<main className="flex-1 overflow-y-auto p-6">
+					<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
 						{children}
 					</main>
-				</SidebarInset>
+				</div>
 			</div>
 		</SidebarProvider>
 	);
