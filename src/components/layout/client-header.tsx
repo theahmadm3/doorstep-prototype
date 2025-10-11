@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -14,9 +13,9 @@ import { User } from "@/lib/types";
 import AddressSelectionModal from "../location/address-selection-modal";
 
 export default function ClientHeader() {
-	const orders = useCartStore(state => state.orders);
-    const selectedAddress = useUIStore(state => state.selectedAddress);
-    const { isAddressesLoading } = useAddresses();
+	const orders = useCartStore((state) => state.orders);
+	const selectedAddress = useUIStore((state) => state.selectedAddress);
+	const { isAddressesLoading } = useAddresses();
 
 	const [user, setUser] = useState<User | null>(null);
 	const [isAddressModalOpen, setAddressModalOpen] = useState(false);
@@ -41,12 +40,9 @@ export default function ClientHeader() {
 				isOpen={isAddressModalOpen}
 				onClose={() => setAddressModalOpen(false)}
 			/>
-			<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10">
+			<div className="p-4 inline-flex justify-between items-center gap-4 bg-background shadow-lg sticky top-0 z-10">
 				<SidebarTrigger />
-				<h1 className="text-lg font-semibold">
-					{isClient && firstName ? `Hello, ${firstName}` : "Customer Dashboard"}
-				</h1>
-				<div className="ml-auto flex items-center gap-2">
+				<div className="flex items-center gap-2">
 					{isClient ? (
 						<Button
 							variant="outline"
@@ -55,9 +51,11 @@ export default function ClientHeader() {
 							disabled={isAddressesLoading}
 						>
 							<MapPin className="mr-2 h-4 w-4" />
-							{isAddressesLoading ? "Loading..." : selectedAddress
+							{isAddressesLoading
+								? "Loading..."
+								: selectedAddress
 								? selectedAddress.address_nickname ||
-								  selectedAddress.street_address?.split(',')[0]
+								  selectedAddress.street_address?.split(",")[0]
 								: "Select Address"}
 						</Button>
 					) : (
