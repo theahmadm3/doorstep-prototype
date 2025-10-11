@@ -40,12 +40,9 @@ export default function ClientHeader() {
 				isOpen={isAddressModalOpen}
 				onClose={() => setAddressModalOpen(false)}
 			/>
-			<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10">
+			<div className="p-4 inline-flex justify-between items-center gap-4 bg-background border-b sticky top-0 z-10">
 				<SidebarTrigger />
-				{/* <h1 className="text-lg font-semibold">
-					{isClient && firstName ? `Hello, ${firstName}` : "Customer Dashboard"}
-				</h1> */}
-				<div className="ml-auto flex items-center gap-2">
+				<div className="flex items-center gap-2">
 					{isClient ? (
 						<Button
 							variant="outline"
@@ -58,7 +55,7 @@ export default function ClientHeader() {
 								? "Loading..."
 								: selectedAddress
 								? selectedAddress.address_nickname ||
-								  selectedAddress.street_address?.split(",")[0].slice(0, 10)
+								  selectedAddress.street_address?.split(",")[0]
 								: "Select Address"}
 						</Button>
 					) : (
