@@ -14,9 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import {
   Home,
-  LogOut,
   Package,
-  ShoppingCart,
   User,
   Utensils
 } from 'lucide-react';
@@ -26,9 +24,9 @@ import ClientHeader from '@/components/layout/client-header';
 import LogoutButton from '@/components/auth/logout-button';
 import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
-import { useOrder } from '@/hooks/use-order';
 import AddressSelectionModal from '@/components/location/address-selection-modal';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAddresses } from '@/hooks/use-addresses';
 
 export default function CustomerLayout({
   children,
@@ -36,7 +34,7 @@ export default function CustomerLayout({
   children: React.ReactNode;
 }) {
   const [user, setUser] = useState<UserType | null>(null);
-  const { addresses, isAddressesLoading } = useOrder();
+  const { addresses, isAddressesLoading } = useAddresses();
   const [isAddressModalRequired, setAddressModalRequired] = useState(false);
   const [isClient, setIsClient] = useState(false);
 

@@ -38,6 +38,7 @@
     "@radix-ui/react-toast": "^1.2.6",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@react-google-maps/api": "^2.19.3",
+    "@tanstack/react-query": "^5.51.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
@@ -51,6 +52,7 @@
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
+    "react-error-boundary": "^4.0.13",
     "react-hook-form": "^7.54.2",
     "react-paystack": "^5.0.0",
     "recharts": "^2.15.1",
@@ -58,9 +60,11 @@
     "tailwindcss-animate": "^1.0.7",
     "use-places-autocomplete": "^4.0.1",
     "uuid": "^9.0.1",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.51.11",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -72,4 +76,3 @@
     "typescript": "^5"
   }
 }
-

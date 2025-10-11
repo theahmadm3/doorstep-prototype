@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useOrder } from "@/hooks/use-order";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,11 +30,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Minus, Plus, Edit } from "lucide-react";
+import { Minus, Plus, Edit, Info } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import AddressSelectionModal from "../location/address-selection-modal";
 import { haversineDistance } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
+import { useCartStore } from "@/stores/useCartStore";
+import { useUIStore } from "@/stores/useUIStore";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -47,17 +50,17 @@ interface CheckoutModalProps {
 export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: CheckoutModalProps) {
   const { 
     orders,
-    guestCart,
+    guestCart: globalGuestCart,
     clearGuestCart, 
     updateOrderStatus, 
     increaseGuestItemQuantity, 
     decreaseGuestItemQuantity, 
     increaseOrderItemQuantity, 
     decreaseOrderItemQuantity, 
-    selectedAddress,
     removeUnsubmittedOrder,
-    viewedRestaurant,
-  } = useOrder();
+  } = useCartStore();
+  
+  const { selectedAddress, viewedRestaurant } = useUIStore();
   
   const router = useRouter();
   const { toast } = useToast();
@@ -73,11 +76,9 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const [showHighFeeModal, setShowHighFeeModal] = useState(false);
 
 
-  // Find the live order from the context using the initial order's ID
-  const order = useMemo(() => 
-    initialOrder ? orders.find(o => o.id === initialOrder.id) : null,
-    [orders, initialOrder]
-  );
+  // Determine the active order and cart based on whether an initialOrder (logged-in user) is passed
+  const order = initialOrder ? orders.find(o => o.id === initialOrder.id) : null;
+  const guestCart = initialOrder ? null : globalGuestCart;
 
   useEffect(() => {
     setIsClient(true);
@@ -102,7 +103,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
       if (dist <= 2) {
         fee = 500;
       } else {
-        fee = Math.ceil(dist) * 500;
+        const additionalDistance = dist - 2;
+        fee = 500 + additionalDistance * 300;
       }
       setDeliveryFee(fee);
 
@@ -113,7 +115,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   }, [viewedRestaurant, selectedAddress]);
   
   const checkoutItems = useMemo(() => {
-    return user ? order?.items || [] : guestCart?.items || [];
+    return user && order ? order.items : guestCart?.items || [];
   }, [order, guestCart, user]);
 
   const { subtotal, taxes, total, totalInKobo } = useMemo(() => {
@@ -311,8 +313,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
         isOpen={isAddressModalOpen}
         onClose={() => setAddressModalOpen(false)}
       />
-        <DialogContent className="max-w-4xl grid-cols-1 md:grid-cols-3 gap-8 p-0">
-            <div className="md:col-span-2 p-6">
+        <DialogContent className="max-w-4xl max-h-[90svh] grid grid-cols-1 md:grid-cols-3 gap-0 p-0">
+            <ScrollArea className="md:col-span-2 p-6">
                  <DialogHeader className="mb-6">
                     <DialogTitle className="text-2xl">Checkout</DialogTitle>
                 </DialogHeader>
@@ -355,7 +357,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         </div>
                     </CardContent>
                 </Card>
-            </div>
+            </ScrollArea>
             <div className="bg-muted/50 p-6 flex flex-col">
                 <Card className="bg-transparent border-0 shadow-none flex-grow">
                     <CardHeader className="px-1">
@@ -365,7 +367,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="px-1">
-                    <div className="max-h-60 overflow-y-auto space-y-4">
+                    <ScrollArea className="max-h-60 pr-4">
+                    <div className="space-y-4">
                     {checkoutItems.map(item => (
                         <div key={item.id} className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
@@ -387,6 +390,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         </div>
                     ))}
                     </div>
+                    </ScrollArea>
                     <Separator className="my-4" />
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -394,18 +398,29 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         <span>₦{subtotal.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
-                        <span>Service charge</span>
-                        <span>₦{taxes.toFixed(2)}</span>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="flex items-center gap-1 cursor-help">
+                                  Service charge <Info className="h-3 w-3 text-muted-foreground" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>This is what we charge for maintaining this system</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <span>₦{taxes.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <div>
                                 <span>Delivery Fee</span>
                                 {distance !== null && (
-                                    <p className="text-xs text-muted-foreground">({distance} km)</p>
+                                    <p className="text-xs text-muted-foreground">({distance.toFixed(1)} km)</p>
                                 )}
                             </div>
-                            <span>
-                                {distance === null ? 'Select address' : `₦${deliveryFee.toFixed(2)}`}
+                             <span>
+                                {distance === null ? 'Select address' : deliveryFee > 2500 ? 'Distance too far' : `₦${deliveryFee.toFixed(2)}`}
                             </span>
                         </div>
                         <Separator className="my-2" />
@@ -417,7 +432,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                     </CardContent>
                 </Card>
                 <CardFooter className="p-1 mt-auto">
-                    <Button className="w-full" onClick={handlePayment} disabled={isPlacingOrder || !viewedRestaurant || !selectedAddress}>
+                    <Button className="w-full" onClick={handlePayment} disabled={isPlacingOrder || !viewedRestaurant || !selectedAddress || deliveryFee > 2500}>
                         {isPlacingOrder ? "Initializing Payment..." : `Proceed to Pay ₦${total.toFixed(2)}`}
                     </Button>
                 </CardFooter>
@@ -426,5 +441,3 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     </Dialog>
   );
 }
-
-    

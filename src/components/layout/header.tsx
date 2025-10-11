@@ -16,18 +16,20 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Menu, ShoppingCart, Utensils, Plus, Minus, Trash2 } from "lucide-react";
-import { useOrder } from "@/hooks/use-order";
+import { Menu, ShoppingCart, Utensils, Plus, Minus, Trash2, LogIn } from "lucide-react";
 import Image from "next/image";
 import { Separator } from "../ui/separator";
 import CheckoutModal from "../checkout/checkout-modal";
+import { useCartStore } from "@/stores/useCartStore";
 
 export default function Header() {
   const [isMenuOpen, setMenuOpen] = useState(false);
-  const { guestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem } = useOrder();
+  const { guestCart, increaseGuestItemQuantity, decreaseGuestItemQuantity, removeGuestItem } = useCartStore();
   const [isClient, setIsClient] = useState(false);
   const [isCheckoutOpen, setCheckoutOpen] = useState(false);
 
@@ -98,14 +100,18 @@ export default function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="pr-0">
-            <Link
-              href="/"
-              className="flex items-center space-x-2 mb-6"
-              onClick={() => setMenuOpen(false)}
-            >
-              <Utensils className="h-6 w-6 text-primary" />
-              <span className="font-bold font-headline">Doorstep</span>
-            </Link>
+            <SheetHeader className="text-left">
+              <SheetTitle>
+                <Link
+                  href="/"
+                  className="flex items-center space-x-2 mb-6"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Utensils className="h-6 w-6 text-primary" />
+                  <span className="font-bold font-headline">Doorstep</span>
+                </Link>
+              </SheetTitle>
+            </SheetHeader>
             <div className="flex flex-col space-y-3">
               {navLinks.map((link) => (
                 <Link
@@ -117,6 +123,14 @@ export default function Header() {
                   {link.label}
                 </Link>
               ))}
+            </div>
+             <div className="absolute bottom-4 left-4 right-4 flex flex-col space-y-2">
+                <Button asChild>
+                  <Link href="/signup">Sign Up</Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                  <Link href="/login">Login</Link>
+                </Button>
             </div>
           </SheetContent>
         </Sheet>
@@ -191,6 +205,12 @@ export default function Header() {
                 </DialogFooter>
             </DialogContent>
           </Dialog>
+           <Button asChild variant="ghost" size="icon" className="sm:hidden">
+              <Link href="/login">
+                <LogIn className="h-5 w-5" />
+                <span className="sr-only">Login</span>
+              </Link>
+            </Button>
             <div className="hidden sm:flex items-center gap-2">
                 <Button variant="ghost" asChild>
                 <Link href="/login">Login</Link>

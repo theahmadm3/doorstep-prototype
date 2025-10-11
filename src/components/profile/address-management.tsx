@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useOrder } from "@/hooks/use-order";
+import { useAddresses } from "@/hooks/use-addresses";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addressSchema } from "@/lib/types";
@@ -34,19 +34,46 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "../ui/checkbox";
 import AddressSelectionModal from "../location/address-selection-modal";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function AddressManagement() {
-  const { addresses, isAddressesLoading, refetchAddresses } = useOrder();
+  const { addresses, isAddressesLoading, refetchAddresses } = useAddresses();
   const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [isAddModalOpen, setAddModalOpen] = useState(false);
 
   const { toast } = useToast();
-  
+  const queryClient = useQueryClient();
+
   const form = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
     mode: "onChange",
+  });
+
+  const { mutate: updateAddressMutation, isPending: isUpdating } = useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: Partial<AddressPostData> }) => updateAddress(id, payload),
+      onSuccess: () => {
+          toast({ title: "Address Updated", description: "Your address has been successfully updated." });
+          queryClient.invalidateQueries({ queryKey: ['addresses'] });
+          setEditModalOpen(false);
+          setAddressToEdit(null);
+      },
+      onError: (error) => {
+          toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
+  });
+
+  const { mutate: deleteAddressMutation, isPending: isDeleting } = useMutation({
+      mutationFn: (id: string) => deleteAddress(id),
+      onSuccess: () => {
+          toast({ title: "Address Deleted", description: "The selected address has been removed." });
+          queryClient.invalidateQueries({ queryKey: ['addresses'] });
+          setAddressToDelete(null);
+      },
+      onError: (error) => {
+          toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
   });
 
   useEffect(() => {
@@ -74,40 +101,12 @@ export default function AddressManagement() {
 
   const handleDeleteConfirm = async () => {
      if (!addressToDelete) return;
-     try {
-        await deleteAddress(addressToDelete.id);
-        toast({ title: "Address Deleted", description: "The selected address has been removed." });
-        await refetchAddresses();
-     } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to delete address.";
-        toast({
-            title: "Error",
-            description: message,
-            variant: "destructive",
-        });
-     } finally {
-         setAddressToDelete(null);
-     }
+     deleteAddressMutation(addressToDelete.id);
   };
 
   const handleSaveAddress = async (data: AddressFormData) => {
     if (!addressToEdit) return;
-    try {
-        const payload: Partial<AddressPostData> = { ...data };
-        await updateAddress(addressToEdit.id, payload);
-        toast({ title: "Address Updated", description: "Your address has been successfully updated." });
-        await refetchAddresses();
-    } catch (error) {
-       const message = error instanceof Error ? error.message : "Failed to save address.";
-       toast({
-          title: "Error",
-          description: message,
-          variant: "destructive",
-       });
-    } finally {
-        setEditModalOpen(false);
-        setAddressToEdit(null);
-    }
+    updateAddressMutation({ id: addressToEdit.id, payload: data });
   };
   
   return (
@@ -123,7 +122,7 @@ export default function AddressManagement() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteConfirm}>Delete</AlertDialogAction>
+                <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting}>{isDeleting ? "Deleting..." : "Delete"}</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -208,8 +207,8 @@ export default function AddressManagement() {
                 </Form>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setEditModalOpen(false)}>Cancel</Button>
-                    <Button type="submit" form="address-form" disabled={form.formState.isSubmitting}>
-                        {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+                    <Button type="submit" form="address-form" disabled={isUpdating}>
+                        {isUpdating ? 'Saving...' : 'Save Changes'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

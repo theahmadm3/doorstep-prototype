@@ -7,7 +7,6 @@ import type { MenuItem, User } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
-import { useOrder } from "@/hooks/use-order";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter } from "next/navigation";
@@ -26,9 +25,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { useCartStore } from "@/stores/useCartStore";
 
 export default function RestaurantMenuPage() {
-  const { addOrUpdateOrder, guestCart, addToGuestCart, clearGuestCart } = useOrder();
+  const { addToGuestCart, clearGuestCart } = useCartStore();
   const { toast } = useToast();
   const params = useParams();
   const router = useRouter();
