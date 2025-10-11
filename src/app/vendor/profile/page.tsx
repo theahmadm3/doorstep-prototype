@@ -259,15 +259,15 @@ function VendorProfilePage() {
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Your Restaurant Profile</h1>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
+                <div className="lg:col-span-3 xl:col-span-2 space-y-8">
                     {/* Restaurant Info Card */}
                     <Card>
-                        <CardHeader className="flex flex-row justify-between items-start">
+                        <CardHeader className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                             <div>
                                 <CardTitle>Restaurant Information</CardTitle>
                                 <CardDescription>Your restaurant's public details.</CardDescription>
                             </div>
-                            <Button variant="outline" size="sm" onClick={openInfoModal}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                            <Button variant="outline" size="sm" onClick={openInfoModal} className="w-full sm:w-auto"><Edit className="mr-2 h-4 w-4" /> Edit</Button>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex flex-col md:flex-row gap-6">
@@ -276,7 +276,7 @@ function VendorProfilePage() {
                                     alt={profile.name}
                                     width={200}
                                     height={200}
-                                    className="rounded-lg object-cover bg-muted"
+                                    className="rounded-lg object-cover bg-muted mx-auto md:mx-0"
                                 />
                                 <div className="flex-1 space-y-4">
                                     <h2 className="text-2xl font-bold">{profile.name}</h2>
@@ -295,12 +295,12 @@ function VendorProfilePage() {
 
                     {/* Address Card */}
                      <Card>
-                        <CardHeader className="flex flex-row justify-between items-start">
+                        <CardHeader className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                            <div>
                                 <CardTitle>Address</CardTitle>
                                 <CardDescription>Your restaurant's location.</CardDescription>
                             </div>
-                            <Button variant="outline" size="sm" onClick={openAddressModal}>
+                            <Button variant="outline" size="sm" onClick={openAddressModal} className="w-full sm:w-auto">
                                 {profile.address ? (
                                     <><Edit className="mr-2 h-4 w-4" /> Edit</>
                                 ) : (
@@ -317,7 +317,7 @@ function VendorProfilePage() {
                 </div>
 
                 {/* Owner Info Card */}
-                <div className="space-y-8">
+                <div className="lg:col-span-3 xl:col-span-1 space-y-8">
                     <Card>
                          <CardHeader>
                              <CardTitle>Owner Information</CardTitle>
@@ -431,5 +431,3 @@ export default function VendorProfilePageWrapper() {
 
     return <VendorProfilePage />;
 }
-
-    

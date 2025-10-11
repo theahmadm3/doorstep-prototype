@@ -38,6 +38,7 @@ import { Skeleton } from "../ui/skeleton";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -312,8 +313,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
         isOpen={isAddressModalOpen}
         onClose={() => setAddressModalOpen(false)}
       />
-        <DialogContent className="max-w-4xl grid-cols-1 md:grid-cols-3 gap-8 p-0">
-            <div className="md:col-span-2 p-6">
+        <DialogContent className="max-w-4xl max-h-[90svh] grid grid-cols-1 md:grid-cols-3 gap-0 p-0">
+            <ScrollArea className="md:col-span-2 p-6">
                  <DialogHeader className="mb-6">
                     <DialogTitle className="text-2xl">Checkout</DialogTitle>
                 </DialogHeader>
@@ -356,7 +357,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         </div>
                     </CardContent>
                 </Card>
-            </div>
+            </ScrollArea>
             <div className="bg-muted/50 p-6 flex flex-col">
                 <Card className="bg-transparent border-0 shadow-none flex-grow">
                     <CardHeader className="px-1">
@@ -366,7 +367,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="px-1">
-                    <div className="max-h-60 overflow-y-auto space-y-4">
+                    <ScrollArea className="max-h-60 pr-4">
+                    <div className="space-y-4">
                     {checkoutItems.map(item => (
                         <div key={item.id} className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
@@ -388,6 +390,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                         </div>
                     ))}
                     </div>
+                    </ScrollArea>
                     <Separator className="my-4" />
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -438,5 +441,3 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     </Dialog>
   );
 }
-
-    

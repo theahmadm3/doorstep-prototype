@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const chartConfig = {
     deliveries: { label: "Deliveries", color: "hsl(var(--chart-1))" },
@@ -103,46 +104,49 @@ export default function RidersPage() {
                     <CardDescription>Onboard, verify, or manage delivery riders.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Vehicle</TableHead>
-                                 <TableHead>Status</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {paginatedRiders.map(rider => (
-                                <TableRow key={rider.id}>
-                                    <TableCell className="font-medium">{rider.name}</TableCell>
-                                    <TableCell>{rider.email}</TableCell>
-                                    <TableCell>{rider.vehicle}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="default" className="bg-green-600">{rider.status}</Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => toggleRiderStatus(rider.id)}>
-                                                    <ShieldCheck className="mr-2 h-4 w-4" /> Verify
-                                                </DropdownMenuItem>
-                                                 <DropdownMenuItem onClick={() => toggleRiderStatus(rider.id)}>
-                                                    <ShieldOff className="mr-2 h-4 w-4" /> Suspend
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+                    <ScrollArea className="w-full whitespace-nowrap">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Vehicle</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedRiders.map(rider => (
+                                    <TableRow key={rider.id}>
+                                        <TableCell className="font-medium">{rider.name}</TableCell>
+                                        <TableCell>{rider.email}</TableCell>
+                                        <TableCell>{rider.vehicle}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="default" className="bg-green-600">{rider.status}</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => toggleRiderStatus(rider.id)}>
+                                                        <ShieldCheck className="mr-2 h-4 w-4" /> Verify
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => toggleRiderStatus(rider.id)}>
+                                                        <ShieldOff className="mr-2 h-4 w-4" /> Suspend
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
                 </CardContent>
                 <div className="flex items-center justify-end space-x-2 py-4 px-6">
                     <Button

@@ -76,10 +76,10 @@ export default function CustomerProfilePage() {
     };
 
     return (
-        <div className="container py-12">
+        <div className="container py-8 md:py-12">
             <h1 className="text-3xl font-bold font-headline mb-8">Your Profile</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                <Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <Card className="lg:col-span-1">
                     <CardHeader>
                         <CardTitle>Personal Information</CardTitle>
                         <CardDescription>
@@ -129,7 +129,7 @@ export default function CustomerProfilePage() {
                         </Form>
                     </CardContent>
                 </Card>
-                 <Card>
+                 <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle>Delivery Addresses</CardTitle>
                         <CardDescription>
@@ -140,7 +140,7 @@ export default function CustomerProfilePage() {
                        <AddressManagement />
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="lg:col-span-3">
                     <CardHeader>
                         <CardTitle>Account Security</CardTitle>
                         <CardDescription>
@@ -149,7 +149,7 @@ export default function CustomerProfilePage() {
                     </CardHeader>
                     <CardContent>
                         <Form {...passwordForm}>
-                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 max-w-md">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email</Label>
                                     <Input id="email" type="email" defaultValue={user?.email || ''} readOnly />
@@ -180,7 +180,7 @@ export default function CustomerProfilePage() {
                                         </FormItem>
                                     )}
                                 />
-                                <Button type="submit" className="w-full">Update Password</Button>
+                                <Button type="submit" className="w-full sm:w-auto">Update Password</Button>
                             </form>
                         </Form>
                     </CardContent>
