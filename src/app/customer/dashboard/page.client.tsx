@@ -38,9 +38,9 @@ export default function CustomerDashboardClient({
 						href={`/customer/restaurants/${restaurant.id}`}
 						passHref
 						onClick={() => setViewedRestaurant(restaurant)}
-						className="group block flex-shrink-0"
+						className="group block flex-shrink-0 w-[380px]"
 					>
-						<Card className="relative h-[420px] overflow-hidden border-0 bg-black rounded-3xl shadow-lg transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+						<Card className="relative h-[300px] w-full overflow-hidden border-0 bg-black rounded-3xl shadow-lg transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
 							{/* Full Background Image with Overlay */}
 							<div className="absolute inset-0">
 								<Image
@@ -93,16 +93,16 @@ export default function CustomerDashboardClient({
 								<div className="space-y-4">
 									{/* Restaurant Name */}
 									<div className="space-y-2">
-										<h3 className="text-3xl font-bold text-white leading-tight tracking-tight">
+										<h3 className="text-3xl font-bold text-white leading-tight tracking-tight line-clamp-2">
 											{restaurant.name}
 										</h3>
 
 										{/* Location */}
 										<div className="flex items-center gap-2 text-white/80">
-											<div className="p-1.5 bg-white/10 backdrop-blur-sm rounded-lg">
+											<div className="p-1.5 bg-white/10 backdrop-blur-sm rounded-lg flex-shrink-0">
 												<MapPin className="h-4 w-4" />
 											</div>
-											<span className="text-sm font-medium">
+											<span className="text-sm font-medium truncate">
 												{restaurant.address?.street_name ||
 													"Address not available"}
 											</span>

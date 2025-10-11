@@ -10,6 +10,7 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 	SidebarFooter,
+	SidebarContent,
 } from "@/components/ui/sidebar";
 import { Home, Package, User, Utensils } from "lucide-react";
 import Link from "next/link";
@@ -60,51 +61,62 @@ export default function CustomerLayout({
 
 	return (
 		<SidebarProvider>
-			<div className="flex flex-col justify-between min-h-screen">
-				<AddressSelectionModal
-					isOpen={isAddressModalRequired}
-					onClose={handleModalClose}
-				/>
-				<Sidebar>
-					<SidebarHeader>
+			<AddressSelectionModal
+				isOpen={isAddressModalRequired}
+				onClose={handleModalClose}
+			/>
+			
+			<div className="flex min-h-screen w-full">
+				<Sidebar className="flex flex-col">
+					<SidebarHeader className="p-4 border-b">
 						<div className="flex items-center gap-2">
 							<Utensils className="w-8 h-8 text-primary" />
 							<span className="text-xl font-bold font-headline">Doorstep</span>
 						</div>
 					</SidebarHeader>
-					<SidebarMenu>
-						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/customer/dashboard">
-									<Home />
-									Dashboard
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/customer/orders">
-									<Package />
-									My Orders
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/customer/profile">
-									<User />
-									Profile
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					</SidebarMenu>
-					<SidebarFooter className="mt-auto">
+					
+					<SidebarContent className="flex-1 overflow-y-auto py-4">
+						<SidebarMenu>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild>
+									<Link href="/customer/dashboard">
+										<Home />
+										Dashboard
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild>
+									<Link href="/customer/orders">
+										<Package />
+										My Orders
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild>
+									<Link href="/customer/profile">
+										<User />
+										Profile
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						</SidebarMenu>
+					</SidebarContent>
+					
+					<SidebarFooter className="p-4 border-t">
 						{!isClient || !user ? (
-							<></>
+							<div className="flex items-center gap-3 p-3">
+								<Skeleton className="h-10 w-10 rounded-full" />
+								<div className="flex-1 space-y-2">
+									<Skeleton className="h-4 w-24" />
+									<Skeleton className="h-3 w-32" />
+								</div>
+							</div>
 						) : (
-							<div className="flex flex-col gap-3 p-2 rounded-md bg-muted">
-								<div className="w-full flex items-center gap-3">
-									<Avatar>
+							<div className="flex flex-col gap-3 p-3 rounded-lg bg-muted">
+								<div className="flex items-center gap-3">
+									<Avatar className="h-10 w-10">
 										<AvatarImage
 											src={user.avatar_url || "https://github.com/shadcn.png"}
 											alt={user.full_name || "Customer"}
@@ -113,11 +125,11 @@ export default function CustomerLayout({
 											{user.full_name?.[0]?.toUpperCase() || "C"}
 										</AvatarFallback>
 									</Avatar>
-									<div className="flex flex-col">
-										<span className="text-sm font-semibold">
+									<div className="flex flex-col min-w-0 flex-1">
+										<span className="text-sm font-semibold truncate">
 											{user.full_name || "Customer User"}
 										</span>
-										<span className="text-xs text-muted-foreground">
+										<span className="text-xs text-muted-foreground truncate">
 											{user.email || "customer@doorstep.com"}
 										</span>
 									</div>
@@ -127,9 +139,12 @@ export default function CustomerLayout({
 						)}
 					</SidebarFooter>
 				</Sidebar>
-				<SidebarInset>
+				
+				<SidebarInset className="flex-1 flex flex-col">
 					<ClientHeader />
-					<div className="p-4">{children}</div>
+					<main className="flex-1 overflow-y-auto p-6">
+						{children}
+					</main>
 				</SidebarInset>
 			</div>
 		</SidebarProvider>

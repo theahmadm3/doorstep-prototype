@@ -40,7 +40,7 @@ export default function ClientHeader() {
 				isOpen={isAddressModalOpen}
 				onClose={() => setAddressModalOpen(false)}
 			/>
-			<div className="p-4 inline-flex justify-between items-center gap-4 bg-background border-b sticky top-0 z-10">
+			<div className="p-4 inline-flex justify-between items-center gap-4 bg-background shadow-lg sticky top-0 z-10">
 				<SidebarTrigger />
 				<div className="flex items-center gap-2">
 					{isClient ? (
