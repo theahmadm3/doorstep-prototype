@@ -49,6 +49,8 @@ export const useCartStore = create<CartState>()(
           updatedOrder = { ...existingUnsubmittedOrder, items: newItems, total: calculateOrderTotal(newItems) };
           set({ orders: orders.map(o => o.id === updatedOrder.id ? updatedOrder : o) });
         } else {
+          // If ordering from a new restaurant, clear other unsubmitted orders
+          const otherUnsubmittedOrders = orders.filter(o => o.status !== 'unsubmitted');
           updatedOrder = {
             id: uuidv4(),
             restaurantId: item.restaurant,
@@ -56,7 +58,7 @@ export const useCartStore = create<CartState>()(
             status: 'unsubmitted',
             total: parseFloat(item.price)
           };
-          set({ orders: [...orders, updatedOrder] });
+          set({ orders: [...otherUnsubmittedOrders, updatedOrder] });
         }
         return updatedOrder;
       },

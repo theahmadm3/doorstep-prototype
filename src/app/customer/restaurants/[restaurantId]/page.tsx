@@ -3,19 +3,13 @@
 
 import { useState, useEffect } from "react";
 import { getRestaurantMenu } from "@/lib/api";
-import type { Restaurant, MenuItem, User, Order } from "@/lib/types";
+import type { Restaurant, MenuItem, User, Order, OrderItem } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, ArrowLeft } from "lucide-react";
+import { PlusCircle, ArrowLeft, Star, Clock, ShoppingCart } from "lucide-react";
 import { notFound, useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +28,52 @@ import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 
+const MenuPageSkeleton = () => (
+    <div className="py-8">
+        <Skeleton className="h-8 w-40 mb-8" />
+        <div className="space-y-4 mb-12">
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="h-6 w-1/2" />
+        </div>
+        <Skeleton className="h-10 w-full mb-8" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+                <div key={i} className="flex gap-4">
+                    <div className="flex-1 space-y-2">
+                        <Skeleton className="h-5 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-5 w-1/4 mt-2" />
+                    </div>
+                    <Skeleton className="h-24 w-24" />
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const FloatingCartButton = ({ order, onCheckout }: { order: Order | undefined, onCheckout: () => void }) => {
+    if (!order || order.items.length === 0) return null;
+
+    const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+
+    return (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20">
+            <Button
+                onClick={onCheckout}
+                size="lg"
+                className="w-full h-14 rounded-full shadow-2xl flex justify-between items-center text-lg"
+            >
+                <div className="flex items-center gap-2">
+                    <ShoppingCart />
+                    <span>{itemCount} item{itemCount > 1 ? 's' : ''}</span>
+                </div>
+                <span>View Order</span>
+                <span>₦{order.total.toFixed(2)}</span>
+            </Button>
+        </div>
+    );
+};
+
 export default function RestaurantMenuPage() {
 	const { addOrUpdateOrder, addToGuestCart, clearGuestCart, orders } = useCartStore();
     const { viewedRestaurant } = useUIStore();
@@ -47,7 +87,6 @@ export default function RestaurantMenuPage() {
 	const [user, setUser] = useState<User | null>(null);
 
 	const [showClearCartDialog, setShowClearCartDialog] = useState(false);
-	const [showIsThatAllDialog, setShowIsThatAllDialog] = useState(false);
 	const [itemToAdd, setItemToAdd] = useState<MenuItem | null>(null);
 
 	const [isCheckoutOpen, setCheckoutOpen] = useState(false);
@@ -77,17 +116,19 @@ export default function RestaurantMenuPage() {
 		}
 	}, [restaurantId]);
 
+	const currentOrder = orders.find(
+        (o) => o.restaurantId === restaurantId && o.status === "unsubmitted",
+    );
+
 	const handleAddItem = (item: MenuItem) => {
 		if (user) {
-			// Logged-in user flow
-			addOrUpdateOrder(item);
+			const updatedOrder = addOrUpdateOrder(item);
+			setOrderForCheckout(updatedOrder);
 			toast({
 				title: "Item Added",
-				description: `${item.name} has been added to your order for this restaurant.`,
+				description: `${item.name} has been added to your order.`,
 			});
-			setShowIsThatAllDialog(true);
 		} else {
-			// Guest user flow
 			const success = addToGuestCart(item);
 			if (success) {
 				toast({
@@ -114,65 +155,49 @@ export default function RestaurantMenuPage() {
 		setItemToAdd(null);
 	};
 
-	const handleIsThatAllNo = () => {
-		setShowIsThatAllDialog(false);
-		router.push("/customer/dashboard");
-	};
-
-	const handleIsThatAllYes = () => {
-		setShowIsThatAllDialog(false);
-		const unsubmittedOrder = orders.find(
-			(o) => o.restaurantId === restaurantId && o.status === "unsubmitted",
-		);
-		if (unsubmittedOrder) {
-			setOrderForCheckout(unsubmittedOrder);
+	const handleCheckout = () => {
+		if(currentOrder) {
+			setOrderForCheckout(currentOrder);
+			setCheckoutOpen(true);
+		} else {
+			// This case is for guest users, who don't have an "order" object yet
 			setCheckoutOpen(true);
 		}
-	};
+	}
+	
+	const categories = menuItems.reduce((acc, item) => {
+        const category = item.category || 'Other';
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(item);
+        return acc;
+    }, {} as Record<string, MenuItem[]>);
+
+    const defaultTab = Object.keys(categories)[0] || '';
 
 	if (isLoading) {
-		return (
-			<div className="py-12">
-				<Skeleton className="h-10 w-48 mb-8" />
-				<div className="mb-12">
-					<Skeleton className="h-10 w-3/4 mx-auto mb-4" />
-					<Skeleton className="h-6 w-1/2 mx-auto" />
-				</div>
-				<div className="space-y-8">
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-						{[...Array(8)].map((_, i) => (
-							<Card key={i}>
-								<CardHeader className="p-0">
-									<Skeleton className="h-48 w-full" />
-								</CardHeader>
-								<CardContent className="pt-6">
-									<Skeleton className="h-6 w-3/4 mb-2" />
-									<Skeleton className="h-4 w-full" />
-								</CardContent>
-								<CardFooter className="flex justify-between items-center">
-									<Skeleton className="h-8 w-1/3" />
-									<Skeleton className="h-10 w-1/2" />
-								</CardFooter>
-							</Card>
-						))}
-					</div>
-				</div>
-			</div>
-		);
+		return <MenuPageSkeleton />;
 	}
 
-	if (!menuItems || menuItems.length === 0) {
-		notFound();
+	if (!viewedRestaurant) {
+		return (
+			<div className="flex flex-col items-center justify-center h-full text-center">
+				<p className="text-lg text-muted-foreground">Restaurant data not found.</p>
+				<Button asChild variant="link">
+					<Link href="/customer/dashboard">Go back to dashboard</Link>
+				</Button>
+			</div>
+		)
 	}
 
 	return (
-		<div className="flex-grow">
+		<div className="pb-24">
 			<CheckoutModal
 				isOpen={isCheckoutOpen}
 				onClose={() => setCheckoutOpen(false)}
 				order={orderForCheckout}
 			/>
-			{/* Dialog for guest users clearing cart */}
 			<AlertDialog
 				open={showClearCartDialog}
 				onOpenChange={setShowClearCartDialog}
@@ -196,112 +221,84 @@ export default function RestaurantMenuPage() {
 				</AlertDialogContent>
 			</AlertDialog>
 
-			{/* Dialog for logged-in users after adding an item */}
-			<AlertDialog
-				open={showIsThatAllDialog}
-				onOpenChange={setShowIsThatAllDialog}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Is that all?</AlertDialogTitle>
-						<AlertDialogDescription>
-							Your item has been added to an order. Would you like to proceed to
-							checkout or continue shopping?
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel onClick={handleIsThatAllNo}>
-							No, continue shopping
-						</AlertDialogCancel>
-						<AlertDialogAction onClick={handleIsThatAllYes}>
-							Yes, go to checkout
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
-			<div className="py-12">
-				<div className="mb-8">
-					<Button asChild variant="outline">
-						<Link href="/customer/dashboard">
-							<ArrowLeft className="mr-2 h-4 w-4" />
-							Back to Restaurants
-						</Link>
-					</Button>
-				</div>
-				<div className="text-center mb-12">
-					<h1 className="text-4xl font-bold font-headline">
-						{viewedRestaurant?.name || "Restaurant"} Menu
-					</h1>
-					<p className="text-muted-foreground mt-2 text-lg">
-						Browse through the delicious offerings.
-					</p>
-				</div>
+			<div className="mb-8">
+				<Button asChild variant="ghost" className="px-2">
+					<Link href="/customer/dashboard">
+						<ArrowLeft className="mr-2 h-4 w-4" />
+						All Restaurants
+					</Link>
+				</Button>
+			</div>
 
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-					{menuItems.map((item) => {
-						const imageUrl =
-							item.image_url && item.image_url.startsWith("http")
-								? item.image_url
-								: "https://placehold.co/400x250.png";
-						return (
-							<Card
-								key={item.id}
-								className={cn("flex flex-col overflow-hidden", {
-									"opacity-50": !item.is_available,
-								})}
-							>
-								<CardHeader className="p-0">
-									{item.is_available ? (
-										<Image
-											src={imageUrl}
-											alt={item.name}
-											width={400}
-											height={250}
-											className="rounded-t-lg object-cover w-full aspect-video"
-										/>
-									) : (
-										<div className="flex items-center justify-center text-center aspect-video bg-muted rounded-t-lg">
-											<p className="text-sm text-muted-foreground p-4">
-												Item not available at the moment — will be back soon.
-											</p>
-										</div>
-									)}
-								</CardHeader>
-								<CardContent className="pt-6 flex-grow">
-									<CardTitle className="font-headline text-xl">
-										{item.name}
-									</CardTitle>
-									{item.description && (
-										<CardDescription className="mt-2">
-											{item.description}
-										</CardDescription>
-									)}
-								</CardContent>
-								<CardFooter className="flex md:flex-col items-center justify-between mt-auto pt-4">
-									<p className="inline-flex gap-2 text-md font-semibold text-primary text-center w-full mb-4">
-										<span className="hidden md:block w-fit">Price:</span>₦
-										{parseFloat(item.price).toFixed(2)}
-									</p>
-									<Button
-										onClick={() => handleAddItem(item)}
-										className="w-full sm:w-auto"
-										disabled={!item.is_available}
-									>
-										{!item.is_available ? (
-											"Unavailable"
-										) : (
-											<>
-												<PlusCircle className="mr-2 h-4 w-4" />{" "}
-												{user ? "Add to Order" : "Add to Cart"}
-											</>
-										)}
-									</Button>
-								</CardFooter>
-							</Card>
-						);
-					})}
+			<div className="relative h-48 md:h-64 rounded-2xl overflow-hidden mb-8">
+				<Image 
+					src={viewedRestaurant.image_url || 'https://placehold.co/1200x400.png'}
+					alt={viewedRestaurant.name}
+					fill
+					className="object-cover"
+				/>
+				<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"/>
+				<div className="absolute bottom-0 left-0 p-6">
+					<h1 className="text-3xl md:text-4xl font-bold text-white font-headline">
+						{viewedRestaurant?.name}
+					</h1>
+					<div className="flex items-center gap-4 text-white/90 mt-2">
+						<div className="flex items-center gap-1">
+							<Star className="h-4 w-4 text-yellow-400" />
+							<span className="text-sm font-medium">{viewedRestaurant.rating}</span>
+						</div>
+						<div className="flex items-center gap-1">
+							<Clock className="h-4 w-4" />
+							<span className="text-sm font-medium">20-30 min</span>
+						</div>
+					</div>
 				</div>
 			</div>
+			
+			<Tabs defaultValue={defaultTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                    {Object.keys(categories).map(category => (
+                        <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
+                    ))}
+                </TabsList>
+                 {Object.entries(categories).map(([category, items]) => (
+                    <TabsContent key={category} value={category}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+							{items.map((item) => {
+								const imageUrl =
+									item.image_url && item.image_url.startsWith("http")
+										? item.image_url
+										: "https://placehold.co/200x200.png";
+								return (
+									<Card key={item.id} className={cn("overflow-hidden transition-all hover:shadow-md", { "opacity-60": !item.is_available })}>
+										<CardContent className="p-4 flex gap-4">
+											<div className="flex-1">
+												<CardTitle className="text-lg font-semibold mb-1">{item.name}</CardTitle>
+												<CardDescription className="text-sm line-clamp-2">{item.description}</CardDescription>
+												<p className="font-bold text-md mt-2">₦{parseFloat(item.price).toFixed(2)}</p>
+											</div>
+											<div className="relative w-24 h-24 flex-shrink-0">
+												<Image src={imageUrl} alt={item.name} fill className="rounded-md object-cover"/>
+												<Button
+													size="icon"
+													className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full shadow-lg"
+													onClick={() => handleAddItem(item)}
+													disabled={!item.is_available}
+													aria-label={`Add ${item.name} to cart`}
+												>
+													<PlusCircle className="h-5 w-5"/>
+												</Button>
+											</div>
+										</CardContent>
+									</Card>
+								)
+							})}
+                        </div>
+                    </TabsContent>
+                ))}
+            </Tabs>
+			
+			<FloatingCartButton order={currentOrder} onCheckout={handleCheckout} />
 		</div>
 	);
 }
