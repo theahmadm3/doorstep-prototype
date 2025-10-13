@@ -398,9 +398,15 @@ export default function VendorOrdersPage() {
                     <TabsTrigger value="incoming">
                         Incoming <Badge className="ml-2">{incomingOrders.length}</Badge>
                     </TabsTrigger>
-                    <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
-                    <TabsTrigger value="ready">Ready for Pickup</TabsTrigger>
-                    <TabsTrigger value="onTheWay">On the Way</TabsTrigger>
+                    <TabsTrigger value="ongoing">
+                        Ongoing <Badge className="ml-2">{ongoingOrders.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="ready">
+                        Ready for Pickup <Badge className="ml-2">{readyForPickupOrders.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="onTheWay">
+                        On the Way <Badge className="ml-2">{onTheWayOrders.length}</Badge>
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="incoming">
@@ -496,6 +502,8 @@ export default function VendorOrdersPage() {
         </div>
     );
 }
+
+    
 
     
 
