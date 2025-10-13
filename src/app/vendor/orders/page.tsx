@@ -21,6 +21,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -162,6 +172,11 @@ export default function VendorOrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<VendorOrder | null>(null);
     const [selectedRiderName, setSelectedRiderName] = useState<string>("");
     const [isAssigning, setIsAssigning] = useState(false);
+    
+    // State for rider type selection modal
+    const [isRiderTypeModalOpen, setRiderTypeModalOpen] = useState(false);
+    const [orderForRiderSelection, setOrderForRiderSelection] = useState<VendorOrder | null>(null);
+
 
     const fetchOrders = useCallback(async () => {
         // Only show main loading skeleton on initial load
@@ -189,6 +204,15 @@ export default function VendorOrdersPage() {
     }, []);
     
     const handleUpdateStatus = async (orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready') => {
+        if (action === 'ready') {
+            const orderToUpdate = orders.find(o => o.id === orderId);
+            if (orderToUpdate) {
+                setOrderForRiderSelection(orderToUpdate);
+                setRiderTypeModalOpen(true);
+            }
+            return;
+        }
+
         setIsUpdating(orderId);
         try {
             await updateVendorOrderStatus(orderId, action);
@@ -208,6 +232,34 @@ export default function VendorOrdersPage() {
             setIsUpdating(null);
         }
     };
+    
+    const handleConfirmReady = async (driverType: 'doorstep' | 'inhouse') => {
+        if (!orderForRiderSelection) return;
+
+        const orderId = orderForRiderSelection.id;
+        setRiderTypeModalOpen(false);
+        setIsUpdating(orderId);
+
+        try {
+            await updateVendorOrderStatus(orderId, 'ready', driverType);
+            toast({
+                title: "Success",
+                description: "Order marked as ready for pickup.",
+            });
+            await fetchOrders();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+            toast({
+                title: "Update Failed",
+                description: message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsUpdating(null);
+            setOrderForRiderSelection(null);
+        }
+    };
+
 
     const handleOpenAssignModal = async (order: VendorOrder) => {
         setSelectedOrder(order);
@@ -320,6 +372,25 @@ export default function VendorOrdersPage() {
                 </DialogContent>
             </Dialog>
 
+             <AlertDialog open={isRiderTypeModalOpen} onOpenChange={setRiderTypeModalOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Order is Ready</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Who will be handling the delivery for this order?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="sm:justify-center pt-4">
+                        <Button variant="outline" onClick={() => handleConfirmReady('inhouse')}>
+                            Use In-house Rider
+                        </Button>
+                        <Button onClick={() => handleConfirmReady('doorstep')}>
+                            Use Doorstep Rider
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
 
             <Tabs defaultValue="incoming">
@@ -428,3 +499,5 @@ export default function VendorOrdersPage() {
         </div>
     );
 }
+
+    

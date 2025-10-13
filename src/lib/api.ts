@@ -171,9 +171,15 @@ export async function getVendorOrders(): Promise<VendorOrder[]> {
     }));
 }
 
-export async function updateVendorOrderStatus(orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready'): Promise<void> {
+export async function updateVendorOrderStatus(orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready', driverType?: 'doorstep' | 'inhouse'): Promise<void> {
+    let body = {};
+    if (action === 'ready' && driverType) {
+        body = { driver_type: driverType };
+    }
+
     await fetcher<void>(`/restaurants/me/orders/${orderId}/${action}/`, {
         method: 'POST',
+        body: JSON.stringify(body),
     });
 }
 
@@ -235,3 +241,5 @@ export async function initializePayment(payload: InitializePaymentPayload): Prom
         body: JSON.stringify(payload)
     });
 }
+
+    
