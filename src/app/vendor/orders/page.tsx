@@ -393,8 +393,8 @@ export default function VendorOrdersPage() {
 
             <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
 
-            <Tabs defaultValue="incoming">
-                <TabsList>
+            <Tabs defaultValue="incoming" className="w-full">
+                <TabsList style={{flexWrap: 'nowrap'}} className="w-full inline-flex gap-x-1 md:gap-x-4 justify-start items-center overflow-x-auto">
                     <TabsTrigger value="incoming">
                         Incoming <Badge className="ml-2">{incomingOrders.length}</Badge>
                     </TabsTrigger>
@@ -402,7 +402,7 @@ export default function VendorOrdersPage() {
                         Ongoing <Badge className="ml-2">{ongoingOrders.length}</Badge>
                     </TabsTrigger>
                     <TabsTrigger value="ready">
-                        Ready for Pickup <Badge className="ml-2">{readyForPickupOrders.length}</Badge>
+                        Ready{" "}<span className="hidden md:block ml-2">for Pickup</span> <Badge className="ml-2">{readyForPickupOrders.length}</Badge>
                     </TabsTrigger>
                     <TabsTrigger value="onTheWay">
                         On the Way <Badge className="ml-2">{onTheWayOrders.length}</Badge>
