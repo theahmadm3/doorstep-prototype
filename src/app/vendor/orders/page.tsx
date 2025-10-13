@@ -459,11 +459,8 @@ export default function VendorOrdersPage() {
                         totalPages={totalPages.ready}
                         onPageChange={(p) => handlePageChange('ready', p)}
                         isLoading={isLoading}
-                        actions={(order) => (
-                           <Button variant="outline" size="sm" onClick={() => handleOpenAssignModal(order)}>
-                                <Send className="mr-2 h-4 w-4" /> Assign Rider
-                            </Button>
-                        )}
+                        showActions={false}
+                        actions={() => null}
                     />
                 </TabsContent>
                  <TabsContent value="onTheWay">
@@ -499,5 +496,7 @@ export default function VendorOrdersPage() {
         </div>
     );
 }
+
+    
 
     
