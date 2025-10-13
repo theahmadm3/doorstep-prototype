@@ -23,7 +23,6 @@ import type { User as UserType } from "@/lib/types";
 import AddressSelectionModal from "@/components/location/address-selection-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
-import InstallPWAButton from "@/components/pwa/install-pwa-button";
 
 export default function CustomerLayout({
 	children,
@@ -107,9 +106,6 @@ export default function CustomerLayout({
 					</SidebarContent>
 					
 					<SidebarFooter className="p-4 border-t">
-						<div className="mb-4">
-              				<InstallPWAButton />
-            			</div>
 						{!isClient || !user ? (
 							<div className="flex items-center gap-3 p-3">
 								<Skeleton className="h-10 w-10 rounded-full" />

@@ -28,7 +28,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LogoutButton from '@/components/auth/logout-button';
 import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
-import InstallPWAButton from '@/components/pwa/install-pwa-button';
 
 export default function AdminLayout({
   children,
@@ -107,9 +106,6 @@ export default function AdminLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
-            <div className="mb-4 px-2">
-              <InstallPWAButton />
-            </div>
             <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
               <Avatar>
                 <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Admin"} />

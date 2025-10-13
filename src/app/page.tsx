@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Utensils, Bike, CircleCheckBig } from "lucide-react";
@@ -5,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
-import InstallPWAButton from "@/components/pwa/install-pwa-button";
 
 export default function Home() {
   return (
@@ -29,9 +29,6 @@ export default function Home() {
                   <Button asChild size="lg" variant="outline" className="border-primary-foreground text-black hover:bg-primary-foreground/10 hover:text-white">
                      <Link href="/signup/vendor">Become a Vendor</Link>
                   </Button>
-                   <div className="w-full sm:w-auto">
-                      <InstallPWAButton />
-                  </div>
                 </div>
               </div>
               <Image
