@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Utensils, Bike, CircleCheckBig } from "lucide-react";
@@ -21,7 +22,7 @@ export default function Home() {
                 <p className="max-w-[600px] text-primary-foreground/80 md:text-xl">
                   Doorstep brings your city's best food right to your door. Fresh, fast, and hassle-free.
                 </p>
-                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                <div className="flex flex-col gap-2 min-[400px]:flex-row items-start">
                   <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
                     <Link href="/menu">Order Now</Link>
                   </Button>

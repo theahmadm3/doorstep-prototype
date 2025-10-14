@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -10,6 +11,7 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 	SidebarFooter,
+	SidebarContent,
 } from "@/components/ui/sidebar";
 import {
 	Home,
@@ -78,48 +80,50 @@ export default function VendorLayout({
 							<span className="text-xl font-bold font-headline">Doorstep</span>
 						</div>
 					</SidebarHeader>
-					<SidebarMenu>
-						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/vendor/dashboard">
-									<Home />
-									Dashboard
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/vendor/orders">
-									<ShoppingBag />
-									Orders
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/vendor/analytics">
-									<LineChart />
-									Analytics
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/vendor/config">
-									<Settings />
-									Config
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/vendor/profile">
-									<User />
-									Profile
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					</SidebarMenu>
+					<SidebarContent>
+						<SidebarMenu>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild>
+									<Link href="/vendor/dashboard">
+										<Home />
+										Dashboard
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild>
+									<Link href="/vendor/orders">
+										<ShoppingBag />
+										Orders
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild>
+									<Link href="/vendor/analytics">
+										<LineChart />
+										Analytics
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild>
+									<Link href="/vendor/config">
+										<Settings />
+										Config
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							<SidebarMenuItem>
+								<SidebarMenuButton asChild>
+									<Link href="/vendor/profile">
+										<User />
+										Profile
+									</Link>								
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+						</SidebarMenu>
+					</SidebarContent>
 					<SidebarFooter className="mt-auto">
 						<div className="flex flex-col items-center gap-3 p-2 rounded-md bg-muted">
 							<div className="w-full flex items-center gap-2">
@@ -145,13 +149,15 @@ export default function VendorLayout({
 						</div>
 					</SidebarFooter>
 				</Sidebar>
-				<SidebarInset>
-					<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0">
+				<div className="flex flex-col flex-1 min-w-0">
+					<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10">
 						<SidebarTrigger />
 						<h1 className="text-lg font-semibold">Vendor Panel</h1>
 					</div>
-					<div className="p-4">{children}</div>
-				</SidebarInset>
+					<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+						{children}
+					</main>
+				</div>
 			</div>
 		</SidebarProvider>
 	);

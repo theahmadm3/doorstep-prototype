@@ -15,7 +15,6 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: 'Doorstep',
   description: 'Your favorite food, delivered.',
-  icons: null,
 };
 
 export default function RootLayout({
