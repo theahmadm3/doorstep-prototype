@@ -195,6 +195,7 @@ export interface OrderDetail {
     total_amount: string;
     items: OrderItemDetail[];
     created_at: string;
+    delivery_otp?: string;
 }
 
 export interface VendorOrder {

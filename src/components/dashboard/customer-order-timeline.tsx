@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { CustomerOrder, OrderDetail } from "@/lib/types";
 import { orderStatusSteps } from "@/lib/data";
-import { Check, CheckCircle, CircleDotDashed, Star } from "lucide-react";
+import { Check, CheckCircle, CircleDotDashed, Star, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
 import Image from "next/image";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 interface CustomerOrderTimelineProps {
     order: CustomerOrder;
@@ -86,6 +88,27 @@ export default function CustomerOrderTimeline({ order, details, isLoadingDetails
                         </div>
 
                         <div className="space-y-6">
+                            {details.delivery_otp && (
+                                <div>
+                                    <h4 className="font-semibold mb-2 text-md flex items-center gap-2">
+                                        Order Code
+                                         <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>This is what will be used to confirm your order.</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </h4>
+                                    <div className="text-2xl font-bold tracking-widest p-3 bg-muted rounded-md border text-center">
+                                        {details.delivery_otp}
+                                    </div>
+                                </div>
+                            )}
+
                             <div>
                                 <h4 className="font-semibold mb-4 text-md">Delivery To</h4>
                                 <div className="text-sm p-3 bg-muted rounded-md border">
