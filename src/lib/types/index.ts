@@ -117,7 +117,7 @@ export interface MenuItemPayload {
 }
 
 // Order Management Types
-export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way';
+export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way' | 'arrived_restaurant' | 'pickedup' | 'arrived_destination';
 
 export interface OrderItem extends MenuItem {
   quantity: number;
@@ -150,6 +150,7 @@ export interface OrderPayload {
   delivery_address_id: string;
   items: OrderItemPayload[];
   payment_reference: string;
+  delivery_fee: string;
 }
 
 export interface CustomerOrder {
@@ -333,3 +334,51 @@ export interface VendorProfileUpdatePayload {
         longitude: number;
     };
 }
+
+
+// Rider Module
+export interface RiderCustomer {
+    name: string;
+    phone: string;
+}
+
+export interface RiderOrder {
+    id: string;
+    status: OrderStatus;
+    total_amount: string;
+    delivery_fee: string;
+    restaurant_latitude: string;
+    restaurant_longitude: string;
+    delivery_latitude: string;
+    delivery_longitude: string;
+    order_type?: "delivery"; // This might be a fixed string or enum
+    customer: RiderCustomer;
+    delivery_address_str: string;
+    created_at: string;
+    restaurant: string;
+}
+
+export interface RiderOrderResponse {
+    success: boolean;
+    data: RiderOrder[];
+}
+
+
+export interface AvailableRiderOrder {
+    id: string;
+    status: OrderStatus;
+    total_amount: string;
+    delivery_fee: string;
+    restaurant_latitude: string;
+    restaurant_longitude: string;
+    delivery_latitude: string;
+    delivery_longitude: string;
+    customer: RiderCustomer;
+    delivery_address_str: string;
+    created_at: string;
+}
+
+export const OTPSchema = z.object({
+  otp: z.string().min(6, "OTP must be 6 digits.").max(6, "OTP must be 6 digits."),
+});
+export type OTPPayload = z.infer<typeof OTPSchema>;

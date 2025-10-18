@@ -138,6 +138,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
         delivery_address_id: selectedAddress.id,
         items: orderItemsPayload,
         payment_reference: transaction.reference,
+        delivery_fee: String(deliveryFee),
       };
 
       await placeOrder(orderPayload);
@@ -161,7 +162,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     } finally {
       setIsPlacingOrder(false);
     }
-  }, [order, selectedAddress, updateOrderStatus, toast, onClose, router]);
+  }, [order, selectedAddress, deliveryFee, updateOrderStatus, toast, onClose, router]);
 
   const onSuccess = useCallback((transaction: PaystackTransaction) => {
     if (transaction.status === 'success') {
