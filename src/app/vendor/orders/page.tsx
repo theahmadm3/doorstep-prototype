@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getVendorOrders, updateVendorOrderStatus, getVendorRiders, assignRiderToOrder } from "@/lib/api";
-import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown, Send } from "lucide-react";
+import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown, Send, UserCheck } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import type { VendorOrder, Rider } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-
+import PickupConfirmationModal from "@/components/vendor/pickup-confirmation-modal";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -177,9 +177,12 @@ export default function VendorOrdersPage() {
     const [isRiderTypeModalOpen, setRiderTypeModalOpen] = useState(false);
     const [orderForRiderSelection, setOrderForRiderSelection] = useState<VendorOrder | null>(null);
 
+    // State for pickup confirmation modal
+    const [isPickupModalOpen, setPickupModalOpen] = useState(false);
+    const [orderForPickup, setOrderForPickup] = useState<VendorOrder | null>(null);
+
 
     const fetchOrders = useCallback(async () => {
-        // Only show main loading skeleton on initial load
         if (orders.length === 0) setIsLoading(true);
         try {
             const data = await getVendorOrders();
@@ -196,21 +199,26 @@ export default function VendorOrdersPage() {
     }, [toast, isLoading, orders.length]);
 
     useEffect(() => {
-        fetchOrders(); // Initial fetch
-        const interval = setInterval(fetchOrders, 60000); // Poll every 60 seconds
+        fetchOrders();
+        const interval = setInterval(fetchOrders, 60000);
 
         return () => clearInterval(interval);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [fetchOrders]);
     
     const handleUpdateStatus = async (orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready') => {
+        const orderToUpdate = orders.find(o => o.id === orderId);
+        if (!orderToUpdate) return;
+        
         if (action === 'ready') {
-            const orderToUpdate = orders.find(o => o.id === orderId);
-            if (orderToUpdate) {
-                setOrderForRiderSelection(orderToUpdate);
+            if (orderToUpdate.order_type === 'pickup') {
+                setOrderForPickup(orderToUpdate);
+                setPickupModalOpen(true);
+                return;
+            } else {
+                 setOrderForRiderSelection(orderToUpdate);
                 setRiderTypeModalOpen(true);
+                return;
             }
-            return;
         }
 
         setIsUpdating(orderId);
@@ -220,7 +228,7 @@ export default function VendorOrdersPage() {
                 title: "Success",
                 description: `Order has been successfully updated.`,
             });
-            await fetchOrders(); // Refetch orders to update the tables
+            await fetchOrders();
         } catch (error) {
              const message = error instanceof Error ? error.message : "An unexpected error occurred.";
              toast({
@@ -233,7 +241,7 @@ export default function VendorOrdersPage() {
         }
     };
     
-    const handleConfirmReady = async (driverType: 'doorstep' | 'inhouse') => {
+    const handleConfirmReadyForDelivery = async (driverType: 'doorstep' | 'inhouse') => {
         if (!orderForRiderSelection) return;
 
         const orderId = orderForRiderSelection.id;
@@ -244,7 +252,7 @@ export default function VendorOrdersPage() {
             await updateVendorOrderStatus(orderId, 'ready', driverType);
             toast({
                 title: "Success",
-                description: "Order marked as ready for pickup.",
+                description: "Order marked as ready for pickup by rider.",
             });
             await fetchOrders();
         } catch (error) {
@@ -259,7 +267,6 @@ export default function VendorOrdersPage() {
             setOrderForRiderSelection(null);
         }
     };
-
 
     const handleOpenAssignModal = async (order: VendorOrder) => {
         setSelectedOrder(order);
@@ -340,6 +347,17 @@ export default function VendorOrdersPage() {
 
     return (
         <div className="space-y-8">
+            {orderForPickup && (
+                <PickupConfirmationModal
+                    isOpen={isPickupModalOpen}
+                    onClose={() => setPickupModalOpen(false)}
+                    orderId={orderForPickup.id}
+                    onSuccess={() => {
+                        fetchOrders();
+                        setOrderForPickup(null);
+                    }}
+                />
+            )}
             <Dialog open={isAssignModalOpen} onOpenChange={setAssignModalOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -381,10 +399,10 @@ export default function VendorOrdersPage() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="sm:justify-center pt-4">
-                        <Button variant="outline" onClick={() => handleConfirmReady('inhouse')}>
+                        <Button variant="outline" onClick={() => handleConfirmReadyForDelivery('inhouse')}>
                             Use In-house Rider
                         </Button>
-                        <Button onClick={() => handleConfirmReady('doorstep')}>
+                        <Button onClick={() => handleConfirmReadyForDelivery('doorstep')}>
                             Use Doorstep Rider
                         </Button>
                     </AlertDialogFooter>
@@ -459,14 +477,22 @@ export default function VendorOrdersPage() {
                  <TabsContent value="ready">
                     <OrderTable
                         title="Ready for Pickup"
-                        description="Orders waiting for a rider to be assigned."
+                        description="Orders waiting for pickup by rider or customer."
                         orders={paginatedReady}
                         currentPage={pages.ready}
                         totalPages={totalPages.ready}
                         onPageChange={(p) => handlePageChange('ready', p)}
                         isLoading={isLoading}
-                        showActions={false}
-                        actions={() => null}
+                        actions={(order) => 
+                            order.order_type === 'pickup' ? (
+                                <Button variant="default" size="sm" onClick={() => { setOrderForPickup(order); setPickupModalOpen(true); }} disabled={isUpdating === order.id}>
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Confirm Pickup
+                                </Button>
+                            ) : (
+                                <span>Awaiting Doorstep rider</span>
+                            )
+                        }
                     />
                 </TabsContent>
                  <TabsContent value="onTheWay">
@@ -502,9 +528,3 @@ export default function VendorOrdersPage() {
         </div>
     );
 }
-
-    
-
-    
-
-    

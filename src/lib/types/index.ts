@@ -117,7 +117,7 @@ export interface MenuItemPayload {
 }
 
 // Order Management Types
-export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way' | 'arrived_restaurant' | 'pickedup' | 'arrived_destination';
+export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way' | 'arrived_restaurant' | 'pickedup' | 'arrived_destination' | 'Picked Up by Customer';
 
 export interface OrderItem extends MenuItem {
   quantity: number;
@@ -161,6 +161,7 @@ export interface CustomerOrder {
     status: OrderStatus;
     created_at: string;
     delivery_address: OrderDetailAddress;
+    order_type: 'delivery' | 'pickup';
 }
 
 export interface OrderItemDetail {
@@ -196,6 +197,7 @@ export interface OrderDetail {
     items: OrderItemDetail[];
     created_at: string;
     delivery_otp?: string;
+    order_type: 'delivery' | 'pickup';
 }
 
 export interface VendorOrder {
@@ -204,6 +206,7 @@ export interface VendorOrder {
     total_amount: string;
     status: OrderStatus;
     created_at: string;
+    order_type: 'delivery' | 'pickup';
 }
 
 export interface AdminOrder {
@@ -214,6 +217,12 @@ export interface AdminOrder {
     status: OrderStatus;
     payment_method: string | null;
     created_at: string;
+    order_type: 'delivery' | 'pickup';
+}
+
+export interface PickupConfirmationPayload {
+    status: "Picked Up by Customer";
+    otp: string;
 }
 
 // Vendor Rider Types
@@ -353,7 +362,7 @@ export interface RiderOrder {
     restaurant_longitude: string;
     delivery_latitude: string;
     delivery_longitude: string;
-    order_type?: "delivery"; // This might be a fixed string or enum
+    order_type?: "delivery" | "pickup";
     customer: RiderCustomer;
     delivery_address_str: string;
     created_at: string;
@@ -361,8 +370,8 @@ export interface RiderOrder {
 }
 
 export interface RiderOrderResponse {
-    success: boolean;
-    data: RiderOrder[];
+  success: boolean;
+  data: RiderOrder[];
 }
 
 export interface AvailableRiderOrder {
@@ -374,7 +383,10 @@ export interface AvailableRiderOrder {
     restaurant_longitude: string;
     delivery_latitude: string;
     delivery_longitude: string;
-    customer: RiderCustomer;
+    customer: {
+        name: string;
+        phone: string;
+    };
     delivery_address_str: string;
     created_at: string;
 }
