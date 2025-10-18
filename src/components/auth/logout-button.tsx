@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -24,7 +25,7 @@ export default function LogoutButton() {
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const { toast } = useToast();
-	const clearCartState = useCartStore.getState().clearUserOrders;
+	const clearUserOrders = useCartStore(state => state.clearUserOrders);
 	const clearUIState = useUIStore.getState().clearUIState;
 	const queryClient = useQueryClient();
 
@@ -42,7 +43,7 @@ export default function LogoutButton() {
 			});
 		} finally {
 			// Clear all application state and local storage before redirecting.
-			clearCartState();
+			clearUserOrders();
 			clearUIState();
 			queryClient.clear(); // Clears all TanStack Query cache
 			localStorage.clear();

@@ -3,26 +3,16 @@
 
 import { useState, useEffect } from "react";
 import { getRestaurantMenu } from "@/lib/api";
-import type { Restaurant, MenuItem, User, Order, OrderItem } from "@/lib/types";
+import type { Restaurant, MenuItem, User, Order } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ArrowLeft, Star, Clock, ShoppingCart } from "lucide-react";
-import { notFound, useParams, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import CheckoutModal from "@/components/checkout/checkout-modal";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/useCartStore";
@@ -75,7 +65,7 @@ const FloatingCartButton = ({ order, onCheckout }: { order: Order | undefined, o
 };
 
 export default function RestaurantMenuPage() {
-	const { addOrUpdateOrder, addToGuestCart, clearGuestCart, orders } = useCartStore();
+	const { addOrUpdateOrder, orders } = useCartStore();
     const { viewedRestaurant } = useUIStore();
 	const { toast } = useToast();
 	const params = useParams();
@@ -86,9 +76,6 @@ export default function RestaurantMenuPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [user, setUser] = useState<User | null>(null);
 
-	const [showClearCartDialog, setShowClearCartDialog] = useState(false);
-	const [itemToAdd, setItemToAdd] = useState<MenuItem | null>(null);
-
 	const [isCheckoutOpen, setCheckoutOpen] = useState(false);
 	const [orderForCheckout, setOrderForCheckout] = useState<Order | null>(null);
 
@@ -96,8 +83,11 @@ export default function RestaurantMenuPage() {
 		const storedUser = localStorage.getItem("user");
 		if (storedUser) {
 			setUser(JSON.parse(storedUser));
-		}
-	}, []);
+		} else {
+            // If no user, redirect to login, as this is a customer-only page
+            router.push(`/login?redirect=/customer/restaurants/${restaurantId}`);
+        }
+	}, [router, restaurantId]);
 
 	useEffect(() => {
 		if (restaurantId) {
@@ -121,46 +111,25 @@ export default function RestaurantMenuPage() {
     );
 
 	const handleAddItem = (item: MenuItem) => {
-		if (user) {
-			const updatedOrder = addOrUpdateOrder(item);
-			setOrderForCheckout(updatedOrder);
-			toast({
-				title: "Item Added",
-				description: `${item.name} has been added to your order.`,
-			});
-		} else {
-			const success = addToGuestCart(item);
-			if (success) {
-				toast({
-					title: "Added to cart",
-					description: `${item.name} has been added to your cart.`,
-				});
-			} else {
-				setItemToAdd(item);
-				setShowClearCartDialog(true);
-			}
-		}
-	};
-
-	const handleConfirmClearCart = () => {
-		if (itemToAdd) {
-			clearGuestCart();
-			addToGuestCart(itemToAdd);
-			toast({
-				title: "Cart Cleared & Item Added",
-				description: `Your cart has been cleared and ${itemToAdd.name} has been added.`,
-			});
-		}
-		setShowClearCartDialog(false);
-		setItemToAdd(null);
+        if (!user) {
+            toast({
+                title: "Authentication Error",
+                description: "You must be logged in to add items to your cart.",
+                variant: "destructive"
+            });
+            return;
+        }
+		const updatedOrder = addOrUpdateOrder(item);
+        setOrderForCheckout(updatedOrder);
+        toast({
+            title: "Item Added",
+            description: `${item.name} has been added to your order.`,
+        });
 	};
 
 	const handleCheckout = () => {
 		if(currentOrder) {
 			setOrderForCheckout(currentOrder);
-			setCheckoutOpen(true);
-		} else {
-			// This case is for guest users, who don't have an "order" object yet
 			setCheckoutOpen(true);
 		}
 	}
@@ -198,28 +167,6 @@ export default function RestaurantMenuPage() {
 				onClose={() => setCheckoutOpen(false)}
 				order={orderForCheckout}
 			/>
-			<AlertDialog
-				open={showClearCartDialog}
-				onOpenChange={setShowClearCartDialog}
-			>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>Start a New Cart?</AlertDialogTitle>
-						<AlertDialogDescription>
-							You have items from another restaurant in your cart. Would you
-							like to clear it to add this item?
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel onClick={() => setItemToAdd(null)}>
-							Cancel
-						</AlertDialogCancel>
-						<AlertDialogAction onClick={handleConfirmClearCart}>
-							Clear Cart & Add
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
 
 			<div className="mb-8">
 				<Button asChild variant="ghost" className="px-2">

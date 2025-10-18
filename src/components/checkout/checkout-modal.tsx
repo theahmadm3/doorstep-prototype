@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import type { User, Order, GuestCart, Restaurant, OrderPayload, OrderItemPayload } from "@/lib/types";
+import type { User, Order, Restaurant, OrderPayload, OrderItemPayload } from "@/lib/types";
 import type { PaystackConfig, PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
 import {
   Dialog,
@@ -28,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getAddresses, placeOrder, initializePayment } from "@/lib/api";
+import { placeOrder, initializePayment } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Minus, Plus, Edit, Info } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
@@ -44,17 +44,12 @@ interface CheckoutModalProps {
     isOpen: boolean;
     onClose: () => void;
     order?: Order | null;
-    guestCart?: GuestCart;
 }
 
 export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: CheckoutModalProps) {
   const { 
     orders,
-    guestCart: globalGuestCart,
-    clearGuestCart, 
     updateOrderStatus, 
-    increaseGuestItemQuantity, 
-    decreaseGuestItemQuantity, 
     increaseOrderItemQuantity, 
     decreaseOrderItemQuantity, 
     removeUnsubmittedOrder,
@@ -76,9 +71,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const [showHighFeeModal, setShowHighFeeModal] = useState(false);
 
 
-  // Determine the active order and cart based on whether an initialOrder (logged-in user) is passed
   const order = initialOrder ? orders.find(o => o.id === initialOrder.id) : null;
-  const guestCart = initialOrder ? null : globalGuestCart;
 
   useEffect(() => {
     setIsClient(true);
@@ -115,8 +108,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   }, [viewedRestaurant, selectedAddress]);
   
   const checkoutItems = useMemo(() => {
-    return user && order ? order.items : guestCart?.items || [];
-  }, [order, guestCart, user]);
+    return user && order ? order.items : [];
+  }, [order, user]);
 
   const { subtotal, taxes, total, totalInKobo } = useMemo(() => {
     const sub = checkoutItems.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
@@ -225,15 +218,12 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   }, [totalInKobo, toast, onClose, initializePaystackPayment, onSuccess, onClosePaymentModal]);
 
   const handlePayment = async () => {
-    if (!user) {
+    if (!user || !order) {
         toast({ title: "Please Log In", description: "You need to be logged in to place an order.", variant: "destructive" });
-        clearGuestCart();
         onClose();
         router.push(`/login?redirect=/customer/dashboard`);
         return;
     }
-    
-    if (!order) return;
 
     if (!user.phone_number) {
         toast({ title: "Phone Number Required", description: "Please add a phone number to your profile before placing an order.", variant: "destructive" });
@@ -271,21 +261,17 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const handleIncrease = (itemId: string) => {
     if (order) {
       increaseOrderItemQuantity(order.id, itemId);
-    } else {
-      increaseGuestItemQuantity(itemId);
     }
   };
 
   const handleDecrease = (itemId: string) => {
     if (order) {
       decreaseOrderItemQuantity(order.id, itemId);
-    } else {
-      decreaseGuestItemQuantity(itemId);
     }
   };
 
-  if (!isClient || !isOpen || checkoutItems.length === 0) {
-    if (isOpen && checkoutItems.length === 0) {
+  if (!isClient || !isOpen || !order || checkoutItems.length === 0) {
+    if (isOpen && (!order || checkoutItems.length === 0)) {
         onClose();
     }
     return null;

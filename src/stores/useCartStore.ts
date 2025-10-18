@@ -6,20 +6,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 interface CartState {
   orders: Order[];
-  guestCart: {
-    restaurantId: string | null;
-    items: OrderItem[];
-  };
   addOrUpdateOrder: (item: MenuItem) => Order;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   increaseOrderItemQuantity: (orderId: string, itemId: string) => void;
   decreaseOrderItemQuantity: (orderId: string, itemId: string) => void;
   removeUnsubmittedOrder: (orderId: string) => void;
-  addToGuestCart: (item: MenuItem) => boolean;
-  clearGuestCart: () => void;
-  increaseGuestItemQuantity: (itemId: string) => void;
-  decreaseGuestItemQuantity: (itemId: string) => void;
-  removeGuestItem: (itemId: string) => void;
   clearUserOrders: () => void;
 }
 
@@ -31,7 +22,6 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       orders: [],
-      guestCart: { restaurantId: null, items: [] },
 
       addOrUpdateOrder: (item: MenuItem) => {
         const { orders } = get();
@@ -127,79 +117,12 @@ export const useCartStore = create<CartState>()(
       clearUserOrders: () => {
           set({ orders: [] });
       },
-
-      // Guest Cart Logic
-      addToGuestCart: (item) => {
-        const { guestCart } = get();
-        if (guestCart.restaurantId && guestCart.restaurantId !== item.restaurant) {
-          return false; // Indicate confirmation needed
-        }
-
-        set(state => {
-          const newRestaurantId = state.guestCart.restaurantId || item.restaurant;
-          const existingItem = state.guestCart.items.find(cartItem => cartItem.id === item.id);
-          let newItems;
-          if (existingItem) {
-            newItems = state.guestCart.items.map(cartItem =>
-              cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
-            );
-          } else {
-            newItems = [...state.guestCart.items, { ...item, quantity: 1 }];
-          }
-          return { guestCart: { restaurantId: newRestaurantId, items: newItems } };
-        });
-        return true;
-      },
-
-      clearGuestCart: () => {
-        set({ guestCart: { restaurantId: null, items: [] } });
-      },
-
-      increaseGuestItemQuantity: (itemId) => {
-        set(state => ({
-          guestCart: {
-            ...state.guestCart,
-            items: state.guestCart.items.map(item =>
-              item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
-            )
-          }
-        }));
-      },
-
-      decreaseGuestItemQuantity: (itemId) => {
-        set(state => {
-          const newItems = state.guestCart.items.map(item =>
-            item.id === itemId ? { ...item, quantity: Math.max(0, item.quantity - 1) } : item
-          ).filter(item => item.quantity > 0);
-
-          return {
-            guestCart: {
-              ...state.guestCart,
-              items: newItems,
-              restaurantId: newItems.length === 0 ? null : state.guestCart.restaurantId,
-            }
-          };
-        });
-      },
-
-      removeGuestItem: (itemId) => {
-        set(state => {
-          const newItems = state.guestCart.items.filter(item => item.id !== itemId);
-          return {
-            guestCart: {
-              ...state.guestCart,
-              items: newItems,
-              restaurantId: newItems.length === 0 ? null : state.guestCart.restaurantId,
-            }
-          };
-        });
-      }
     }),
     {
       name: 'doorstep-cart-storage',
       storage: createJSONStorage(() => localStorage),
-      // Only persist the parts of the state we care about
-      partialize: (state) => ({ guestCart: state.guestCart, orders: state.orders.filter(o => o.status === 'unsubmitted') }),
+      // Only persist unsubmitted orders
+      partialize: (state) => ({ orders: state.orders.filter(o => o.status === 'unsubmitted') }),
     }
   )
 );
