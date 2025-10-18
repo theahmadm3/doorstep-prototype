@@ -147,10 +147,11 @@ export interface OrderItemPayload {
 
 export interface OrderPayload {
   restaurant_id: string;
-  delivery_address_id: string;
+  delivery_address_id?: string;
   items: OrderItemPayload[];
   payment_reference: string;
   delivery_fee: string;
+  order_type: 'delivery' | 'pickup';
 }
 
 export interface CustomerOrder {
@@ -362,7 +363,6 @@ export interface RiderOrderResponse {
     success: boolean;
     data: RiderOrder[];
 }
-
 
 export interface AvailableRiderOrder {
     id: string;
