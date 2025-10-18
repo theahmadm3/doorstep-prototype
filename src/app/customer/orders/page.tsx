@@ -150,8 +150,9 @@ export default function CustomerOrdersPage() {
         });
     }
 
-    const activeOrders = fetchedOrders.filter(o => o.status !== 'Delivered' && o.status !== 'Cancelled');
-    const pastOrders = fetchedOrders.filter(o => o.status === 'Delivered' || o.status === 'Cancelled');
+    const pastOrderStatuses = ['Delivered', 'Cancelled', 'Picked Up by Customer', 'Rejected'];
+    const activeOrders = fetchedOrders.filter(o => !pastOrderStatuses.includes(o.status));
+    const pastOrders = fetchedOrders.filter(o => pastOrderStatuses.includes(o.status));
     const unsubmittedOrders = unplacedOrders.filter(o => o.status === 'unsubmitted');
 
     return (
