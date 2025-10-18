@@ -14,21 +14,9 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { useCartStore } from "@/stores/useCartStore";
 
 export default function RestaurantMenuPage() {
-  const { addToGuestCart, clearGuestCart } = useCartStore();
   const { toast } = useToast();
   const params = useParams();
   const router = useRouter();
@@ -37,9 +25,6 @@ export default function RestaurantMenuPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-
-  const [showClearCartDialog, setShowClearCartDialog] = useState(false);
-  const [itemToAdd, setItemToAdd] = useState<MenuItem | null>(null);
 
   useEffect(() => {
      const storedUser = localStorage.getItem('user');
@@ -66,37 +51,19 @@ export default function RestaurantMenuPage() {
   }, [restaurantId]);
 
   const handleAddItem = (item: MenuItem) => {
-    // For guests, we add to cart. If they are logged in, we redirect them to the customer dashboard version of this page.
+    // If the user is logged in, redirect them to the customer-specific page to add the item.
+    // If not, prompt them to log in.
     if (user) {
       router.push(`/customer/restaurants/${restaurantId}`);
-      return;
-    }
-
-    const success = addToGuestCart(item);
-    if (success) {
-      toast({
-        title: "Added to cart",
-        description: `${item.name} has been added to your cart.`,
-      });
     } else {
-      setItemToAdd(item);
-      setShowClearCartDialog(true);
-    }
-  };
-
-  const handleConfirmClearCart = () => {
-    if (itemToAdd) {
-        clearGuestCart();
-        addToGuestCart(itemToAdd);
         toast({
-            title: "Cart Cleared & Item Added",
-            description: `Your cart has been cleared and ${itemToAdd.name} has been added.`,
+            title: "Login Required",
+            description: "Please log in to start ordering.",
+            variant: "destructive"
         });
+      router.push(`/login?redirect=/restaurants/${restaurantId}`);
     }
-    setShowClearCartDialog(false);
-    setItemToAdd(null);
   };
-
 
   if (isLoading) {
     return (
@@ -137,20 +104,6 @@ export default function RestaurantMenuPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-       <AlertDialog open={showClearCartDialog} onOpenChange={setShowClearCartDialog}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                <AlertDialogTitle>Start a New Cart?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    You have items from another restaurant in your cart. Would you like to clear your current cart to add this item?
-                </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setItemToAdd(null)}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmClearCart}>Clear Cart & Add</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
       <Header />
       <main className="flex-grow">
         <div className="container py-12">
