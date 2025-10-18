@@ -215,7 +215,7 @@ export default function VendorOrdersPage() {
                 // The confirmation will be a separate step.
                 setIsUpdating(orderId);
                  try {
-                    await updateVendorOrderStatus(orderId, 'ready');
+                    await updateVendorOrderStatus(orderId, 'ready', 'inhouse');
                     toast({
                         title: "Success",
                         description: "Order marked as Ready for Pickup.",
@@ -547,3 +547,4 @@ export default function VendorOrdersPage() {
         </div>
     );
 }
+
