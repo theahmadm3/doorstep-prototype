@@ -60,7 +60,7 @@ export default function PickupConfirmationModal({ isOpen, onClose, orderId, onSu
       onSuccess();
       onClose();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+      const message = "Unable to confirm pickup. Please check the OTP and try again.";
       toast({
         title: "Confirmation Failed",
         description: message,

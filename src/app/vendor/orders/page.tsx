@@ -211,13 +211,32 @@ export default function VendorOrdersPage() {
         
         if (action === 'ready') {
             if (orderToUpdate.order_type === 'pickup') {
-                setOrderForPickup(orderToUpdate);
-                setPickupModalOpen(true);
+                // For pickup orders, just update the status to "Ready for Pickup"
+                // The confirmation will be a separate step.
+                setIsUpdating(orderId);
+                 try {
+                    await updateVendorOrderStatus(orderId, 'ready');
+                    toast({
+                        title: "Success",
+                        description: "Order marked as Ready for Pickup.",
+                    });
+                    await fetchOrders();
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+                    toast({
+                        title: "Update Failed",
+                        description: message,
+                        variant: "destructive",
+                    });
+                } finally {
+                    setIsUpdating(null);
+                }
                 return;
             } else {
+                 // For delivery orders, open the rider type selection modal
                  setOrderForRiderSelection(orderToUpdate);
-                setRiderTypeModalOpen(true);
-                return;
+                 setRiderTypeModalOpen(true);
+                 return;
             }
         }
 
