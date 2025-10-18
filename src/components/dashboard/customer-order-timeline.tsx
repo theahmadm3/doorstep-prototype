@@ -4,8 +4,8 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import type { CustomerOrder, OrderDetail } from "@/lib/types";
-import { orderStatusSteps } from "@/lib/data";
+import type { CustomerOrder, OrderDetail, OrderStatus } from "@/lib/types";
+import { orderStatusSteps, pickupOrderStatusSteps } from "@/lib/data";
 import { Check, CheckCircle, CircleDotDashed, Star, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
@@ -35,7 +35,32 @@ const DetailsSkeleton = () => (
 );
 
 export default function CustomerOrderTimeline({ order, details, isLoadingDetails, onConfirmDelivery, isConfirming }: CustomerOrderTimelineProps) {
-    const currentStatusIndex = orderStatusSteps.indexOf(order.status);
+    const isPickup = order.order_type === 'pickup';
+    const timelineSteps = isPickup ? pickupOrderStatusSteps : orderStatusSteps;
+    
+    // Map backend status to a consistent index for both timelines
+    let currentStatusIndex = -1;
+    if (isPickup) {
+        const pickupStatusMap: Record<OrderStatus, number> = {
+            'Pending': 0,
+            'Accepted': 1,
+            'Preparing': 2,
+            'Ready for Pickup': 3,
+            'Picked Up by Customer': 4,
+            'Completed': 4,
+        };
+        currentStatusIndex = pickupStatusMap[order.status as keyof typeof pickupStatusMap] ?? -1;
+        // The display step 'Completed' corresponds to multiple backend statuses
+        if (order.status === 'Picked Up by Customer') {
+             const completedIndex = timelineSteps.indexOf('Completed');
+             if(completedIndex > -1) currentStatusIndex = completedIndex;
+        } else {
+             currentStatusIndex = timelineSteps.indexOf(order.status);
+        }
+
+    } else {
+        currentStatusIndex = timelineSteps.indexOf(order.status);
+    }
     
     return (
         <Card className="shadow-md border-muted">
@@ -110,9 +135,14 @@ export default function CustomerOrderTimeline({ order, details, isLoadingDetails
                             )}
 
                             <div>
-                                <h4 className="font-semibold mb-4 text-md">Delivery To</h4>
+                                <h4 className="font-semibold mb-4 text-md">{isPickup ? "Pickup Location" : "Delivery To"}</h4>
                                 <div className="text-sm p-3 bg-muted rounded-md border">
-                                    {details.delivery_address ? (
+                                    {isPickup ? (
+                                        <>
+                                            <p className="font-semibold">{details.restaurant.name}</p>
+                                            <p>{details.restaurant.address?.street_name || "Address not available"}</p>
+                                        </>
+                                    ) : details.delivery_address ? (
                                         <>
                                             <p className="font-semibold">{details.delivery_address.address_nickname || 'Address Details'}</p>
                                             <p>{details.delivery_address.street_address}, {details.delivery_address.city}</p>
@@ -125,7 +155,7 @@ export default function CustomerOrderTimeline({ order, details, isLoadingDetails
                             <div>
                                 <h4 className="font-semibold mb-6 text-md">Status</h4>
                                 <ol className="relative border-s border-gray-200 dark:border-gray-700">                  
-                                {orderStatusSteps.map((status, index) => {
+                                {timelineSteps.map((status, index) => {
                                         const isCompleted = index < currentStatusIndex;
                                         const isCurrent = index === currentStatusIndex;
 
@@ -148,7 +178,7 @@ export default function CustomerOrderTimeline({ order, details, isLoadingDetails
                     </div>
                 ) : <p className="text-muted-foreground">Could not load order details.</p>}
             </CardContent>
-             {order.status === 'On the Way' && onConfirmDelivery && (
+             {order.status === 'On the Way' && onConfirmDelivery && !isPickup && (
                 <CardFooter className="flex-col items-stretch pt-4 border-t">
                     <Button
                         onClick={() => onConfirmDelivery(order.id)}
