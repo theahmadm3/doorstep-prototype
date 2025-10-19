@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CheckCircle, Package, DollarSign, Check, X, Phone } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { getAvailableRiderOrders } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAvailableRiderOrders, performRiderAction } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
 const AvailableDeliveriesSkeleton = () => (
     <Card>
@@ -49,6 +49,7 @@ const AvailableDeliveriesSkeleton = () => (
 
 export default function RiderDashboardPage() {
     const { toast } = useToast();
+    const queryClient = useQueryClient();
 
     const { data: availableOrders, isLoading, isError } = useQuery({
         queryKey: ['availableRiderOrders'],
@@ -63,14 +64,31 @@ export default function RiderDashboardPage() {
         }
     });
 
+    const actionMutation = useMutation({
+        mutationFn: ({ orderId, action }: { orderId: string, action: 'accept' | 'reject' }) => performRiderAction(orderId, action),
+        onSuccess: (_, { action }) => {
+            toast({
+                title: `Order ${action === 'accept' ? 'Accepted' : 'Rejected'}`,
+                description: "Your order list has been updated."
+            });
+            queryClient.invalidateQueries({ queryKey: ['availableRiderOrders'] });
+            queryClient.invalidateQueries({ queryKey: ['riderOrders'] });
+        },
+        onError: (error, { action }) => {
+            toast({
+                title: `Failed to ${action} order`,
+                description: error.message,
+                variant: "destructive"
+            });
+        }
+    });
+
     const handleAccept = (orderId: string) => {
-        // TODO: Implement API call to accept order
-        toast({ title: "Order Accepted (Mock)", description: `Order #${orderId.slice(0, 6)} accepted.` });
+        actionMutation.mutate({ orderId, action: 'accept' });
     }
 
     const handleReject = (orderId: string) => {
-        // TODO: Implement API call to reject order
-        toast({ title: "Order Rejected (Mock)", description: `Order #${orderId.slice(0, 6)} rejected.` });
+        actionMutation.mutate({ orderId, action: 'reject' });
     }
 
     return (
@@ -156,10 +174,10 @@ export default function RiderDashboardPage() {
                                                 </TableCell>
                                                 <TableCell>{formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}</TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button variant="outline" size="icon" className="mr-2 border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600" onClick={() => handleAccept(order.id)}>
+                                                    <Button variant="outline" size="icon" className="mr-2 border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600" onClick={() => handleAccept(order.id)} disabled={actionMutation.isPending}>
                                                         <Check className="h-4 w-4" />
                                                     </Button>
-                                                    <Button variant="outline" size="icon" className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => handleReject(order.id)}>
+                                                    <Button variant="outline" size="icon" className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => handleReject(order.id)} disabled={actionMutation.isPending}>
                                                         <X className="h-4 w-4" />
                                                     </Button>
                                                 </TableCell>
