@@ -55,21 +55,21 @@ export default function RiderOrderActions({ order, onSuccess }: RiderOrderAction
             {isLoading ? 'Updating...' : 'Arrived at Restaurant'}
           </Button>
         );
-      case 'arrived_restaurant':
+      case 'Arrived at Restaurant':
         return (
           <Button className="w-full" onClick={() => handleAction('pickedup')} disabled={isLoading}>
              <Truck className="mr-2 h-4 w-4" />
             {isLoading ? 'Updating...' : 'Mark as Picked Up'}
           </Button>
         );
-      case 'pickedup':
+      case 'On the Way':
          return (
           <Button className="w-full" onClick={() => handleAction('arrived_destination')} disabled={isLoading}>
             <Map className="mr-2 h-4 w-4" />
             {isLoading ? 'Updating...' : 'Arrived at Destination'}
           </Button>
         );
-      case 'arrived_destination':
+      case 'Arrived at Destination':
         return (
           <Button className="w-full" onClick={() => setIsModalOpen(true)} disabled={isLoading}>
             <Check className="mr-2 h-4 w-4" />
