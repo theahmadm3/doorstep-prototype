@@ -115,9 +115,10 @@ export default function RiderOrdersPage() {
         }
     });
 
-    const ongoingStatuses: OrderStatus[] = ["Driver Assigned", "arrived_restaurant", "pickedup", "arrived_destination"];
-    const ongoingOrders = orders.filter(o => ongoingStatuses.includes(o.status));
-    const pastOrders = orders.filter(o => !ongoingStatuses.includes(o.status));
+    const pastStatuses: OrderStatus[] = ["Delivered", "Cancelled", "Rejected"];
+    const ongoingOrders = orders.filter(o => !pastStatuses.includes(o.status));
+    const pastOrders = orders.filter(o => pastStatuses.includes(o.status));
+
 
     const handleActionSuccess = () => {
         refetch();
