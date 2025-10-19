@@ -246,7 +246,7 @@ export async function updateRestaurantProfile(payload: VendorProfileUpdatePayloa
 
 // Rider API
 export async function getAvailableRiderOrders(): Promise<AvailableRiderOrder[]> {
-    const response = await fetcher<{data: AvailableRiderOrder[]}>('/drivers/orders/available/');
+    const response = await fetcher<{data: AvailableRiderOrder[]}>('/drivers/orders/available');
     return response.data;
 }
 
