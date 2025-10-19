@@ -255,7 +255,7 @@ export async function getRiderOrders(): Promise<RiderOrder[]> {
 }
 
 export async function performRiderAction(orderId: string, action: string, payload?: object): Promise<RiderOrder> {
-    const response = await fetcher<{ data: RiderOrder }>(`/drivers/orders/${orderId}/${action}/`, {
+    const response = await fetcher<{ data: RiderOrder }>(`/drivers/orders/${orderId}/${action}`, {
         method: 'POST',
         body: payload ? JSON.stringify(payload) : undefined,
     });
