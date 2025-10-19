@@ -88,8 +88,8 @@ export default function RiderLayout({
                   <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'R'}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold">{user?.full_name || "Rider User"}</span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm font-semibold truncate">{user?.full_name || "Rider User"}</span>
+                  <span className="text-xs text-muted-foreground truncate">
                     {user?.email || "rider@doorstep.com"}
                   </span>
                 </div>
