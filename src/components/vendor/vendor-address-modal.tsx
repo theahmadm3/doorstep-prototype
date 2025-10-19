@@ -21,7 +21,12 @@ interface VendorAddressModalProps {
 
 const libraries: ("places")[] = ['places'];
 
-const GooglePlacesAutocomplete = ({ onPlaceSelect, initialValue = "" }) => {
+interface GooglePlacesAutocompleteProps {
+    onPlaceSelect: (location: { street_name: string; latitude: number; longitude: number } | null, value?: string) => void;
+    initialValue?: string;
+}
+
+const GooglePlacesAutocomplete = ({ onPlaceSelect, initialValue = "" }: GooglePlacesAutocompleteProps) => {
     const {
         ready,
         value,
@@ -39,7 +44,7 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect, initialValue = "" }) => {
         onPlaceSelect(null, e.target.value);
     };
 
-    const handleSelect = (suggestion) => () => {
+    const handleSelect = (suggestion: google.maps.places.AutocompletePrediction) => () => {
         setValue(suggestion.description, false);
         clearSuggestions();
 

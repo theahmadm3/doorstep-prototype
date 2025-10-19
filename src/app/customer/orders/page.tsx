@@ -17,7 +17,19 @@ import CheckoutModal from "@/components/checkout/checkout-modal";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
-const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder, isLoading, onToggle, orderDetails, loadingDetailsId }) => {
+interface OrderListProps {
+    title: string;
+    orders: CustomerOrder[];
+    onConfirmDelivery: (orderId: string) => void;
+    isConfirming: boolean;
+    isPastOrder: boolean;
+    isLoading: boolean;
+    onToggle: (value: string) => void;
+    orderDetails: Record<string, OrderDetail | null>;
+    loadingDetailsId: string | null;
+}
+
+const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder, isLoading, onToggle, orderDetails, loadingDetailsId }: OrderListProps) => {
     if (isLoading) {
         return (
             <div>
@@ -64,10 +76,10 @@ const OrderList = ({ title, orders, onConfirmDelivery, isConfirming, isPastOrder
                                 <AccordionContent className="px-6 pb-6">
                                      <CustomerOrderTimeline
                                         order={order}
-                                        details={orderDetails[order.id]}
+                                        details={orderDetails[order.id] ?? undefined}
                                         isLoadingDetails={loadingDetailsId === order.id}
                                         onConfirmDelivery={onConfirmDelivery}
-                                        isConfirming={isConfirming === order.id}
+                                        isConfirming={isConfirming}
                                     />
                                 </AccordionContent>
                             </AccordionItem>
@@ -210,7 +222,7 @@ export default function CustomerOrdersPage() {
                 title="Active Orders"
                 orders={activeOrders}
                 onConfirmDelivery={handleConfirmDelivery}
-                isConfirming={isConfirming ? (activeOrders.find(o => o.id === (isConfirming as any)))?.id : undefined}
+                isConfirming={!!isConfirming}
                 isPastOrder={false}
                 isLoading={isLoadingOrders}
                 onToggle={handleToggleAccordion}
@@ -221,6 +233,8 @@ export default function CustomerOrdersPage() {
             <OrderList
                 title="Past Orders"
                 orders={pastOrders}
+                onConfirmDelivery={handleConfirmDelivery}
+                isConfirming={false}
                 isPastOrder={true}
                 isLoading={isLoadingOrders}
                 onToggle={handleToggleAccordion}

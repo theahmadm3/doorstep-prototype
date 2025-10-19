@@ -41,21 +41,20 @@ export default function CustomerOrderTimeline({ order, details, isLoadingDetails
     // Map backend status to a consistent index for both timelines
     let currentStatusIndex = -1;
     if (isPickup) {
-        const pickupStatusMap: Record<OrderStatus, number> = {
+        const pickupStatusMap: Partial<Record<OrderStatus, number>> = {
             'Pending': 0,
             'Accepted': 1,
             'Preparing': 2,
             'Ready for Pickup': 3,
             'Picked Up by Customer': 4,
-            'Completed': 4,
         };
-        currentStatusIndex = pickupStatusMap[order.status as keyof typeof pickupStatusMap] ?? -1;
-        // The display step 'Completed' corresponds to multiple backend statuses
+        currentStatusIndex = pickupStatusMap[order.status] ?? -1;
+        // The display step 'Completed' corresponds to 'Picked Up by Customer' backend status
         if (order.status === 'Picked Up by Customer') {
-             const completedIndex = timelineSteps.indexOf('Completed');
-             if(completedIndex > -1) currentStatusIndex = completedIndex;
+             currentStatusIndex = 4; // Index of 'Completed' in the timeline
         } else {
-             currentStatusIndex = timelineSteps.indexOf(order.status);
+             const statusIndex = timelineSteps.indexOf(order.status);
+             if (statusIndex > -1) currentStatusIndex = statusIndex;
         }
 
     } else {

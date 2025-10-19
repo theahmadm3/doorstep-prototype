@@ -13,7 +13,15 @@ import { getAdminOrders } from "@/lib/api";
 import type { AdminOrder } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const OrderTable = ({ orders, title, description, actionButton, isLoading }) => {
+interface OrderTableProps {
+    orders: AdminOrder[];
+    title: string;
+    description: string;
+    actionButton?: (order: AdminOrder) => React.ReactNode;
+    isLoading: boolean;
+}
+
+const OrderTable = ({ orders, title, description, actionButton, isLoading }: OrderTableProps) => {
     if (isLoading) {
         return (
              <Card>
@@ -179,7 +187,6 @@ export default function AdminOrdersPage() {
                         orders={riderAssignedOrders}
                         title="Rider Assigned"
                         description="Orders currently out for delivery."
-                        actionButton={null}
                         isLoading={isLoading}
                     />
                 </TabsContent>
@@ -188,7 +195,6 @@ export default function AdminOrdersPage() {
                         orders={pastOrders}
                         title="Past Orders"
                         description="Completed or cancelled orders."
-                        actionButton={null}
                         isLoading={isLoading}
                     />
                 </TabsContent>

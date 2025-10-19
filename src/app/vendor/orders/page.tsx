@@ -42,7 +42,19 @@ import PickupConfirmationModal from "@/components/vendor/pickup-confirmation-mod
 
 const ITEMS_PER_PAGE = 5;
 
-const OrderTable = ({ title, description, orders, actions, currentPage, onPageChange, totalPages, isLoading, showActions = true }) => {
+interface OrderTableProps {
+    title: string;
+    description: string;
+    orders: VendorOrder[];
+    actions?: (order: VendorOrder) => React.ReactNode;
+    currentPage: number;
+    onPageChange: (page: number) => void;
+    totalPages: number;
+    isLoading: boolean;
+    showActions?: boolean;
+}
+
+const OrderTable = ({ title, description, orders, actions, currentPage, onPageChange, totalPages, isLoading, showActions = true }: OrderTableProps) => {
     if (isLoading) {
         return (
              <Card>
@@ -124,7 +136,7 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
                                 <TableCell>₦{parseFloat(order.total_amount).toFixed(2)}</TableCell>
                                 {showActions && (
                                     <TableCell className="space-x-2">
-                                        {actions(order)}
+                                        {actions?.(order)}
                                     </TableCell>
                                 )}
                             </TableRow>
@@ -339,11 +351,11 @@ export default function VendorOrdersPage() {
         past: 1,
     });
     
-    const handlePageChange = (category, page) => {
+    const handlePageChange = (category: string, page: number) => {
         setPages(prev => ({ ...prev, [category]: page }));
     };
 
-    const paginate = (data, page) => {
+    const paginate = (data: VendorOrder[], page: number) => {
         const start = (page - 1) * ITEMS_PER_PAGE;
         const end = start + ITEMS_PER_PAGE;
         return data.slice(start, end);
