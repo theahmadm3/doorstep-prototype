@@ -1,5 +1,4 @@
 
-
 import * as z from 'zod';
 
 // Generic
@@ -47,7 +46,7 @@ export interface User {
     full_name: string;
     email: string;
     phone_number: string | null;
-    role: "customer" | "restaurant" | "admin" | "rider";
+    role: "customer" | "restaurant" | "admin" | "driver";
     status: "Pending" | "Active" | "Suspended";
     avatar_url: string | null;
     created_at: string;
@@ -118,7 +117,7 @@ export interface MenuItemPayload {
 }
 
 // Order Management Types
-export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way' | 'arrived_restaurant' | 'pickedup' | 'arrived_destination' | 'Picked Up by Customer' | 'Rejected';
+export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way' | 'arrived_restaurant' | 'pickedup' | 'arrived_destination' | 'Picked Up by Customer' | 'Rejected' | 'Driver Assigned';
 
 export interface OrderItem extends MenuItem {
   quantity: number;
