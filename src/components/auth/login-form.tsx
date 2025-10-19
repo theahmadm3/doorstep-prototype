@@ -69,7 +69,7 @@ export default function LoginForm() {
         case 'restaurant':
           router.push('/vendor/dashboard');
           break;
-        case 'driver':
+        case 'rider':
           router.push('/rider/dashboard');
           break;
         case 'customer':

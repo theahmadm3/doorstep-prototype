@@ -46,7 +46,7 @@ export default function RiderOrdersPage() {
             </TableHeader>
             <TableBody>
               {paginatedOngoingOrders.map((order) => {
-                const restaurant = restaurants.find(r => r.id === order.restaurantId);
+                const restaurant = restaurants.find(r => Number(r.id) === Number(order.restaurantId));
                 return (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">#{order.id}</TableCell>
@@ -115,7 +115,7 @@ export default function RiderOrdersPage() {
             </TableHeader>
             <TableBody>
               {paginatedPastOrders.map((order) => {
-                 const restaurant = restaurants.find(r => r.id === order.restaurantId);
+                 const restaurant = restaurants.find(r => Number(r.id) === Number(order.restaurantId));
                  return (
                     <TableRow key={order.id}>
                         <TableCell className="font-medium">#{order.id}</TableCell>

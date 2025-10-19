@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, ShieldOff, Trash2, Utensils, DollarSign, Package, Legend } from "lucide-react";
+import { MoreHorizontal, ShieldOff, Trash2, Utensils, DollarSign, Package } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { restaurants, analyticsData } from "@/lib/data";
 import { useToast } from "@/hooks/use-toast";

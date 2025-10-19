@@ -26,7 +26,11 @@ interface AddressSelectionModalProps {
     onClose: () => void;
 }
 
-const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
+interface GooglePlacesAutocompleteProps {
+    onPlaceSelect: (place: google.maps.places.PlaceResult) => void;
+}
+
+const GooglePlacesAutocomplete = ({ onPlaceSelect }: GooglePlacesAutocompleteProps) => {
     const {
         ready,
         value,
@@ -42,7 +46,7 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
         setValue(e.target.value);
     };
 
-    const handleSelect = ({ description, place_id }) => () => {
+    const handleSelect = ({ description, place_id }: { description: string; place_id?: string }) => () => {
         setValue(description, false);
         clearSuggestions();
 
@@ -51,14 +55,16 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
             console.log("📍 Coordinates: ", { lat, lng });
 
             // Fetch Place Details
-            const service = new window.google.maps.places.PlacesService(document.createElement('div'));
-            service.getDetails({ placeId: place_id }, (place, status) => {
-                if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-                    onPlaceSelect(place);
-                } else {
-                    console.error('Failed to fetch place details:', status);
-                }
-            });
+            if (place_id) {
+                const service = new window.google.maps.places.PlacesService(document.createElement('div'));
+                service.getDetails({ placeId: place_id }, (place, status) => {
+                    if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+                        onPlaceSelect(place);
+                    } else {
+                        console.error('Failed to fetch place details:', status);
+                    }
+                });
+            }
         });
     };
 
