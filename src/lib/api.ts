@@ -194,7 +194,7 @@ export async function confirmPickupByCustomer(orderId: string, otp: string): Pro
         otp: otp,
     };
     await fetcher<void>(`/orders/${orderId}/pickup-status/`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: JSON.stringify(payload),
     });
 }

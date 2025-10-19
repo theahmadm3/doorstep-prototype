@@ -1,4 +1,5 @@
 
+
 import * as z from 'zod';
 
 // Generic
@@ -117,7 +118,7 @@ export interface MenuItemPayload {
 }
 
 // Order Management Types
-export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way' | 'arrived_restaurant' | 'pickedup' | 'arrived_destination' | 'Picked Up by Customer';
+export type OrderStatus = 'unsubmitted' | 'Order Placed' | 'Vendor Accepted' | 'Preparing' | 'Order Ready' | 'Rider Assigned' | 'Rider on the Way' | 'Delivered' | 'Cancelled' | 'Pending' | 'Accepted' | 'Ready for Pickup' | 'On the Way' | 'arrived_restaurant' | 'pickedup' | 'arrived_destination' | 'Picked Up by Customer' | 'Rejected';
 
 export interface OrderItem extends MenuItem {
   quantity: number;
