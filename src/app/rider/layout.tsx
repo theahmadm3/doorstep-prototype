@@ -81,16 +81,18 @@ export default function RiderLayout({
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
-            <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
-              <Avatar>
-                <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Rider"} />
-                <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'R'}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold">{user?.full_name || "Rider User"}</span>
-                <span className="text-xs text-muted-foreground">
-                  {user?.email || "rider@doorstep.com"}
-                </span>
+            <div className="flex flex-col items-center gap-3 p-2 rounded-md bg-muted">
+              <div className="w-full flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Rider"} />
+                  <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'R'}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold">{user?.full_name || "Rider User"}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {user?.email || "rider@doorstep.com"}
+                  </span>
+                </div>
               </div>
               <LogoutButton />
             </div>
