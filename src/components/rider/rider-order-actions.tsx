@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { performRiderAction } from '@/lib/api';
 import type { RiderOrder } from '@/lib/types';
-import { Restaurant, Check, Map, Truck } from 'lucide-react';
+import { UtensilsCrossed, Check, Map, Truck } from 'lucide-react';
 import OTPSubmissionModal from './otp-submission-modal';
 
 interface RiderOrderActionsProps {
@@ -51,7 +51,7 @@ export default function RiderOrderActions({ order, onSuccess }: RiderOrderAction
       case 'Driver Assigned':
         return (
           <Button className="w-full" onClick={() => handleAction('arrived_restaurant')} disabled={isLoading}>
-            <Restaurant className="mr-2 h-4 w-4" />
+            <UtensilsCrossed className="mr-2 h-4 w-4" />
             {isLoading ? 'Updating...' : 'Arrived at Restaurant'}
           </Button>
         );
