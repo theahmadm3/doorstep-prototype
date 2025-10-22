@@ -28,6 +28,7 @@ import { useEffect, useState, useCallback } from "react";
 import type { User as UserType } from "@/lib/types";
 import { getRestaurantProfile } from "@/lib/api";
 import VendorAddressModal from "@/components/vendor/vendor-address-modal";
+import { PWAInstallButton } from "@/components/pwa/install-button";
 
 export default function VendorLayout({
 	children,
@@ -147,6 +148,7 @@ export default function VendorLayout({
 							</div>
 							<LogoutButton />
 						</div>
+						<PWAInstallButton />
 					</SidebarFooter>
 				</Sidebar>
 				<div className="flex flex-col flex-1 min-w-0">

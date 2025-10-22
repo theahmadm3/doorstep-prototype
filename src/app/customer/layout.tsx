@@ -23,6 +23,7 @@ import type { User as UserType } from "@/lib/types";
 import AddressSelectionModal from "@/components/location/address-selection-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
+import { PWAInstallButton } from "@/components/pwa/install-button";
 
 export default function CustomerLayout({
 	children,
@@ -138,6 +139,7 @@ export default function CustomerLayout({
 								<LogoutButton />
 							</div>
 						)}
+						<PWAInstallButton />
 					</SidebarFooter>
 				</Sidebar>
 				

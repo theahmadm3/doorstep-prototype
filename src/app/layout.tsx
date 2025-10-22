@@ -15,6 +15,21 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: 'Doorstep',
   description: 'Your favorite food, delivered.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Doorstep',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  themeColor: '#000000',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
 };
 
 export default function RootLayout({
@@ -24,6 +39,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${poppins.variable} h-full`}>
+      <head>
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      </head>
       <body className="antialiased flex flex-col h-full bg-background">
         <Providers>
           {children}

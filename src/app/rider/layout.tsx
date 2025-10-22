@@ -25,6 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LogoutButton from '@/components/auth/logout-button';
 import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
+import { PWAInstallButton } from '@/components/pwa/install-button';
 
 export default function RiderLayout({
   children,
@@ -96,6 +97,7 @@ export default function RiderLayout({
               </div>
               <LogoutButton />
             </div>
+            <PWAInstallButton />
           </SidebarFooter>
         </Sidebar>
         <div className="flex flex-col flex-1 min-w-0">
