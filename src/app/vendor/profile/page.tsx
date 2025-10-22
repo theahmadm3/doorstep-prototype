@@ -71,17 +71,19 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect, initialValue = "" }) => {
     };
     
     return (
-        <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-                value={value}
-                onChange={handleInput}
-                disabled={!ready}
-                placeholder="Search for an address..."
-                className="pl-10"
-            />
+        <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-2">
+                <Search className="h-5 w-5 text-muted-foreground" />
+                <Input
+                    value={value}
+                    onChange={handleInput}
+                    disabled={!ready}
+                    placeholder="Search for an address..."
+                    className="flex-1"
+                />
+            </div>
             {status === "OK" && (
-                 <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg">
+                 <div className="w-full bg-background border rounded-md shadow-lg">
                     <ScrollArea className="h-auto max-h-60">
                         {data.map((suggestion) => (
                             <div key={suggestion.place_id} onClick={handleSelect(suggestion)} className="p-3 hover:bg-muted cursor-pointer text-sm">
@@ -259,7 +261,7 @@ function VendorProfilePage() {
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Your Restaurant Profile</h1>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-3 xl:col-span-2 space-y-8">
+                <div className="lg:col-span-2 space-y-8">
                     {/* Restaurant Info Card */}
                     <Card>
                         <CardHeader className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
@@ -317,7 +319,7 @@ function VendorProfilePage() {
                 </div>
 
                 {/* Owner Info Card */}
-                <div className="lg:col-span-3 xl:col-span-1 space-y-8">
+                <div className="lg:col-span-1 space-y-8">
                     <Card>
                          <CardHeader>
                              <CardTitle>Owner Information</CardTitle>

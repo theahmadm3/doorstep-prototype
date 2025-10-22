@@ -21,7 +21,7 @@ export default function RiderProfilePage() {
     return (
         <div className="space-y-8">
              <h1 className="text-3xl font-bold font-headline">Your Profile</h1>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl">
                 <Card>
                     <CardHeader>
                         <CardTitle>Personal Information</CardTitle>
@@ -43,7 +43,7 @@ export default function RiderProfilePage() {
                                 <Label htmlFor="vehicle">Vehicle Type</Label>
                                 <Input id="vehicle" defaultValue="Motorcycle" />
                             </div>
-                            <Button type="submit">Save Information</Button>
+                            <Button type="submit" className="w-full sm:w-auto">Save Information</Button>
                         </form>
                     </CardContent>
                 </Card>

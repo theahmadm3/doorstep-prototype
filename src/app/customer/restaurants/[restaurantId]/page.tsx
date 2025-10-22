@@ -47,19 +47,21 @@ const FloatingCartButton = ({ order, onCheckout }: { order: Order | undefined, o
     const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20">
-            <Button
-                onClick={onCheckout}
-                size="lg"
-                className="w-full h-14 rounded-full shadow-2xl flex justify-between items-center text-lg"
-            >
-                <div className="flex items-center gap-2">
-                    <ShoppingCart />
-                    <span>{itemCount} item{itemCount > 1 ? 's' : ''}</span>
-                </div>
-                <span>View Order</span>
-                <span>₦{order.total.toFixed(2)}</span>
-            </Button>
+        <div className="flex justify-center items-end pt-4 pb-4">
+            <div className="w-full max-w-md px-4">
+                <Button
+                    onClick={onCheckout}
+                    size="lg"
+                    className="w-full h-14 rounded-full shadow-2xl flex justify-between items-center text-lg"
+                >
+                    <div className="flex items-center gap-2">
+                        <ShoppingCart />
+                        <span>{itemCount} item{itemCount > 1 ? 's' : ''}</span>
+                    </div>
+                    <span>View Order</span>
+                    <span>₦{order.total.toFixed(2)}</span>
+                </Button>
+            </div>
         </div>
     );
 };
@@ -161,7 +163,7 @@ export default function RestaurantMenuPage() {
 	}
 
 	return (
-		<div className="pb-24">
+		<div className="flex flex-col min-h-screen">
 			<CheckoutModal
 				isOpen={isCheckoutOpen}
 				onClose={() => setCheckoutOpen(false)}
@@ -177,15 +179,14 @@ export default function RestaurantMenuPage() {
 				</Button>
 			</div>
 
-			<div className="relative h-48 md:h-64 rounded-2xl overflow-hidden mb-8">
+			<div className="flex flex-col h-48 md:h-64 rounded-2xl overflow-hidden mb-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
 				<Image 
 					src={viewedRestaurant.image_url || 'https://placehold.co/1200x400.png'}
 					alt={viewedRestaurant.name}
 					fill
-					className="object-cover"
+					className="object-cover -z-10"
 				/>
-				<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"/>
-				<div className="absolute bottom-0 left-0 p-6">
+				<div className="flex flex-col justify-end h-full p-4 md:p-6">
 					<h1 className="text-3xl md:text-4xl font-bold text-white font-headline">
 						{viewedRestaurant?.name}
 					</h1>
@@ -219,22 +220,24 @@ export default function RestaurantMenuPage() {
 								return (
 									<Card key={item.id} className={cn("overflow-hidden transition-all hover:shadow-md", { "opacity-60": !item.is_available })}>
 										<CardContent className="p-4 flex gap-4">
-											<div className="flex-1">
+											<div className="flex-1 min-w-0">
 												<CardTitle className="text-lg font-semibold mb-1">{item.name}</CardTitle>
 												<CardDescription className="text-sm line-clamp-2">{item.description}</CardDescription>
-												<p className="font-bold text-md mt-2">₦{parseFloat(item.price).toFixed(2)}</p>
+												<div className="flex items-center justify-between mt-2">
+													<p className="font-bold text-md">₦{parseFloat(item.price).toFixed(2)}</p>
+													<Button
+														size="icon"
+														className="h-8 w-8 rounded-full shadow-lg flex-shrink-0"
+														onClick={() => handleAddItem(item)}
+														disabled={!item.is_available}
+														aria-label={`Add ${item.name} to cart`}
+													>
+														<PlusCircle className="h-5 w-5"/>
+													</Button>
+												</div>
 											</div>
-											<div className="relative w-24 h-24 flex-shrink-0">
+											<div className="w-24 h-24 flex-shrink-0">
 												<Image src={imageUrl} alt={item.name} fill className="rounded-md object-cover"/>
-												<Button
-													size="icon"
-													className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full shadow-lg"
-													onClick={() => handleAddItem(item)}
-													disabled={!item.is_available}
-													aria-label={`Add ${item.name} to cart`}
-												>
-													<PlusCircle className="h-5 w-5"/>
-												</Button>
 											</div>
 										</CardContent>
 									</Card>

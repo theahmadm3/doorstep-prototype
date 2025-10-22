@@ -31,18 +31,18 @@ export default function CustomerDashboardClient({
 				</p>
 			</div>
 
-			<div className="inline-flex w-full overflow-x-auto snap-x snap-mandatory gap-6 py-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 				{restaurants.map((restaurant) => (
 					<Link
 						key={restaurant.id}
 						href={`/customer/restaurants/${restaurant.id}`}
 						passHref
 						onClick={() => setViewedRestaurant(restaurant)}
-						className="group block flex-shrink-0 w-[380px]"
+						className="group block w-full"
 					>
-						<Card className="relative h-[300px] w-full overflow-hidden border-0 bg-black rounded-3xl shadow-lg transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+						<Card className="flex flex-col h-[300px] w-full overflow-hidden border-0 bg-black rounded-3xl shadow-lg transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
 							{/* Full Background Image with Overlay */}
-							<div className="absolute inset-0">
+							<div className="flex-1 flex flex-col">
 								<Image
 									src={
 										restaurant.image_url && restaurant.image_url !== "string"
@@ -52,96 +52,91 @@ export default function CustomerDashboardClient({
 									alt={restaurant.name}
 									fill
 									data-ai-hint="restaurant storefront"
-									className="object-cover transition-transform duration-700 group-hover:scale-105"
+									className="object-cover transition-transform duration-700 group-hover:scale-105 -z-10"
 								/>
 								{/* Dynamic Gradient Overlay */}
-								<div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-								<div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-transparent to-blue-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-							</div>
+								<div className="flex flex-col h-full bg-gradient-to-t from-black via-black/60 to-transparent group-hover:bg-gradient-to-br group-hover:from-purple-600/20 group-hover:via-black/60 group-hover:to-blue-600/20 transition-all duration-500">
+									{/* Content Overlay */}
+									<div className="flex flex-col justify-between h-full p-6">
+										{/* Top Section - Status Badge & Rating */}
+										<div className="flex justify-between items-start">
+											{/* Rating Badge */}
+											<div className="backdrop-blur-xl bg-white/10 border border-white/20 px-4 py-2 rounded-full">
+												<div className="flex items-center gap-2">
+													<svg
+														className="w-4 h-4 text-yellow-400 fill-yellow-400"
+														viewBox="0 0 20 20"
+													>
+														<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+													</svg>
+													<span className="text-white text-sm font-bold">
+														{restaurant.rating || "4.5"}
+													</span>
+												</div>
+											</div>
 
-							{/* Content Overlay */}
-							<div className="relative h-full flex flex-col justify-between p-6">
-								{/* Top Section - Status Badge & Rating */}
-								<div className="flex justify-between items-start">
-									{/* Rating Badge */}
-									<div className="backdrop-blur-xl bg-white/10 border border-white/20 px-4 py-2 rounded-full">
-										<div className="flex items-center gap-2">
-											<svg
-												className="w-4 h-4 text-yellow-400 fill-yellow-400"
-												viewBox="0 0 20 20"
-											>
-												<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-											</svg>
-											<span className="text-white text-sm font-bold">
-												{restaurant.rating || "4.5"}
-											</span>
+											{/* Status Badge */}
+											<div className="backdrop-blur-xl bg-white/10 border border-white/20 px-4 py-2 rounded-full">
+												<div className="flex items-center gap-2">
+													<div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+													<span className="text-white text-xs font-medium">
+														Open
+													</span>
+												</div>
+											</div>
 										</div>
-									</div>
 
-									{/* Status Badge */}
-									<div className="backdrop-blur-xl bg-white/10 border border-white/20 px-4 py-2 rounded-full">
-										<div className="flex items-center gap-2">
-											<div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-											<span className="text-white text-xs font-medium">
-												Open
-											</span>
+										{/* Bottom Section - Info */}
+										<div className="space-y-4">
+											{/* Restaurant Name */}
+											<div className="space-y-2">
+												<h3 className="text-3xl font-bold text-white leading-tight tracking-tight line-clamp-2">
+													{restaurant.name}
+												</h3>
+
+												{/* Location */}
+												<div className="flex items-center gap-2 text-white/80">
+													<div className="p-1.5 bg-white/10 backdrop-blur-sm rounded-lg flex-shrink-0">
+														<MapPin className="h-4 w-4" />
+													</div>
+													<span className="text-sm font-medium truncate">
+														{restaurant.address?.street_name ||
+															"Address not available"}
+													</span>
+												</div>
+											</div>
+
+											{/* Action Button */}
+											<div className="flex items-center justify-between backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-4 transition-all duration-300 group-hover:bg-white/20 group-hover:border-white/30">
+												<div className="flex items-center gap-3">
+													<div className="p-2 bg-white rounded-xl">
+														<Utensils className="h-5 w-5 text-black" />
+													</div>
+													<span className="text-white font-semibold text-base">
+														View Menu
+													</span>
+												</div>
+
+												<div className="p-2 bg-white/20 rounded-xl transition-transform duration-300 group-hover:translate-x-1">
+													<svg
+														className="h-5 w-5 text-white"
+														fill="none"
+														viewBox="0 0 24 24"
+														stroke="currentColor"
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															strokeWidth={2.5}
+															d="M13 7l5 5m0 0l-5 5m5-5H6"
+														/>
+													</svg>
+												</div>
+											</div>
 										</div>
 									</div>
 								</div>
-
-								{/* Bottom Section - Info */}
-								<div className="space-y-4">
-									{/* Restaurant Name */}
-									<div className="space-y-2">
-										<h3 className="text-3xl font-bold text-white leading-tight tracking-tight line-clamp-2">
-											{restaurant.name}
-										</h3>
-
-										{/* Location */}
-										<div className="flex items-center gap-2 text-white/80">
-											<div className="p-1.5 bg-white/10 backdrop-blur-sm rounded-lg flex-shrink-0">
-												<MapPin className="h-4 w-4" />
-											</div>
-											<span className="text-sm font-medium truncate">
-												{restaurant.address?.street_name ||
-													"Address not available"}
-											</span>
-										</div>
-									</div>
-
-									{/* Action Button */}
-									<div className="flex items-center justify-between backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-4 transition-all duration-300 group-hover:bg-white/20 group-hover:border-white/30">
-										<div className="flex items-center gap-3">
-											<div className="p-2 bg-white rounded-xl">
-												<Utensils className="h-5 w-5 text-black" />
-											</div>
-											<span className="text-white font-semibold text-base">
-												View Menu
-											</span>
-										</div>
-
-										<div className="p-2 bg-white/20 rounded-xl transition-transform duration-300 group-hover:translate-x-1">
-											<svg
-												className="h-5 w-5 text-white"
-												fill="none"
-												viewBox="0 0 24 24"
-												stroke="currentColor"
-											>
-												<path
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													strokeWidth={2.5}
-													d="M13 7l5 5m0 0l-5 5m5-5H6"
-												/>
-											</svg>
-										</div>
-									</div>
-								</div>
 							</div>
-
-							{/* Decorative Elements */}
-							<div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-3xl" />
-							<div className="absolute bottom-0 left-0 w-40 h-40 bg-gradient-to-tr from-purple-500/20 to-transparent rounded-full blur-3xl" />
 						</Card>
 					</Link>
 				))}
