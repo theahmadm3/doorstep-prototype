@@ -65,7 +65,6 @@
   },
   "devDependencies": {
     "@tanstack/react-query-devtools": "^5.51.11",
-    "@types/next-pwa": "^5.6.9",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
