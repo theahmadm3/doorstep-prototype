@@ -1,17 +1,17 @@
 {
-	"theme_color": "#3c7fec",
-	"background_color": "#2EC6FE",
+	"theme_color": "#005380",
+	"background_color": "#005380",
 	"icons": [
 		{
 			"purpose": "maskable",
 			"sizes": "512x512",
-			"src": "eren.png",
+			"src": "/public/eren.png",
 			"type": "image/png"
 		},
 		{
 			"purpose": "any",
 			"sizes": "512x512",
-			"src": "eren.png",
+			"src": "/public/eren.png",
 			"type": "image/png"
 		}
 	],

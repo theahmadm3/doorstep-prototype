@@ -3,6 +3,7 @@ import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/providers";
+import PWAInstallPrompt from "@/components/pwa-install-prompt";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const poppins = Poppins({
@@ -13,7 +14,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
 	title: "Doorstep",
-	description: "Your favorite food, delivered.",
+	description: "Your favourite food, delivered to your doorstep.",
 };
 
 export default function RootLayout({
@@ -32,6 +33,7 @@ export default function RootLayout({
 			<body className="antialiased flex flex-col h-full bg-background">
 				<Providers>
 					{children}
+					<PWAInstallPrompt />
 					<Toaster />
 				</Providers>
 			</body>
