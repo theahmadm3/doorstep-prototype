@@ -7,7 +7,7 @@ interface OrderStatusTrackerProps {
   currentStatus: OrderStatus;
 }
 
-const statusIcons: Record<OrderStatus, React.ElementType> = {
+npmconst statusIcons: Record<OrderStatus, React.ElementType> = {
   'Order Placed': ShoppingCart,
   'Vendor Accepted': Package,
   'Preparing': ChefHat,

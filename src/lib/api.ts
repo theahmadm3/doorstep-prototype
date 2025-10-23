@@ -1,5 +1,4 @@
 
-
 import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder, Rider, RiderPayload, RiderListResponse, VendorAnalyticsData, VendorProfile, VendorProfileUpdatePayload, AvailableRiderOrder, RiderOrderResponse, PickupConfirmationPayload, RiderOrder } from "./types";
 import type { InitializePaymentPayload, InitializePaymentResponse } from "./types/paystack";
 import {format} from "date-fns"
@@ -194,7 +193,7 @@ export async function confirmPickupByCustomer(orderId: string, otp: string): Pro
         otp: otp,
     };
     await fetcher<void>(`/orders/${orderId}/pickup-status/`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: JSON.stringify(payload),
     });
 }
@@ -246,7 +245,7 @@ export async function updateRestaurantProfile(payload: VendorProfileUpdatePayloa
 
 // Rider API
 export async function getAvailableRiderOrders(): Promise<AvailableRiderOrder[]> {
-    const response = await fetcher<{data: AvailableRiderOrder[]}>('/drivers/orders/available/');
+    const response = await fetcher<{data: AvailableRiderOrder[]}>('/drivers/orders/available');
     return response.data;
 }
 
@@ -256,7 +255,7 @@ export async function getRiderOrders(): Promise<RiderOrder[]> {
 }
 
 export async function performRiderAction(orderId: string, action: string, payload?: object): Promise<RiderOrder> {
-    const response = await fetcher<{ data: RiderOrder }>(`/drivers/orders/${orderId}/${action}/`, {
+    const response = await fetcher<{ data: RiderOrder }>(`/drivers/orders/${orderId}/${action}`, {
         method: 'POST',
         body: payload ? JSON.stringify(payload) : undefined,
     });
