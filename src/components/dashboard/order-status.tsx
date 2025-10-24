@@ -15,7 +15,8 @@ const statusIcons: Record<OrderStatus, React.ElementType> = {
   'Rider Assigned': Bike,
   'Rider on the Way': Bike,
   'Delivered': CheckCircle2,
-  'Cancelled': Circle, // Fallback
+  'Picked Up by Customer': CheckCircle2,
+  'Cancelled': Circle,
 };
 
 export default function OrderStatusTracker({ currentStatus }: OrderStatusTrackerProps) {
@@ -39,7 +40,7 @@ export default function OrderStatusTracker({ currentStatus }: OrderStatusTracker
               >
                 <Icon className="w-5 h-5" />
               </div>
-              <p className={cn("mt-2 text-xs md:text-sm", isCurrent ? "font-bold text-primary" : "text-muted-foreground")}>{status}</p>
+              <p className={cn("mt-2 text-xs md:text-sm", isCurrent ? "font-bold text-primary" : "text-muted-foreground")}>{status === 'Picked Up by Customer' ? 'Delivered' : status}</p>
             </div>
             {index < orderStatusFlow.length - 1 && (
               <div className={cn("flex-1 h-1 mx-2", isCompleted ? "bg-primary" : "bg-border")} />
