@@ -1,8 +1,7 @@
-
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'use-sync-external-store/shim/index.js';
-import { useToast } from './use-toast';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useToast } from "@/hooks/use-toast";
 
 export interface LocationStatus {
     status: 'connecting' | 'connected' | 'disconnected' | 'error';
@@ -61,6 +60,7 @@ export const useRiderLocationSocket = (): LocationStatus => {
                         
                         if (socket.readyState === WebSocket.OPEN) {
                              socket.send(JSON.stringify({ latitude: roundedLat, longitude: roundedLng }));
+                             console.log(`Coords: ${roundedLat}, ${roundedLng}`)
                         }
                     },
                     (error) => {
@@ -82,6 +82,7 @@ export const useRiderLocationSocket = (): LocationStatus => {
 
         socket.onmessage = (event) => {
             console.log('WebSocket message received:', event.data);
+            
         };
 
         socket.onerror = (event) => {
