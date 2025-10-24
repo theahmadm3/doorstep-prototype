@@ -4,12 +4,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, Package, DollarSign, Check, X, Phone } from "lucide-react";
+import { CheckCircle, Package, DollarSign, Check, X, Phone, Satellite } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAvailableRiderOrders, performRiderAction } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { useLocationStatus } from "@/app/rider/layout";
+import { cn } from "@/lib/utils";
 
 const AvailableDeliveriesSkeleton = () => (
     <Card>
@@ -50,6 +52,7 @@ const AvailableDeliveriesSkeleton = () => (
 export default function RiderDashboardPage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const locationStatus = useLocationStatus();
 
     const { data: availableOrders, isLoading, isError } = useQuery({
         queryKey: ['availableRiderOrders'],
@@ -94,7 +97,7 @@ export default function RiderDashboardPage() {
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Rider Dashboard</h1>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Available Deliveries</CardTitle>
@@ -115,7 +118,7 @@ export default function RiderDashboardPage() {
                         <p className="text-xs text-muted-foreground">Keep up the great work!</p>
                     </CardContent>
                 </Card>
-                <Card>
+                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Earnings Today</CardTitle>
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -123,6 +126,16 @@ export default function RiderDashboardPage() {
                     <CardContent>
                         <div className="text-2xl font-bold">₦6,250</div>
                         <p className="text-xs text-muted-foreground">Your current payout</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Location Status</CardTitle>
+                        <Satellite className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className={cn("text-2xl font-bold", locationStatus.color)}>{locationStatus.message}</div>
+                        <p className="text-xs text-muted-foreground">Live location tracking</p>
                     </CardContent>
                 </Card>
             </div>
