@@ -23,6 +23,7 @@ import AddressSelectionModal from "@/components/location/address-selection-modal
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
+import { usePathname } from "next/navigation";
 
 const customerNavLinks = [
   { href: "/customer/dashboard", label: "Dashboard", icon: Home },
@@ -39,6 +40,9 @@ export default function CustomerLayout({
 	const { addresses, isAddressesLoading } = useAddresses();
 	const [isAddressModalRequired, setAddressModalRequired] = useState(false);
 	const [isClient, setIsClient] = useState(false);
+	const pathname = usePathname();
+
+	const showHeader = pathname === '/customer/dashboard';
 
 	useEffect(() => {
 		setIsClient(true);
@@ -134,7 +138,7 @@ export default function CustomerLayout({
 				</Sidebar>
 				
 				<div className="flex-1 flex flex-col min-w-0">
-					<ClientHeader />
+					{showHeader && <ClientHeader />}
 					<main className="flex-1 overflow-y-auto">
 						<div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
 							{children}
