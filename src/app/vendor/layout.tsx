@@ -7,7 +7,6 @@ import {
 	SidebarMenu,
 	SidebarMenuItem,
 	SidebarMenuButton,
-	SidebarInset,
 	SidebarProvider,
 	SidebarTrigger,
 	SidebarFooter,
@@ -28,6 +27,15 @@ import { useEffect, useState, useCallback } from "react";
 import type { User as UserType } from "@/lib/types";
 import { getRestaurantProfile } from "@/lib/api";
 import VendorAddressModal from "@/components/vendor/vendor-address-modal";
+import BottomNavigation from "@/components/layout/bottom-navigation";
+
+const vendorNavLinks = [
+  { href: "/vendor/dashboard", label: "Dashboard", icon: Home },
+  { href: "/vendor/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/vendor/analytics", label: "Analytics", icon: LineChart },
+  { href: "/vendor/config", label: "Config", icon: Settings },
+  { href: "/vendor/profile", label: "Profile", icon: User },
+];
 
 export default function VendorLayout({
 	children,
@@ -73,7 +81,7 @@ export default function VendorLayout({
 					isOpen={showAddressModal}
 					onAddressSaved={handleAddressSaved}
 				/>
-				<Sidebar>
+				<Sidebar className="hidden md:flex md:flex-col">
 					<SidebarHeader>
 						<div className="flex items-center gap-2">
 							<Utensils className="w-8 h-8 text-primary" />
@@ -82,46 +90,16 @@ export default function VendorLayout({
 					</SidebarHeader>
 					<SidebarContent>
 						<SidebarMenu>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/vendor/dashboard">
-										<Home />
-										Dashboard
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/vendor/orders">
-										<ShoppingBag />
-										Orders
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/vendor/analytics">
-										<LineChart />
-										Analytics
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/vendor/config">
-										<Settings />
-										Config
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/vendor/profile">
-										<User />
-										Profile
-									</Link>								
-								</SidebarMenuButton>
-							</SidebarMenuItem>
+							{vendorNavLinks.map(link => (
+								<SidebarMenuItem key={link.href}>
+									<SidebarMenuButton asChild>
+										<Link href={link.href}>
+											<link.icon />
+											{link.label}
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							))}
 						</SidebarMenu>
 					</SidebarContent>
 					<SidebarFooter className="mt-auto">
@@ -150,13 +128,14 @@ export default function VendorLayout({
 					</SidebarFooter>
 				</Sidebar>
 				<div className="flex flex-col flex-1 min-w-0">
-					<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10">
+					<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10 md:hidden">
 						<SidebarTrigger />
 						<h1 className="text-lg font-semibold">Vendor Panel</h1>
 					</div>
-					<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+					<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
 						{children}
 					</main>
+					<BottomNavigation links={vendorNavLinks} />
 				</div>
 			</div>
 		</SidebarProvider>

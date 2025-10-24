@@ -7,7 +7,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarInset,
   SidebarProvider,
   SidebarTrigger,
   SidebarFooter,
@@ -15,7 +14,6 @@ import {
 } from '@/components/ui/sidebar';
 import {
   Home,
-  LogOut,
   Package,
   User,
   Utensils
@@ -25,6 +23,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LogoutButton from '@/components/auth/logout-button';
 import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
+import BottomNavigation from '@/components/layout/bottom-navigation';
+
+const riderNavLinks = [
+  { href: "/rider/dashboard", label: "Dashboard", icon: Home },
+  { href: "/rider/orders", label: "Orders", icon: Package },
+  { href: "/rider/profile", label: "Profile", icon: User },
+];
 
 export default function RiderLayout({
   children,
@@ -45,7 +50,7 @@ export default function RiderLayout({
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
-        <Sidebar>
+        <Sidebar className="hidden md:flex md:flex-col">
           <SidebarHeader>
             <div className="flex items-center gap-2">
               <Utensils className="w-8 h-8 text-primary" />
@@ -54,30 +59,16 @@ export default function RiderLayout({
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/rider/dashboard">
-                    <Home />
-                    Dashboard
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/rider/orders">
-                    <Package />
-                    Orders
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/rider/profile">
-                    <User />
-                    Profile
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {riderNavLinks.map(link => (
+                <SidebarMenuItem key={link.href}>
+                  <SidebarMenuButton asChild>
+                    <Link href={link.href}>
+                      <link.icon />
+                      {link.label}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
@@ -99,13 +90,14 @@ export default function RiderLayout({
           </SidebarFooter>
         </Sidebar>
         <div className="flex flex-col flex-1 min-w-0">
-          <div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10">
+          <div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10 md:hidden">
             <SidebarTrigger />
             <h1 className="text-lg font-semibold">Rider Panel</h1>
           </div>
-          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
             {children}
           </main>
+          <BottomNavigation links={riderNavLinks} />
         </div>
       </div>
     </SidebarProvider>
