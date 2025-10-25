@@ -36,10 +36,10 @@ export default function VerifyOtpForm() {
     if (!phoneNumber) {
       toast({
         title: "Phone number not found",
-        description: "Please start the signup process again.",
+        description: "Please start the signup or login process again.",
         variant: "destructive",
       });
-      router.replace("/signup");
+      router.replace("/login");
     }
   }, [phoneNumber, router, toast]);
   
@@ -90,18 +90,36 @@ export default function VerifyOtpForm() {
       const user = await getAuthUser();
       localStorage.setItem('user', JSON.stringify(user));
       
-      // Clear any guest cart items
-      clearUserOrders();
+      // Clear any guest cart items if the user is a customer
+      if (user.role === 'customer') {
+          clearUserOrders();
+      }
 
       toast({
         title: "Verification Successful!",
-        description: "Welcome to Doorstep!",
+        description: `Welcome back, ${user.full_name}!`,
       });
 
       // Clear the phone number from the auth store
       setPhoneNumber(null);
 
-      router.push("/customer/dashboard");
+      // Redirect based on user role
+      switch (user.role) {
+        case "customer":
+          router.push("/customer/dashboard");
+          break;
+        case "restaurant":
+          router.push("/vendor/dashboard");
+          break;
+        case "driver":
+          router.push("/rider/dashboard");
+          break;
+        case "admin":
+          router.push("/admin/dashboard");
+          break;
+        default:
+          router.push("/login"); // Fallback to login
+      }
       
     } catch (error) {
       const message =
