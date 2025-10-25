@@ -9,6 +9,8 @@ export interface PaginatedResponse<T> {
     results: T[];
 }
 
+const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
+
 // User and Auth
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -21,6 +23,27 @@ export interface LoginResponse {
     user: User;
 }
 
+export const customerSignupSchema = z.object({
+  full_name: z.string().min(2, "Full name must be at least 2 characters."),
+  email: z.string().email("Please enter a valid email."),
+  phone_number: z.string().regex(nigerianPhoneRegex, "Please enter a valid 11-digit Nigerian phone number (e.g., 08012345678)."),
+  birthday: z.date().optional(),
+  referral_code: z.string().optional(),
+});
+export type CustomerSignupPayload = z.infer<typeof customerSignupSchema>;
+
+export const otpVerificationSchema = z.object({
+    otp_code: z.string().length(6, "OTP must be 6 digits."),
+});
+export type OtpVerificationPayload = z.infer<typeof otpVerificationSchema> & { phone_number: string };
+
+export interface VerifyOtpResponse {
+    tokens: { access: string };
+    user_role: "customer";
+}
+
+
+// Legacy signup - keeping for other roles if needed
 export const signupSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Please enter a valid email."),
@@ -234,8 +257,6 @@ export interface Rider {
 export interface RiderListResponse {
     drivers: Rider[];
 }
-
-const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
 
 export const riderSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
