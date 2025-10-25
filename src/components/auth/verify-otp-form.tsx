@@ -100,9 +100,6 @@ export default function VerifyOtpForm() {
         description: `Welcome back, ${user.full_name}!`,
       });
 
-      // Clear the phone number from the auth store
-      setPhoneNumber(null);
-
       // Redirect based on user role
       switch (user.role) {
         case "customer":
@@ -121,6 +118,9 @@ export default function VerifyOtpForm() {
           router.push("/login"); // Fallback to login
       }
       
+      // Clear the phone number from the auth store AFTER navigation
+      setPhoneNumber(null);
+
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "An unexpected error occurred.";
