@@ -7,7 +7,6 @@ import {
 	SidebarMenu,
 	SidebarMenuItem,
 	SidebarMenuButton,
-	SidebarInset,
 	SidebarProvider,
 	SidebarTrigger,
 	SidebarFooter,
@@ -23,6 +22,14 @@ import type { User as UserType } from "@/lib/types";
 import AddressSelectionModal from "@/components/location/address-selection-modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
+import BottomNavigation from "@/components/layout/bottom-navigation";
+import { usePathname } from "next/navigation";
+
+const customerNavLinks = [
+  { href: "/customer/dashboard", label: "Dashboard", icon: Home },
+  { href: "/customer/orders", label: "My Orders", icon: Package },
+  { href: "/customer/profile", label: "Profile", icon: User },
+];
 
 export default function CustomerLayout({
 	children,
@@ -33,6 +40,9 @@ export default function CustomerLayout({
 	const { addresses, isAddressesLoading } = useAddresses();
 	const [isAddressModalRequired, setAddressModalRequired] = useState(false);
 	const [isClient, setIsClient] = useState(false);
+	const pathname = usePathname();
+
+	const showHeader = pathname === '/customer/dashboard';
 
 	useEffect(() => {
 		setIsClient(true);
@@ -78,30 +88,16 @@ export default function CustomerLayout({
 					
 					<SidebarContent className="flex-1 overflow-y-auto py-4">
 						<SidebarMenu>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/customer/dashboard">
-										<Home />
-										Dashboard
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/customer/orders">
-										<Package />
-										My Orders
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/customer/profile">
-										<User />
-										Profile
-									</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
+							{customerNavLinks.map(link => (
+								<SidebarMenuItem key={link.href}>
+									<SidebarMenuButton asChild>
+										<Link href={link.href}>
+											<link.icon />
+											{link.label}
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							))}
 						</SidebarMenu>
 					</SidebarContent>
 					
@@ -142,12 +138,13 @@ export default function CustomerLayout({
 				</Sidebar>
 				
 				<div className="flex-1 flex flex-col min-w-0">
-					<ClientHeader />
+					{showHeader && <ClientHeader />}
 					<main className="flex-1 overflow-y-auto">
-						<div className="p-4 md:p-6 lg:p-8">
+						<div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
 							{children}
 						</div>
 					</main>
+					<BottomNavigation links={customerNavLinks} />
 				</div>
 			</div>
 		</SidebarProvider>

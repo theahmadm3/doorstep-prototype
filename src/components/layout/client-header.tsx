@@ -65,7 +65,7 @@ export default function ClientHeader() {
 						</Button>
 					)}
 				</div>
-				<div className="flex items-center justify-end space-x-2">
+				<div className="hidden md:flex items-center justify-end space-x-2">
 					<Button variant="ghost" size="icon" asChild>
 						<Link href="/customer/orders">
 							<Package className="h-5 w-5" />
