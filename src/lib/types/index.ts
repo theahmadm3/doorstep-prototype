@@ -13,10 +13,10 @@ const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
 
 // User and Auth
 export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
+  phone_number: z.string().regex(nigerianPhoneRegex, "Please enter a valid 11-digit Nigerian phone number (e.g., 08012345678)."),
 });
 export type LoginCredentials = z.infer<typeof loginSchema>;
+
 
 export interface LoginResponse {
     access: string;

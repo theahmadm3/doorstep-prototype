@@ -1,7 +1,7 @@
 
 "use client";
 
-import { LoginCredentials, LoginResponse, SignupPayload, SignupResponse, User, ProfileUpdatePayload, CustomerSignupPayload, OtpVerificationPayload, VerifyOtpResponse } from "./types";
+import { LoginResponse, SignupPayload, SignupResponse, User, ProfileUpdatePayload, CustomerSignupPayload, OtpVerificationPayload, VerifyOtpResponse } from "./types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -9,13 +9,13 @@ if (!BASE_URL) {
     throw new Error("Missing NEXT_PUBLIC_BASE_URL environment variable");
 }
 
-export async function loginUser(credentials: LoginCredentials): Promise<LoginResponse> {
-    const res = await fetch(`${BASE_URL}/auth/login/`, {
+export async function sendLoginOTP(phoneNumber: string): Promise<{ detail: string }> {
+    const res = await fetch(`${BASE_URL}/auth/customer/send-otp/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({ phone_number: phoneNumber }),
     });
 
     if (!res.ok) {
