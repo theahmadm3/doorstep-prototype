@@ -99,8 +99,11 @@ export default function VerifyOtpForm() {
         title: "Verification Successful!",
         description: `Welcome back, ${user.full_name}!`,
       });
+      
+      // Clear the phone number from the auth store now that we are done with it
+      setPhoneNumber(null);
 
-      // Redirect based on user role BEFORE clearing the phone number
+      // Redirect based on user role
       switch (user.role) {
         case "customer":
           router.push("/customer/dashboard");
@@ -117,9 +120,6 @@ export default function VerifyOtpForm() {
         default:
           router.push("/login"); // Fallback to login
       }
-      
-      // Clear the phone number from the auth store AFTER navigation is triggered
-      setPhoneNumber(null);
 
     } catch (error) {
       const message =
