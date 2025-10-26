@@ -1,10 +1,8 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,84 +14,55 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useSearchParams } from "next/navigation";
-import { loginUser } from "@/lib/auth-api";
+import { useRouter } from "next/navigation";
+import { sendLoginOTP } from "@/lib/auth-api";
 import { loginSchema } from "@/lib/types";
 import { useState } from "react";
-
 
 export default function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect");
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loginErrorMessage, setLoginErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      phone_number: "",
     },
+    mode: "onChange",
   });
 
+  const { formState: { isSubmitting } } = form;
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
-    
-    localStorage.removeItem('user');
-    localStorage.removeItem('accessToken');
+    setErrorMessage("");
 
-    setIsSubmitting(true);
+    let formattedPhoneNumber = values.phone_number;
+    if (formattedPhoneNumber.startsWith('0')) {
+      formattedPhoneNumber = '234' + formattedPhoneNumber.substring(1);
+    }
+
     try {
-      const data = await loginUser(values);
-
+      await sendLoginOTP(formattedPhoneNumber);
+      
+      // Store phone number temporarily in localStorage
+      localStorage.setItem('tempPhoneNumber', formattedPhoneNumber);
+      
       toast({
-        title: "Login Successful",
-        description: "Redirecting...",
+        title: "OTP Sent",
+        description: "We've sent a login code to you via WhatsApp.",
       });
 
-      localStorage.setItem('accessToken', data.access);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      if (redirectUrl) {
-        router.push(redirectUrl);
-        return;
-      }
-      
-      switch (data.user.role) {
-        case 'admin':
-          router.push('/admin/dashboard');
-          break;
-        case 'restaurant':
-          router.push('/vendor/dashboard');
-          break;
-        case 'driver':
-          router.push('/rider/dashboard');
-          break;
-        case 'customer':
-          router.push('/customer/dashboard');
-          break;
-        default:
-          router.push('/login');
-          toast({
-            title: "User Type not found",
-          });
-          break;
-      }
+      router.push("/verify-otp");
 
     } catch (error) {
-       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
-       setLoginErrorMessage(errorMessage);
-       toast({
+      const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+      setErrorMessage(message);
+      toast({
         title: "Login Failed",
-        description: errorMessage,
+        description: message,
         variant: "destructive",
       });
-    }
-    finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -102,34 +71,23 @@ export default function LoginForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="email"
+          name="phone_number"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Phone Number</FormLabel>
               <FormControl>
-                <Input placeholder="you@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input placeholder="08012345678" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? "signing in..." : "Sign In"}
+          {isSubmitting ? "Sending OTP..." : "Send Login Code"}
         </Button>
-        <p className={"text-center text-sm " + (loginErrorMessage ? "text-red-500" : "text-white")}> Error: {loginErrorMessage} </p>
+        {errorMessage && (
+          <p className="text-center text-sm text-red-500">{errorMessage}</p>
+        )}
       </form>
     </Form>
   );

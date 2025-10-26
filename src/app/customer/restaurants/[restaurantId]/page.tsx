@@ -313,7 +313,7 @@ export default function RestaurantMenuPage() {
                                         <Card
                                             key={item.id}
                                             className={cn(
-                                                "overflow-hidden transition-all hover:shadow-md",
+                                                "overflow-hidden transition-all hover:shadow-md w-fit",
                                                 { "opacity-60": !item.is_available },
                                             )}
                                         >
