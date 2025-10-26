@@ -1,10 +1,8 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,17 +14,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { sendLoginOTP } from "@/lib/auth-api";
 import { loginSchema } from "@/lib/types";
 import { useState } from "react";
-import { useAuthStore } from "@/stores/useAuthStore";
-
 
 export default function LoginForm() {
   const { toast } = useToast();
   const router = useRouter();
-  const { setPhoneNumber } = useAuthStore();
   const [errorMessage, setErrorMessage] = useState("");
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -44,23 +39,26 @@ export default function LoginForm() {
 
     let formattedPhoneNumber = values.phone_number;
     if (formattedPhoneNumber.startsWith('0')) {
-        formattedPhoneNumber = '234' + formattedPhoneNumber.substring(1);
+      formattedPhoneNumber = '234' + formattedPhoneNumber.substring(1);
     }
-    
+
     try {
       await sendLoginOTP(formattedPhoneNumber);
+      
+      // Store phone number temporarily in localStorage
+      localStorage.setItem('tempPhoneNumber', formattedPhoneNumber);
+      
       toast({
         title: "OTP Sent",
         description: "We've sent a login code to you via WhatsApp.",
       });
 
-      setPhoneNumber(formattedPhoneNumber);
       router.push("/verify-otp");
 
     } catch (error) {
-       const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-       setErrorMessage(message);
-       toast({
+      const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+      setErrorMessage(message);
+      toast({
         title: "Login Failed",
         description: message,
         variant: "destructive",
@@ -88,7 +86,7 @@ export default function LoginForm() {
           {isSubmitting ? "Sending OTP..." : "Send Login Code"}
         </Button>
         {errorMessage && (
-            <p className="text-center text-sm text-red-500">{errorMessage}</p>
+          <p className="text-center text-sm text-red-500">{errorMessage}</p>
         )}
       </form>
     </Form>
