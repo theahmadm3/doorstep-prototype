@@ -10,6 +10,7 @@ export const useAddresses = () => {
     const { data, isLoading, isError, refetch } = useQuery({
         queryKey: ['addresses'],
         queryFn: getAddresses,
+        refetchOnWindowFocus: false,
     });
 
     const setSelectedAddress = useUIStore(state => state.setSelectedAddress);

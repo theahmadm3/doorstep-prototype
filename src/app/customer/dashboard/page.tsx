@@ -29,7 +29,8 @@ function DashboardSkeleton() {
 export default function CustomerDashboardPage() {
     const { data: restaurants, isLoading } = useQuery({
         queryKey: ['restaurants'],
-        queryFn: getRestaurants
+        queryFn: getRestaurants,
+        refetchOnWindowFocus: false,
     });
 
     if (isLoading) {
