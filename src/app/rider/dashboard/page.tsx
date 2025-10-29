@@ -10,7 +10,7 @@ import { getAvailableRiderOrders, performRiderAction } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
-import { useLocationStatus } from "@/app/rider/layout";
+import { useRiderLocation } from "@/app/rider/layout";
 import { cn } from "@/lib/utils";
 
 const AvailableDeliveriesSkeleton = () => (
@@ -52,7 +52,7 @@ const AvailableDeliveriesSkeleton = () => (
 export default function RiderDashboardPage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
-    const locationStatus = useLocationStatus();
+    const locationStatus = useRiderLocation();
 
     const { data: availableOrders, isLoading, isError } = useQuery({
         queryKey: ['availableRiderOrders'],
