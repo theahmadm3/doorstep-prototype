@@ -17,6 +17,12 @@ export const loginSchema = z.object({
 });
 export type LoginCredentials = z.infer<typeof loginSchema>;
 
+export const partnerLoginSchema = z.object({
+  email: z.string().email("Please enter a valid email."),
+  password: z.string().min(1, "Password is required."),
+});
+export type PartnerLoginCredentials = z.infer<typeof partnerLoginSchema>;
+
 
 export interface LoginResponse {
     access: string;
