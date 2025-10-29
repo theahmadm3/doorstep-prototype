@@ -24,7 +24,7 @@ import LogoutButton from '@/components/auth/logout-button';
 import { useEffect, useState, createContext, useContext } from 'react';
 import type { User as UserType } from '@/lib/types';
 import BottomNavigation from '@/components/layout/bottom-navigation';
-import { useRiderLocation, LocationStatus } from '@/hooks/use-rider-location';
+import { useRiderLocation as useRiderLocationData, LocationStatus } from '@/hooks/use-rider-location-socket';
 
 const riderNavLinks = [
   { href: "/rider/dashboard", label: "Dashboard", icon: Home },
@@ -41,7 +41,7 @@ const LocationStatusContext = createContext<LocationStatus>({
 export const useRiderLocation = () => useContext(LocationStatusContext);
 
 function RiderLocationProvider({ children }: { children: React.ReactNode }) {
-    const locationStatus = useRiderLocation();
+    const locationStatus = useRiderLocationData();
     return (
         <LocationStatusContext.Provider value={locationStatus}>
             {children}
