@@ -4,12 +4,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, Package, DollarSign, Check, X, Phone, Satellite } from "lucide-react";
+import { CheckCircle, Package, DollarSign, Check, X, Phone, Satellite, MapPin } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAvailableRiderOrders, performRiderAction } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow } from "date-fns";
 import { useRiderLocation } from "@/app/rider/layout";
 import { cn } from "@/lib/utils";
 
@@ -23,10 +22,9 @@ const AvailableDeliveriesSkeleton = () => (
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Address</TableHead>
-                        <TableHead>Payout</TableHead>
-                        <TableHead>Posted</TableHead>
+                        <TableHead>Restaurant</TableHead>
+                        <TableHead>Distance</TableHead>
+                        <TableHead>Order Type</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -34,9 +32,8 @@ const AvailableDeliveriesSkeleton = () => (
                     {[...Array(3)].map((_, i) => (
                         <TableRow key={i}>
                             <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-48" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                             <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-20" /></TableCell>
                             <TableCell className="text-right space-x-2">
                                 <Skeleton className="h-8 w-8 inline-block" />
                                 <Skeleton className="h-8 w-8 inline-block" />
@@ -160,32 +157,27 @@ export default function RiderDashboardPage() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Order</TableHead>
-                                            <TableHead>Customer</TableHead>
-                                            <TableHead>Address</TableHead>
-                                            <TableHead>Payout</TableHead>
-                                            <TableHead>Posted</TableHead>
+                                            <TableHead>Restaurant</TableHead>
+                                            <TableHead>Distance</TableHead>
+                                            <TableHead>Order Type</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {availableOrders.map((order) => (
                                             <TableRow key={order.id}>
-                                                <TableCell className="font-medium">#{order.id.slice(0, 6)}...</TableCell>
                                                 <TableCell>
-                                                    <div className="font-medium">{order.customer.name}</div>
-                                                    <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                                        <Phone className="h-3 w-3"/> {order.customer.phone}
+                                                    <div className="font-medium">{order.restaurant_name}</div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-1">
+                                                        <MapPin className="h-3 w-3 text-muted-foreground"/> 
+                                                        {order.distance_to_order.toFixed(2)} km
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div className="max-w-xs truncate">{order.delivery_address_str}</div>
+                                                <TableCell className="capitalize">
+                                                    {order.order_type}
                                                 </TableCell>
-                                                <TableCell className="font-semibold">
-                                                    <div>₦{parseFloat(order.total_amount).toFixed(2)}</div>
-                                                    <div className="text-xs font-normal text-green-600">(+ ₦{parseFloat(order.delivery_fee).toFixed(2)} fee)</div>
-                                                </TableCell>
-                                                <TableCell>{formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}</TableCell>
                                                 <TableCell className="text-right">
                                                     <Button variant="outline" size="icon" className="mr-2 border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600" onClick={() => handleAccept(order.id)} disabled={actionMutation.isPending}>
                                                         <Check className="h-4 w-4" />

@@ -404,18 +404,9 @@ export interface RiderOrderResponse {
 export interface AvailableRiderOrder {
     id: string;
     status: OrderStatus;
-    total_amount: string;
-    delivery_fee: string;
-    restaurant_latitude: string;
-    restaurant_longitude: string;
-    delivery_latitude: string;
-    delivery_longitude: string;
-    customer: {
-        name: string;
-        phone: string;
-    };
-    delivery_address_str: string;
-    created_at: string;
+    order_type: 'delivery' | 'pickup';
+    restaurant_name: string;
+    distance_to_order: number;
 }
 
 export const OTPSchema = z.object({
