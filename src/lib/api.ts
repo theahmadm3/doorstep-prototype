@@ -21,6 +21,13 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
     const res = await fetch(`${BASE_URL}${url}`, { ...options, headers });
     
     if (!res.ok) {
+        if (res.status === 401 && typeof window !== 'undefined') {
+            // Token is invalid or expired.
+            localStorage.clear();
+            window.location.href = '/login?session_expired=true';
+            throw new Error("Session expired. Please log in again.");
+        }
+
         const errorBody = await res.text();
         console.error(`API Error: ${res.status} ${res.statusText}`, errorBody);
         try {
