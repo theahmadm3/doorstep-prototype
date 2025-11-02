@@ -109,8 +109,10 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 				// If user is trying to access another role's routes, redirect them
 				if (
 					userRoutePrefix &&
-					pathname.startsWith(`/${userRoutePrefix}`) === false &&
-					!pathname.startsWith("/restaurants/")
+					!(
+						pathname.startsWith(`/${userRoutePrefix}`) ||
+						pathname.startsWith("/restaurants/")
+					)
 				) {
 					console.warn("User attempting to access unauthorized route");
 					router.replace(getDashboardRoute(user.role));
