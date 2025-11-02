@@ -70,8 +70,6 @@ export default function VendorLayout({
 
 	const handleAddressSaved = () => {
 		setShowAddressModal(false);
-		// Optionally, you can re-verify or simply trust the modal did its job.
-		// For a better UX, we can just close it.
 	};
 
 	return (
