@@ -88,6 +88,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
 			if (!token) {
 				clearAuthData();
+				setIsLoading(false);
 				router.replace("/login");
 				return;
 			}
