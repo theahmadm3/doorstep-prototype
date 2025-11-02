@@ -17,19 +17,24 @@ const publicRoutes = [
 	"/verify-otp",
 ];
 
-const getDashboardRoute = (role: User["role"]): string => {
+const getRoleRoutePrefix = (role: User["role"]): string => {
 	switch (role) {
 		case "customer":
-			return "/customer/dashboard";
+			return "customer";
 		case "restaurant":
-			return "/vendor/dashboard";
+			return "vendor";
 		case "driver":
-			return "/rider/dashboard";
+			return "rider";
 		case "admin":
-			return "/admin/dashboard";
+			return "admin";
 		default:
-			return "/login";
+			return "";
 	}
+};
+
+const getDashboardRoute = (role: User["role"]): string => {
+	const prefix = getRoleRoutePrefix(role);
+	return prefix ? `/${prefix}/dashboard` : "/login";
 };
 
 const isPublicRoute = (pathname: string): boolean => {
@@ -99,16 +104,16 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 				setIsAuthenticated(true);
 
 				// Optional: Add role-based route protection
-				const expectedDashboard = getDashboardRoute(user.role);
-				const userRoutePrefix = expectedDashboard.split("/")[1]; // e.g., 'customer', 'vendor'
+				const userRoutePrefix = getRoleRoutePrefix(user.role);
 
 				// If user is trying to access another role's routes, redirect them
 				if (
+					userRoutePrefix &&
 					pathname.startsWith(`/${userRoutePrefix}`) === false &&
 					!pathname.startsWith("/restaurants/")
 				) {
 					console.warn("User attempting to access unauthorized route");
-					router.replace(expectedDashboard);
+					router.replace(getDashboardRoute(user.role));
 					return;
 				}
 
