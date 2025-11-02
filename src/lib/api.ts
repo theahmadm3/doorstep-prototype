@@ -252,7 +252,7 @@ export async function updateRestaurantProfile(payload: VendorProfileUpdatePayloa
 
 // Rider API
 export async function getAvailableRiderOrders(): Promise<AvailableRiderOrder[]> {
-    const response = await fetcher<PaginatedResponse<AvailableRiderOrder>>('/drivers/orders/available');
+    const response = await fetcher<PaginatedResponse<AvailableRiderOrder>>('/drivers/orders/available/');
     return response.results;
 }
 
@@ -274,7 +274,7 @@ export async function updateRiderLocation(latitude: number, longitude: number): 
         current_latitude: String(latitude.toFixed(6)),
         current_longitude: String(longitude.toFixed(6)),
     };
-    await fetcher<void>('/drivers/me/location', {
+    await fetcher<void>('/drivers/me/location/', {
         method: 'PATCH',
         body: JSON.stringify(payload),
     });
