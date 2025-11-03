@@ -288,3 +288,11 @@ export async function initializePayment(payload: InitializePaymentPayload): Prom
         body: JSON.stringify(payload)
     });
 }
+
+// Push Notification API
+export async function subscribeToNotifications(subscription: PushSubscription): Promise<void> {
+    await fetcher<void>('/subscribe', {
+        method: 'POST',
+        body: JSON.stringify(subscription.toJSON()),
+    });
+}

@@ -413,3 +413,11 @@ export const OTPSchema = z.object({
   otp: z.string().min(6, "OTP must be 6 digits.").max(6, "OTP must be 6 digits."),
 });
 export type OTPPayload = z.infer<typeof OTPSchema>;
+
+// Push Notification Types
+export interface PlatformInfo {
+  isIOS: boolean;
+  isSafari: boolean;
+  isStandalone: boolean;
+  needsPWAInstall: boolean;
+}
