@@ -7,7 +7,7 @@ export const VAPID_PUBLIC_KEY = "BN3CNOHqv-ZLPtRz9z08-sRQH-rPfEvGyv7B6W-cqt6H-Ke
 /**
  * Convert VAPID public key from base64 to Uint8Array
  */
-export function urlBase64ToUint8Array(base64String: string): Uint8Array {
+export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
     .replace(/\-/g, '+')

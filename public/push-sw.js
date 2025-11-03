@@ -4,8 +4,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Doorstep Notification';
   const options = {
     body: data.body || 'You have a new notification',
-    icon: data.icon || '/favicon.ico',
-    badge: '/favicon.ico',
+    icon: data.icon || '/eren.png',
+    badge: '/eren.png',
     data: data.data || {},
   };
 
