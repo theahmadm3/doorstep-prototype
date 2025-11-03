@@ -1,5 +1,7 @@
 // Push notification utility library
 
+import type { PlatformInfo } from "./types";
+
 export const VAPID_PUBLIC_KEY = "BN3CNOHqv-ZLPtRz9z08-sRQH-rPfEvGyv7B6W-cqt6H-KeDHNFC9PKJ25UMfFJudRC5x50RkQBUVFODLDh0paE";
 
 /**
@@ -85,17 +87,17 @@ export function isPushNotificationSupported(): boolean {
 /**
  * Detect platform information (iOS, PWA status, etc.)
  */
-export function detectPlatform(): {
-  isIOS: boolean;
-  isSafari: boolean;
-  isStandalone: boolean;
-  needsPWAInstall: boolean;
-} {
+export function detectPlatform(): PlatformInfo {
   const userAgent = window.navigator.userAgent.toLowerCase();
   const isIOS = /iphone|ipad|ipod/.test(userAgent);
   const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
+  
+  // Type-safe check for standalone mode
+  interface NavigatorStandalone {
+    standalone?: boolean;
+  }
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                       (window.navigator as any).standalone === true;
+                       (window.navigator as NavigatorStandalone).standalone === true;
   
   // iOS users need to install as PWA to get push notifications
   const needsPWAInstall = isIOS && !isStandalone;
