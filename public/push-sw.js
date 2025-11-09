@@ -1,6 +1,14 @@
 // Push notification service worker
 self.addEventListener('push', (event) => {
-  const data = event.data ? event.data.json() : {};
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      // Malformed JSON, fallback to empty object
+      data = {};
+    }
+  }
   const title = data.title || 'Doorstep Notification';
   const options = {
     body: data.body || 'You have a new notification',
