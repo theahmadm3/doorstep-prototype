@@ -24,16 +24,28 @@ export function urlBase64ToUint8Array(
 }
 
 /**
- * Register the push service worker
+ * Wait for service worker to be ready
  */
-export async function registerPushServiceWorker(): Promise<ServiceWorkerRegistration> {
+async function waitForServiceWorker(): Promise<ServiceWorkerRegistration> {
 	if (!("serviceWorker" in navigator)) {
 		throw new Error("Service workers are not supported in this browser");
 	}
 
-	const registration = await navigator.serviceWorker.register("/push-sw.js");
+	// Wait for the service worker to be ready (next-pwa registers it automatically)
+	const registration = await navigator.serviceWorker.ready;
+
+	// Force an update check (important for iOS)
 	await registration.update();
+
 	return registration;
+}
+
+/**
+ * Register the push service worker (or get existing registration)
+ * Note: next-pwa automatically registers sw.js, so we just wait for it
+ */
+export async function registerPushServiceWorker(): Promise<ServiceWorkerRegistration> {
+	return waitForServiceWorker();
 }
 
 /**
@@ -46,6 +58,39 @@ export async function subscribeToPushNotifications(
 		throw new Error("VAPID public key is not configured");
 	}
 
+	// Wait for service worker to be active (critical for iOS)
+	if (registration.installing || registration.waiting) {
+		await new Promise<void>((resolve) => {
+			const worker = registration.installing || registration.waiting;
+			if (!worker) {
+				resolve();
+				return;
+			}
+
+			const checkState = () => {
+				if (worker.state === "activated") {
+					worker.removeEventListener("statechange", checkState);
+					resolve();
+				}
+			};
+
+			worker.addEventListener("statechange", checkState);
+
+			// Timeout after 10 seconds
+			setTimeout(() => {
+				worker.removeEventListener("statechange", checkState);
+				resolve();
+			}, 10000);
+		});
+	}
+
+	// Check for existing subscription first
+	const existingSubscription = await registration.pushManager.getSubscription();
+	if (existingSubscription) {
+		return existingSubscription;
+	}
+
+	// Create new subscription
 	const subscription = await registration.pushManager.subscribe({
 		userVisibleOnly: true,
 		applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
@@ -62,14 +107,13 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
 		return null;
 	}
 
-	const registration = await navigator.serviceWorker.getRegistration(
-		"/push-sw.js",
-	);
-	if (!registration) {
+	try {
+		const registration = await navigator.serviceWorker.ready;
+		return registration.pushManager.getSubscription();
+	} catch (error) {
+		console.error("Error getting subscription:", error);
 		return null;
 	}
-
-	return registration.pushManager.getSubscription();
 }
 
 /**
@@ -92,6 +136,14 @@ export function isPushNotificationSupported(): boolean {
 }
 
 /**
+ * Get iOS version
+ */
+function getIOSVersion(): number | null {
+	const match = navigator.userAgent.match(/OS (\d+)_/);
+	return match ? parseInt(match[1], 10) : null;
+}
+
+/**
  * Detect platform information (iOS, PWA status, etc.)
  */
 export function detectPlatform(): PlatformInfo {
@@ -106,6 +158,10 @@ export function detectPlatform(): PlatformInfo {
 	const isStandalone =
 		window.matchMedia("(display-mode: standalone)").matches ||
 		(window.navigator as NavigatorStandalone).standalone === true;
+
+	// Check iOS version (16.4+ required for push)
+	const iosVersion = isIOS ? getIOSVersion() : null;
+	const supportsIOSPush = iosVersion !== null && iosVersion >= 16;
 
 	// iOS users need to install as PWA to get push notifications
 	const needsPWAInstall = isIOS && !isStandalone;
