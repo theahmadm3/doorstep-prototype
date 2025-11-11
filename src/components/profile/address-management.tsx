@@ -1,15 +1,8 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -20,9 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Address, AddressFormData, AddressPostData } from "@/lib/types";
-import { PlusCircle, Edit, Trash2 } from "lucide-react";
-import AddressForm from "./address-form";
-import { getAddresses, addAddress, updateAddress, deleteAddress } from "@/lib/api";
+import { PlusCircle, Edit, Trash2, MapPin } from "lucide-react";
+import { updateAddress, deleteAddress } from "@/lib/api";
 import { Skeleton } from "../ui/skeleton";
 import {
   AlertDialog,
@@ -33,197 +25,230 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
+import { useAddresses } from "@/hooks/use-addresses";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { addressSchema } from "@/lib/types";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "../ui/checkbox";
+import AddressSelectionModal from "../location/address-selection-modal";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function AddressManagement() {
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const { addresses, isAddressesLoading, refetchAddresses } = useAddresses();
+  const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
+  const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [isAddModalOpen, setAddModalOpen] = useState(false);
 
-  const fetchAddresses = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const fetchedAddresses = await getAddresses(); 
-      setAddresses(fetchedAddresses);
-      if (fetchedAddresses.length > 0) {
-        const defaultAddress = fetchedAddresses.find(a => a.is_default);
-        // Set selected to default or first address only on initial load or after list changes
-        if (!selectedAddressId) {
-            setSelectedAddressId(defaultAddress?.id || fetchedAddresses[0].id);
-        }
-      } else {
-        setSelectedAddressId(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const form = useForm<AddressFormData>({
+    resolver: zodResolver(addressSchema),
+    mode: "onChange",
+  });
+
+  const { mutate: updateAddressMutation, isPending: isUpdating } = useMutation({
+      mutationFn: ({ id, payload }: { id: string; payload: Partial<AddressPostData> }) => updateAddress(id, payload),
+      onSuccess: () => {
+          toast({ title: "Address Updated", description: "Your address has been successfully updated." });
+          queryClient.invalidateQueries({ queryKey: ['addresses'] });
+          setEditModalOpen(false);
+          setAddressToEdit(null);
+      },
+      onError: (error) => {
+          toast({ title: "Error", description: error.message, variant: "destructive" });
       }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to load addresses.";
-      toast({
-        title: "Error",
-        description: message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
+  });
+
+  const { mutate: deleteAddressMutation, isPending: isDeleting } = useMutation({
+      mutationFn: (id: string) => deleteAddress(id),
+      onSuccess: () => {
+          toast({ title: "Address Deleted", description: "The selected address has been removed." });
+          queryClient.invalidateQueries({ queryKey: ['addresses'] });
+          setAddressToDelete(null);
+      },
+      onError: (error) => {
+          toast({ title: "Error", description: error.message, variant: "destructive" });
+      }
+  });
 
   useEffect(() => {
-    fetchAddresses();
-  }, [fetchAddresses]);
+    refetchAddresses();
+  }, [refetchAddresses]);
 
-  
-  const handleAddClick = () => {
-    setEditingAddress(null);
-    setModalOpen(true);
+  useEffect(() => {
+      if(addressToEdit) {
+          form.reset({
+            street_address: addressToEdit.street_address ?? "",
+            city: addressToEdit.city ?? "",
+            nearest_landmark: addressToEdit.nearest_landmark ?? "",
+            address_nickname: addressToEdit.address_nickname ?? "",
+            is_default: addressToEdit.is_default || false,
+            latitude: addressToEdit.latitude ? Number(addressToEdit.latitude) : undefined,
+            longitude: addressToEdit.longitude ? Number(addressToEdit.longitude) : undefined,
+          });
+      }
+  }, [addressToEdit, form]);
+
+  const handleEditClick = (address: Address) => {
+    setAddressToEdit(address);
+    setEditModalOpen(true);
   };
 
-  const handleEditClick = () => {
-    const addressToEdit = addresses.find(addr => addr.id === selectedAddressId);
-    if (addressToEdit) {
-      setEditingAddress(addressToEdit);
-      setModalOpen(true);
-    }
+  const handleDeleteConfirm = async () => {
+     if (!addressToDelete) return;
+     deleteAddressMutation(addressToDelete.id);
   };
-
-  const handleDelete = async () => {
-     if (!selectedAddressId) return;
-     try {
-        await deleteAddress(selectedAddressId);
-        toast({ title: "Address Deleted", description: "The selected address has been removed." });
-        await fetchAddresses(); // Refetch after delete
-     } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to delete address.";
-        toast({
-            title: "Error",
-            description: message,
-            variant: "destructive",
-        });
-     }
-  };
-
 
   const handleSaveAddress = async (data: AddressFormData) => {
-    try {
-      if (editingAddress) {
-        const payload: Partial<AddressPostData> = { ...data };
-        await updateAddress(editingAddress.id, payload);
-        toast({ title: "Address Updated", description: "Your address has been successfully updated." });
-      } else {
-        const payload: AddressPostData = { ...data, is_default: addresses.length === 0 };
-        await addAddress(payload); 
-        toast({ title: "Address Added", description: "Your new address has been saved." });
-      }
-      await fetchAddresses(); // Refetch after save
-    } catch (error) {
-       const message = error instanceof Error ? error.message : "Failed to save address.";
-       toast({
-          title: "Error",
-          description: message,
-          variant: "destructive",
-       });
-    } finally {
-        setModalOpen(false);
-        setEditingAddress(null);
-    }
+    if (!addressToEdit) return;
+    updateAddressMutation({ id: addressToEdit.id, payload: data });
   };
-
-  const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
   
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-24 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Saved Addresses</label>
-        {addresses.length > 0 ? (
-          <div className="flex items-center gap-2">
-            <Select onValueChange={setSelectedAddressId} value={selectedAddressId || ''}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select an address" />
-              </SelectTrigger>
-              <SelectContent>
-                {addresses.map(addr => (
-                  <SelectItem key={addr.id} value={addr.id}>
-                    {addr.address_nickname || `${addr.street_address.substring(0, 20)}...`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="ghost" size="icon" onClick={handleEditClick} disabled={!selectedAddressId}>
-                <Edit className="h-4 w-4" />
-            </Button>
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" disabled={!selectedAddressId}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
+        <AddressSelectionModal isOpen={isAddModalOpen} onClose={() => setAddModalOpen(false)} />
+        <AlertDialog open={!!addressToDelete} onOpenChange={(open) => !open && setAddressToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This will permanently delete the address: <strong>{addressToDelete?.address_nickname || addressToDelete?.street_address}</strong>.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting}>{isDeleting ? "Deleting..." : "Delete"}</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        <Dialog open={isEditModalOpen} onOpenChange={setEditModalOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Address</DialogTitle>
+                    <DialogDescription>Update the details for this location.</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form id="address-form" onSubmit={form.handleSubmit(handleSaveAddress)} className="space-y-4 py-4">
+                        <FormField
+                            control={form.control}
+                            name="street_address"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>House number and street name</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g. 123 Allen Avenue" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="city"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>District/LGA/Town</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g. Ikeja" {...field} value={field.value ?? ''}/>
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="nearest_landmark"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Nearest Landmark (Optional)</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g. Opposite the big mosque" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="address_nickname"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Address Nickname (Optional)</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g. Home, Work" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="is_default"
+                            render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                <FormControl>
+                                <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                <FormLabel>Set as default address</FormLabel>
+                                </div>
+                            </FormItem>
+                            )}
+                        />
+                    </form>
+                </Form>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setEditModalOpen(false)}>Cancel</Button>
+                    <Button type="submit" form="address-form" disabled={isUpdating}>
+                        {isUpdating ? 'Saving...' : 'Save Changes'}
                     </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete your
-                        address.
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">You have no saved addresses.</p>
-        )}
-      </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        
+        <Button variant="outline" className="w-full" onClick={() => setAddModalOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add New Address
+        </Button>
 
-       {selectedAddress && (
-        <div className="text-sm p-3 bg-muted rounded-md border">
-            <p className="font-semibold">{selectedAddress.address_nickname || 'Address Details'}</p>
-            <p>{selectedAddress.street_address}</p>
-            <p>{selectedAddress.city}</p>
-            {selectedAddress.nearest_landmark && <p className="text-muted-foreground">Landmark: {selectedAddress.nearest_landmark}</p>}
+        <div className="space-y-3 pt-4">
+            {isAddressesLoading ? (
+                <div className="space-y-3">
+                    {[...Array(2)].map((_, i) => (
+                        <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                </div>
+            ) : addresses.length > 0 ? (
+                    addresses.map(address => (
+                    <div key={address.id} className="flex items-center gap-4 p-3 rounded-md border hover:bg-muted">
+                        <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
+                        <div className="flex-grow">
+                            <p className="font-semibold">{address.address_nickname || `${address.street_address || `Location @ ${Number(address.latitude)?.toFixed(2)}, ${Number(address.longitude)?.toFixed(2)}`}`}</p>
+                            <p className="text-sm text-muted-foreground">{address.street_address ? `${address.street_address}, ${address.city || ''}`.trim().replace(/,$/, '') : "GPS Location"}</p>
+                        </div>
+                        <div className="flex gap-1">
+                             <Button variant="ghost" size="icon" onClick={() => handleEditClick(address)}>
+                                <Edit className="h-4 w-4"/>
+                            </Button>
+                             <Button variant="ghost" size="icon" onClick={() => setAddressToDelete(address)}>
+                                <Trash2 className="h-4 w-4 text-red-500"/>
+                            </Button>
+                        </div>
+                    </div>
+                ))
+            ) : (
+                <div className="text-center text-muted-foreground py-10">
+                    <p>You have no saved addresses.</p>
+                </div>
+            )}
         </div>
-       )}
-
-      <Button variant="outline" className="w-full" onClick={handleAddClick}>
-        <PlusCircle className="mr-2 h-4 w-4" /> Add New Address
-      </Button>
-
-      <Dialog open={isModalOpen} onOpenChange={setModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingAddress ? 'Edit Address' : 'Add a New Address'}</DialogTitle>
-            <DialogDescription>
-              Please fill in the details for your delivery location.
-            </DialogDescription>
-          </DialogHeader>
-          <AddressForm
-            onSubmit={handleSaveAddress}
-            defaultValues={editingAddress || undefined}
-            isEditing={!!editingAddress}
-          />
-          <DialogFooter>
-             <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-             <Button type="submit" form="address-form">
-                {editingAddress ? 'Save Changes' : 'Save Address'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

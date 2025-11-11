@@ -1,3 +1,4 @@
+
 import LoginForm from "@/components/auth/login-form";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import Link from "next/link";
@@ -10,10 +11,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 function LoginFormSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Skeleton className="h-4 w-16" />
-        <Skeleton className="h-10 w-full" />
-      </div>
       <div className="space-y-2">
         <Skeleton className="h-4 w-16" />
         <Skeleton className="h-10 w-full" />
@@ -46,7 +43,7 @@ export default function LoginPage() {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-headline">Welcome Back!</CardTitle>
               <CardDescription>
-                Sign in to continue to Doorstep.
+                Enter your phone number to receive a login code.
               </CardDescription>
             </CardHeader>
             <CardContent>

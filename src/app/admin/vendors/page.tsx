@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const chartConfig = {
     sales: { label: "Sales (₦)", color: "hsl(var(--chart-1))" },
@@ -106,44 +107,47 @@ export default function VendorsPage() {
                     <CardDescription>Approve, disable, or manage restaurant partners.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {paginatedVendors.map(vendor => (
-                                <TableRow key={vendor.id}>
-                                    <TableCell>#{vendor.id}</TableCell>
-                                    <TableCell className="font-medium">{vendor.name}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="default" className="bg-green-600">Active</Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => toggleVendorStatus(vendor.id)}>
-                                                    <ShieldOff className="mr-2 h-4 w-4" /> Disable
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-600">
-                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+                    <ScrollArea className="w-full whitespace-nowrap">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedVendors.map(vendor => (
+                                    <TableRow key={vendor.id}>
+                                        <TableCell>#{vendor.id}</TableCell>
+                                        <TableCell className="font-medium">{vendor.name}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="default" className="bg-green-600">Active</Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => toggleVendorStatus(vendor.id)}>
+                                                        <ShieldOff className="mr-2 h-4 w-4" /> Disable
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-red-600">
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
                 </CardContent>
                  <div className="flex items-center justify-end space-x-2 py-4 px-6">
                     <Button

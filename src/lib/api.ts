@@ -1,6 +1,6 @@
 
-
-import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder, Rider, RiderPayload, RiderListResponse, VendorAnalyticsData, InitializePaymentPayload, InitializePaymentResponse } from "./types";
+import { PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData, AddressFormData, OrderPayload, CustomerOrder, OrderItemDetail, OrderDetail, AdminUser, MenuItemPayload, VendorOrder, AdminOrder, Rider, RiderPayload, RiderListResponse, VendorAnalyticsData, VendorProfile, VendorProfileUpdatePayload, AvailableRiderOrder, RiderOrderResponse, PickupConfirmationPayload, RiderOrder } from "./types";
+import type { InitializePaymentPayload, InitializePaymentResponse } from "./types/paystack";
 import {format} from "date-fns"
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -11,9 +11,8 @@ if (!BASE_URL) {
 
 async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-    const headers = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...options.headers,
     };
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -22,6 +21,13 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
     const res = await fetch(`${BASE_URL}${url}`, { ...options, headers });
     
     if (!res.ok) {
+        if (res.status === 401 && typeof window !== 'undefined') {
+            // Token is invalid or expired.
+            localStorage.clear();
+            window.location.href = '/login?session_expired=true';
+            throw new Error("Session expired. Please log in again.");
+        }
+
         const errorBody = await res.text();
         console.error(`API Error: ${res.status} ${res.statusText}`, errorBody);
         try {
@@ -44,6 +50,10 @@ export async function getRestaurants(): Promise<Restaurant[]> {
     return data.results;
 }
 
+export async function getRestaurantDetails(restaurantId: string): Promise<Restaurant> {
+    return fetcher<Restaurant>(`/restaurants/${restaurantId}/`);
+}
+
 export async function getRestaurantMenu(restaurantId: string): Promise<MenuItem[]> {
     const data = await fetcher<PaginatedResponse<MenuItem>>(`/restaurants/${restaurantId}/menu/`);
     // Mock categories for now as they are not in the API response
@@ -59,7 +69,7 @@ export async function getAddresses(): Promise<Address[]> {
     return data.results;
 }
 
-export async function addAddress(addressData: AddressPostData): Promise<Address> {
+export async function addAddress(addressData: Partial<AddressPostData>): Promise<Address> {
     return fetcher<Address>('/addresses/', {
         method: 'POST',
         body: JSON.stringify(addressData),
@@ -103,7 +113,11 @@ export async function confirmOrderDelivery(orderId: string): Promise<void> {
 
 
 export async function getOrderDetails(orderId: string): Promise<OrderDetail> {
-    return fetcher<OrderDetail>(`/orders/${orderId}/`);
+    const order = await fetcher<OrderDetail>(`/orders/${orderId}/`);
+    return {
+        ...order,
+        created_at: format(new Date(order.created_at), "dd MMMM yyyy, h:mm:ss a"),
+    };
 }
 
 // Admin API calls
@@ -118,8 +132,6 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
         created_at: format(new Date(order.created_at), "dd MMM yyyy, hh:mm a")
     }));
 }
-
-
 
 // Vendor API Calls
 export async function getVendorMenuItems(): Promise<MenuItem[]> {
@@ -163,9 +175,15 @@ export async function getVendorOrders(): Promise<VendorOrder[]> {
     }));
 }
 
-export async function updateVendorOrderStatus(orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready'): Promise<void> {
+export async function updateVendorOrderStatus(orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready', driverType?: 'doorstep' | 'inhouse'): Promise<void> {
+    let body = {};
+    if (action === 'ready' && driverType) {
+        body = { driver_type: driverType };
+    }
+
     await fetcher<void>(`/restaurants/me/orders/${orderId}/${action}/`, {
         method: 'POST',
+        body: JSON.stringify(body),
     });
 }
 
@@ -175,6 +193,18 @@ export async function assignRiderToOrder(orderId: string, driverName: string): P
         body: JSON.stringify({ driver_name: driverName }),
     });
 }
+
+export async function confirmPickupByCustomer(orderId: string, otp: string): Promise<void> {
+    const payload: PickupConfirmationPayload = {
+        status: "Picked Up by Customer",
+        otp: otp,
+    };
+    await fetcher<void>(`/orders/${orderId}/pickup-status/`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+}
+
 
 // Vendor Rider Management API Calls
 export async function getVendorRiders(): Promise<Rider[]> {
@@ -208,9 +238,52 @@ export async function getVendorAnalytics(): Promise<VendorAnalyticsData> {
     return fetcher<VendorAnalyticsData>('/restaurant/me/analytics');
 }
 
+// Vendor Profile API
+export async function getRestaurantProfile(): Promise<VendorProfile> {
+    return fetcher<VendorProfile>('/restaurants/me/');
+}
+
+export async function updateRestaurantProfile(payload: VendorProfileUpdatePayload): Promise<VendorProfile> {
+    return fetcher<VendorProfile>('/restaurants/me/', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
+}
+
+// Rider API
+export async function getAvailableRiderOrders(): Promise<AvailableRiderOrder[]> {
+    const response = await fetcher<PaginatedResponse<AvailableRiderOrder>>('/drivers/orders/available/');
+    return response.results;
+}
+
+export async function getRiderOrders(): Promise<RiderOrder[]> {
+  const response = await fetcher<RiderOrderResponse>('/drivers/orders/');
+  return response.data;
+}
+
+export async function performRiderAction(orderId: string, action: string, payload?: object): Promise<RiderOrder> {
+    const response = await fetcher<{ data: RiderOrder }>(`/drivers/orders/${orderId}/${action}`, {
+        method: 'POST',
+        body: payload ? JSON.stringify(payload) : undefined,
+    });
+    return response.data;
+}
+
+export async function updateRiderLocation(latitude: number, longitude: number): Promise<void> {
+    const payload = {
+        current_latitude: String(latitude.toFixed(6)),
+        current_longitude: String(longitude.toFixed(6)),
+    };
+    await fetcher<void>('/drivers/me/location/', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    });
+}
+
+
 // Payment API
 export async function initializePayment(payload: InitializePaymentPayload): Promise<InitializePaymentResponse> {
-    return fetcher<InitializePaymentResponse>('/payments/initialize/', {
+    return fetcher<InitializePaymentResponse>('/initialize/', {
         method: 'POST',
         body: JSON.stringify(payload)
     });

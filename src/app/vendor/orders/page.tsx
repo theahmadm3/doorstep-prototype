@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getVendorOrders, updateVendorOrderStatus, getVendorRiders, assignRiderToOrder } from "@/lib/api";
-import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown, Send } from "lucide-react";
+import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown, Send, UserCheck } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import type { VendorOrder, Rider } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +21,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -28,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-
+import PickupConfirmationModal from "@/components/vendor/pickup-confirmation-modal";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -162,9 +172,17 @@ export default function VendorOrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<VendorOrder | null>(null);
     const [selectedRiderName, setSelectedRiderName] = useState<string>("");
     const [isAssigning, setIsAssigning] = useState(false);
+    
+    // State for rider type selection modal
+    const [isRiderTypeModalOpen, setRiderTypeModalOpen] = useState(false);
+    const [orderForRiderSelection, setOrderForRiderSelection] = useState<VendorOrder | null>(null);
+
+    // State for pickup confirmation modal
+    const [isPickupModalOpen, setPickupModalOpen] = useState(false);
+    const [orderForPickup, setOrderForPickup] = useState<VendorOrder | null>(null);
+
 
     const fetchOrders = useCallback(async () => {
-        // Only show main loading skeleton on initial load
         if (orders.length === 0) setIsLoading(true);
         try {
             const data = await getVendorOrders();
@@ -181,14 +199,47 @@ export default function VendorOrdersPage() {
     }, [toast, isLoading, orders.length]);
 
     useEffect(() => {
-        fetchOrders(); // Initial fetch
-        const interval = setInterval(fetchOrders, 60000); // Poll every 60 seconds
+        fetchOrders();
+        const interval = setInterval(fetchOrders, 60000);
 
         return () => clearInterval(interval);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [fetchOrders]);
     
     const handleUpdateStatus = async (orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready') => {
+        const orderToUpdate = orders.find(o => o.id === orderId);
+        if (!orderToUpdate) return;
+        
+        if (action === 'ready') {
+            if (orderToUpdate.order_type === 'pickup') {
+                // For pickup orders, just update the status to "Ready for Pickup"
+                // The confirmation will be a separate step.
+                setIsUpdating(orderId);
+                 try {
+                    await updateVendorOrderStatus(orderId, 'ready', 'inhouse');
+                    toast({
+                        title: "Success",
+                        description: "Order marked as Ready for Pickup.",
+                    });
+                    await fetchOrders();
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+                    toast({
+                        title: "Update Failed",
+                        description: message,
+                        variant: "destructive",
+                    });
+                } finally {
+                    setIsUpdating(null);
+                }
+                return;
+            } else {
+                 // For delivery orders, open the rider type selection modal
+                 setOrderForRiderSelection(orderToUpdate);
+                 setRiderTypeModalOpen(true);
+                 return;
+            }
+        }
+
         setIsUpdating(orderId);
         try {
             await updateVendorOrderStatus(orderId, action);
@@ -196,7 +247,7 @@ export default function VendorOrdersPage() {
                 title: "Success",
                 description: `Order has been successfully updated.`,
             });
-            await fetchOrders(); // Refetch orders to update the tables
+            await fetchOrders();
         } catch (error) {
              const message = error instanceof Error ? error.message : "An unexpected error occurred.";
              toast({
@@ -206,6 +257,33 @@ export default function VendorOrdersPage() {
              });
         } finally {
             setIsUpdating(null);
+        }
+    };
+    
+    const handleConfirmReadyForDelivery = async (driverType: 'doorstep' | 'inhouse') => {
+        if (!orderForRiderSelection) return;
+
+        const orderId = orderForRiderSelection.id;
+        setRiderTypeModalOpen(false);
+        setIsUpdating(orderId);
+
+        try {
+            await updateVendorOrderStatus(orderId, 'ready', driverType);
+            toast({
+                title: "Success",
+                description: "Order marked as ready for pickup by rider.",
+            });
+            await fetchOrders();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+            toast({
+                title: "Update Failed",
+                description: message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsUpdating(null);
+            setOrderForRiderSelection(null);
         }
     };
 
@@ -288,6 +366,17 @@ export default function VendorOrdersPage() {
 
     return (
         <div className="space-y-8">
+            {orderForPickup && (
+                <PickupConfirmationModal
+                    isOpen={isPickupModalOpen}
+                    onClose={() => setPickupModalOpen(false)}
+                    orderId={orderForPickup.id}
+                    onSuccess={() => {
+                        fetchOrders();
+                        setOrderForPickup(null);
+                    }}
+                />
+            )}
             <Dialog open={isAssignModalOpen} onOpenChange={setAssignModalOpen}>
                 <DialogContent>
                     <DialogHeader>
@@ -320,16 +409,41 @@ export default function VendorOrdersPage() {
                 </DialogContent>
             </Dialog>
 
+             <AlertDialog open={isRiderTypeModalOpen} onOpenChange={setRiderTypeModalOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Order is Ready</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Who will be handling the delivery for this order?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="sm:justify-center pt-4">
+                        <Button variant="outline" onClick={() => handleConfirmReadyForDelivery('inhouse')}>
+                            Use In-house Rider
+                        </Button>
+                        <Button onClick={() => handleConfirmReadyForDelivery('doorstep')}>
+                            Use Doorstep Rider
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
 
-            <Tabs defaultValue="incoming">
-                <TabsList>
+            <Tabs defaultValue="incoming" className="w-full">
+                <TabsList style={{flexWrap: 'nowrap'}} className="w-full inline-flex gap-x-1 md:gap-x-4 justify-start items-center overflow-x-auto">
                     <TabsTrigger value="incoming">
                         Incoming <Badge className="ml-2">{incomingOrders.length}</Badge>
                     </TabsTrigger>
-                    <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
-                    <TabsTrigger value="ready">Ready for Pickup</TabsTrigger>
-                    <TabsTrigger value="onTheWay">On the Way</TabsTrigger>
+                    <TabsTrigger value="ongoing">
+                        Ongoing <Badge className="ml-2">{ongoingOrders.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="ready">
+                        Ready{" "}<span className="hidden md:block ml-2">for Pickup</span> <Badge className="ml-2">{readyForPickupOrders.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="onTheWay">
+                        On the Way <Badge className="ml-2">{onTheWayOrders.length}</Badge>
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="incoming">
@@ -382,17 +496,22 @@ export default function VendorOrdersPage() {
                  <TabsContent value="ready">
                     <OrderTable
                         title="Ready for Pickup"
-                        description="Orders waiting for a rider to be assigned."
+                        description="Orders waiting for pickup by rider or customer."
                         orders={paginatedReady}
                         currentPage={pages.ready}
                         totalPages={totalPages.ready}
                         onPageChange={(p) => handlePageChange('ready', p)}
                         isLoading={isLoading}
-                        actions={(order) => (
-                           <Button variant="outline" size="sm" onClick={() => handleOpenAssignModal(order)}>
-                                <Send className="mr-2 h-4 w-4" /> Assign Rider
-                            </Button>
-                        )}
+                        actions={(order) => 
+                            order.order_type === 'pickup' ? (
+                                <Button variant="default" size="sm" onClick={() => { setOrderForPickup(order); setPickupModalOpen(true); }} disabled={isUpdating === order.id}>
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Confirm Pickup
+                                </Button>
+                            ) : (
+                                <span>Awaiting Doorstep rider</span>
+                            )
+                        }
                     />
                 </TabsContent>
                  <TabsContent value="onTheWay">
@@ -428,3 +547,4 @@ export default function VendorOrdersPage() {
         </div>
     );
 }
+
