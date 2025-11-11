@@ -8,6 +8,9 @@ const withPWA = nextPWA({
 	disable: process.env.NODE_ENV === "development",
 	scope: "/",
 	maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+	// Use a custom service worker source so we can add push event handlers
+	// next-pwa will run workbox injectManifest on this file and output public/sw.js
+	swSrc: "service-worker.js",
 });
 
 const nextConfig: NextConfig = {
