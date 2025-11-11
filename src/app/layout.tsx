@@ -1,13 +1,10 @@
 
-"use client"
-
 import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/providers";
 import PWAInstallPrompt from "@/components/pwa-install-prompt";
-import AuthGuard from "@/components/auth/auth-guard";
 import PushInitializer from "@/components/pwa/push-initializer";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -51,9 +48,7 @@ export default function RootLayout({
 		<html lang="en" className={`${inter.variable} ${poppins.variable} h-full`}>
 			<body className="antialiased flex flex-col h-full bg-background">
 				<Providers>
-					<AuthGuard>
-						{children}
-					</AuthGuard>
+					{children}
 					<PWAInstallPrompt />
 					<Toaster />
 					<PushInitializer />

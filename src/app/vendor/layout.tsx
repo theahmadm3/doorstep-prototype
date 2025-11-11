@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -27,6 +28,7 @@ import type { User as UserType } from "@/lib/types";
 import { getRestaurantProfile } from "@/lib/api";
 import VendorAddressModal from "@/components/vendor/vendor-address-modal";
 import BottomNavigation from "@/components/layout/bottom-navigation";
+import AuthGuard from "@/components/auth/auth-guard";
 
 const vendorNavLinks = [
 	{ href: "/vendor/dashboard", label: "Dashboard", icon: Home },
@@ -72,69 +74,71 @@ export default function VendorLayout({
 	};
 
 	return (
-		<SidebarProvider>
-			<div className="flex min-h-screen">
-				<VendorAddressModal
-					isOpen={showAddressModal}
-					onAddressSaved={handleAddressSaved}
-				/>
-				<Sidebar className="hidden md:flex md:flex-col">
-					<SidebarHeader>
-						<div className="flex items-center gap-2">
-							<Utensils className="w-8 h-8 text-primary" />
-							<span className="text-xl font-bold font-headline">Doorstep</span>
-						</div>
-					</SidebarHeader>
-					<SidebarContent>
-						<SidebarMenu>
-							{vendorNavLinks.map((link) => (
-								<SidebarMenuItem key={link.href}>
-									<SidebarMenuButton asChild>
-										<Link href={link.href}>
-											<link.icon />
-											{link.label}
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
-						</SidebarMenu>
-					</SidebarContent>
-					<SidebarFooter className="mt-auto">
-						<div className="flex flex-col items-center gap-3 p-2 rounded-md bg-muted">
-							<div className="w-full flex items-center gap-2">
-								<Avatar>
-									<AvatarImage
-										src={user?.avatar_url || "https://github.com/shadcn.png"}
-										alt={user?.full_name || "Vendor"}
-									/>
-									<AvatarFallback>
-										{user?.full_name?.[0]?.toUpperCase() || "V"}
-									</AvatarFallback>
-								</Avatar>
-								<div className="flex flex-col">
-									<span className="text-sm font-semibold">
-										{user?.full_name || ""}
-									</span>
-									<span className="text-xs text-muted-foreground">
-										{user?.email || ""}
-									</span>
-								</div>
+		<AuthGuard>
+			<SidebarProvider>
+				<div className="flex min-h-screen">
+					<VendorAddressModal
+						isOpen={showAddressModal}
+						onAddressSaved={handleAddressSaved}
+					/>
+					<Sidebar className="hidden md:flex md:flex-col">
+						<SidebarHeader>
+							<div className="flex items-center gap-2">
+								<Utensils className="w-8 h-8 text-primary" />
+								<span className="text-xl font-bold font-headline">Doorstep</span>
 							</div>
-							<LogoutButton />
+						</SidebarHeader>
+						<SidebarContent>
+							<SidebarMenu>
+								{vendorNavLinks.map((link) => (
+									<SidebarMenuItem key={link.href}>
+										<SidebarMenuButton asChild>
+											<Link href={link.href}>
+												<link.icon />
+												{link.label}
+											</Link>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								))}
+							</SidebarMenu>
+						</SidebarContent>
+						<SidebarFooter className="mt-auto">
+							<div className="flex flex-col items-center gap-3 p-2 rounded-md bg-muted">
+								<div className="w-full flex items-center gap-2">
+									<Avatar>
+										<AvatarImage
+											src={user?.avatar_url || "https://github.com/shadcn.png"}
+											alt={user?.full_name || "Vendor"}
+										/>
+										<AvatarFallback>
+											{user?.full_name?.[0]?.toUpperCase() || "V"}
+										</AvatarFallback>
+									</Avatar>
+									<div className="flex flex-col">
+										<span className="text-sm font-semibold">
+											{user?.full_name || ""}
+										</span>
+										<span className="text-xs text-muted-foreground">
+											{user?.email || ""}
+										</span>
+									</div>
+								</div>
+								<LogoutButton />
+							</div>
+						</SidebarFooter>
+					</Sidebar>
+					<div className="flex flex-col flex-1 min-w-0">
+						<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10 md:hidden">
+							<SidebarTrigger />
+							<h1 className="text-lg font-semibold">Vendor Panel</h1>
 						</div>
-					</SidebarFooter>
-				</Sidebar>
-				<div className="flex flex-col flex-1 min-w-0">
-					<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10 md:hidden">
-						<SidebarTrigger />
-						<h1 className="text-lg font-semibold">Vendor Panel</h1>
+						<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
+							{children}
+						</main>
+						<BottomNavigation links={vendorNavLinks} />
 					</div>
-					<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
-						{children}
-					</main>
-					<BottomNavigation links={vendorNavLinks} />
 				</div>
-			</div>
-		</SidebarProvider>
+			</SidebarProvider>
+		</AuthGuard>
 	);
 }
