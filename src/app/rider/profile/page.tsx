@@ -30,6 +30,13 @@ export default function RiderProfilePage() {
         isStandalone: false,
         needsPWAInstall: false,
     });
+    const [debugLogs, setDebugLogs] = useState<string[]>([]);
+
+    const addDebugLog = (message: string) => {
+        const timestamp = new Date().toLocaleTimeString();
+        setDebugLogs(prev => [...prev, `[${timestamp}] ${message}`]);
+        console.log(`[Debug] ${message}`);
+    };
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -39,18 +46,42 @@ export default function RiderProfilePage() {
 
         // Detect platform
         if (typeof window !== 'undefined') {
-            setPlatformInfo(detectPlatform());
+            const platform = detectPlatform();
+            setPlatformInfo(platform);
+            addDebugLog(`Platform detected - iOS: ${platform.isIOS}, Standalone: ${platform.isStandalone}, Safari: ${platform.isSafari}, Needs PWA Install: ${platform.needsPWAInstall}`);
+            addDebugLog(`User Agent: ${navigator.userAgent}`);
+            addDebugLog(`Display Mode: ${window.matchMedia("(display-mode: standalone)").matches ? "standalone" : "browser"}`);
         }
         
         // Register service worker and check subscription
         const initPushNotifications = async () => {
             try {
-                if (supportsWebPush()) {
+                addDebugLog(`Checking if push notifications are supported...`);
+                const supported = isPushNotificationSupported();
+                addDebugLog(`Service Worker supported: ${"serviceWorker" in navigator}`);
+                addDebugLog(`PushManager supported: ${"PushManager" in window}`);
+                addDebugLog(`Push notifications supported: ${supported}`);
+                
+                const webPushSupported = supportsWebPush();
+                addDebugLog(`Web Push supported (iOS-aware): ${webPushSupported}`);
+                
+                if (webPushSupported) {
+                    addDebugLog(`Registering push service worker...`);
                     await registerPushServiceWorker();
+                    addDebugLog(`Service worker registered successfully`);
+                    
                     const subscription = await getCurrentSubscription();
+                    addDebugLog(`Current subscription: ${subscription ? 'Found' : 'None'}`);
+                    if (subscription) {
+                        addDebugLog(`Subscription endpoint: ${subscription.endpoint.substring(0, 50)}...`);
+                    }
                     setIsSubscribed(!!subscription);
+                } else {
+                    addDebugLog(`Web Push not supported on this device/mode`);
                 }
             } catch (error) {
+                const errorMsg = error instanceof Error ? error.message : String(error);
+                addDebugLog(`ERROR: ${errorMsg}`);
                 console.error('Failed to initialize push notifications:', error);
             }
         };
@@ -59,7 +90,10 @@ export default function RiderProfilePage() {
     }, []);
 
     const handleEnableNotifications = async () => {
+        addDebugLog(`Enable notifications button clicked`);
+        
         if (platformInfo.needsPWAInstall) {
+            addDebugLog(`Cannot enable - PWA not installed on iOS`);
             toast({
                 title: "Install as PWA",
                 description: "On iOS, please install this app to your home screen to enable notifications. Tap the Share button and select 'Add to Home Screen'.",
@@ -71,9 +105,12 @@ export default function RiderProfilePage() {
         setIsSubscribing(true);
         try {
             // Request permission
+            addDebugLog(`Requesting notification permission...`);
             const permission = await Notification.requestPermission();
+            addDebugLog(`Permission result: ${permission}`);
             
             if (permission !== 'granted') {
+                addDebugLog(`Permission denied by user`);
                 toast({
                     title: "Permission Denied",
                     description: "Please enable notifications in your browser settings to receive updates.",
@@ -84,11 +121,17 @@ export default function RiderProfilePage() {
             }
 
             // Register service worker and subscribe
+            addDebugLog(`Getting service worker registration...`);
             const registration = await registerPushServiceWorker();
+            addDebugLog(`Service worker ready, subscribing to push...`);
+            
             const subscription = await subscribeToPushNotifications(registration);
+            addDebugLog(`Push subscription created: ${subscription.endpoint.substring(0, 50)}...`);
 
             // Send subscription to backend
+            addDebugLog(`Sending subscription to backend...`);
             await subscribeToNotifications(subscription);
+            addDebugLog(`Backend subscription successful`);
 
             setIsSubscribed(true);
             toast({
@@ -97,6 +140,7 @@ export default function RiderProfilePage() {
             });
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to enable notifications";
+            addDebugLog(`ERROR enabling notifications: ${message}`);
             toast({
                 title: "Error",
                 description: message,
@@ -182,6 +226,29 @@ export default function RiderProfilePage() {
                             <p className="text-sm text-muted-foreground">
                                 Push notifications are not supported in your browser.
                             </p>
+                        )}
+                        
+                        {/* Debug Logs Section */}
+                        {debugLogs.length > 0 && (
+                            <div className="mt-4 border rounded-lg p-4 bg-gray-50 dark:bg-gray-900">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-medium text-sm">Debug Logs</h4>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => setDebugLogs([])}
+                                    >
+                                        Clear
+                                    </Button>
+                                </div>
+                                <div className="space-y-1 max-h-60 overflow-y-auto">
+                                    {debugLogs.map((log, index) => (
+                                        <p key={index} className="text-xs font-mono text-gray-700 dark:text-gray-300">
+                                            {log}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
                         )}
                     </CardContent>
                 </Card>
