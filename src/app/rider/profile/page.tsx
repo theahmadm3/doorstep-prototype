@@ -146,17 +146,14 @@ export default function RiderProfilePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {platformInfo.needsPWAInstall && (
-                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                    <strong>iOS Users:</strong> To enable push notifications, please install this app to your home screen. 
-                                    Tap the Share button <span className="inline-block">📤</span> and select "Add to Home Screen".
-                                </p>
-                            </div>
-                        )}
-                        
                         {isPushNotificationSupported() ? (
-                            <div className="space-y-4">
+                            <>
+                                {platformInfo.needsPWAInstall && (
+                                    <div className="bg-yellow-100 dark:bg-yellow-900/20 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-300 p-4" role="alert">
+                                        <p className="font-bold">Enable Notifications on iOS</p>
+                                        <p>To get notifications, you must add this app to your Home Screen. Tap the Share icon and then 'Add to Home Screen'.</p>
+                                    </div>
+                                )}
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-medium">
@@ -176,7 +173,7 @@ export default function RiderProfilePage() {
                                         {isSubscribing ? "Enabling..." : isSubscribed ? "Enabled" : "Enable Notifications"}
                                     </Button>
                                 </div>
-                            </div>
+                            </>
                         ) : (
                             <p className="text-sm text-muted-foreground">
                                 Push notifications are not supported in your browser.
