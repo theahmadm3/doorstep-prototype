@@ -22,5 +22,9 @@
 	"name": "Doorstep Limited",
 	"short_name": "Doorstep",
 	"description": "Get Your items delivered to your doorstep.",
-	"start_url": "/"
+	"start_url": "/",
+	"scope": "/",
+	"id": "/",
+	"categories": ["shopping", "delivery"],
+	"screenshots": []
 }

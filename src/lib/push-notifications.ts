@@ -31,8 +31,18 @@ export async function registerPushServiceWorker(): Promise<ServiceWorkerRegistra
 		throw new Error("Service workers are not supported in this browser");
 	}
 
-	const registration = await navigator.serviceWorker.register("/push-sw.js");
-	await registration.update();
+	// Check if already registered
+	let registration = await navigator.serviceWorker.getRegistration("/push-sw.js");
+	
+	if (!registration) {
+		registration = await navigator.serviceWorker.register("/push-sw.js", {
+			scope: "/",
+		});
+	}
+	
+	// Wait for the service worker to be ready
+	await navigator.serviceWorker.ready;
+	
 	return registration;
 }
 
@@ -46,7 +56,16 @@ export async function subscribeToPushNotifications(
 		throw new Error("VAPID public key is not configured");
 	}
 
-	const subscription = await registration.pushManager.subscribe({
+	// Check for existing subscription first
+	let subscription = await registration.pushManager.getSubscription();
+	
+	if (subscription) {
+		// Subscription already exists
+		return subscription;
+	}
+
+	// Create new subscription
+	subscription = await registration.pushManager.subscribe({
 		userVisibleOnly: true,
 		applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
 	});
@@ -108,6 +127,7 @@ export function detectPlatform(): PlatformInfo {
 		(window.navigator as NavigatorStandalone).standalone === true;
 
 	// iOS users need to install as PWA to get push notifications
+	// iOS 16.4+ supports Web Push API, but only in PWA mode (not in Safari browser)
 	const needsPWAInstall = isIOS && !isStandalone;
 
 	return {
@@ -116,4 +136,19 @@ export function detectPlatform(): PlatformInfo {
 		isStandalone,
 		needsPWAInstall,
 	};
+}
+
+/**
+ * Check if the device supports Web Push (including iOS PWA)
+ */
+export function supportsWebPush(): boolean {
+	const platform = detectPlatform();
+	
+	// For iOS, push notifications only work in PWA mode (standalone)
+	if (platform.isIOS) {
+		return platform.isStandalone && isPushNotificationSupported();
+	}
+	
+	// For other platforms, check standard support
+	return isPushNotificationSupported();
 }

@@ -25,7 +25,8 @@ import {
     subscribeToPushNotifications, 
     getCurrentSubscription,
     isPushNotificationSupported,
-    detectPlatform
+    detectPlatform,
+    supportsWebPush
 } from "@/lib/push-notifications";
 
 const libraries: ("places")[] = ['places'];
@@ -160,7 +161,7 @@ function VendorProfilePage() {
         // Register service worker and check subscription
         const initPushNotifications = async () => {
             try {
-                if (isPushNotificationSupported()) {
+                if (supportsWebPush()) {
                     await registerPushServiceWorker();
                     const subscription = await getCurrentSubscription();
                     setIsSubscribed(!!subscription);
@@ -420,7 +421,7 @@ function VendorProfilePage() {
                                 </div>
                             )}
                             
-                            {isPushNotificationSupported() ? (
+                            {supportsWebPush() ? (
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <div>
