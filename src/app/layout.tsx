@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/providers";
 import PWAInstallPrompt from "@/components/pwa-install-prompt";
+import PushSWRegistration from "@/components/push-sw-registration";
 import AuthGuard from "@/components/auth/auth-guard";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -43,6 +44,7 @@ export default function RootLayout({
 		<html lang="en" className={`${inter.variable} ${poppins.variable} h-full`}>
 			<body className="antialiased flex flex-col h-full bg-background">
 				<Providers>
+					<PushSWRegistration />
 					<AuthGuard>{children}</AuthGuard>
 					<PWAInstallPrompt />
 					<Toaster />

@@ -24,24 +24,19 @@ export function urlBase64ToUint8Array(
 }
 
 /**
- * Register the push service worker
+ * Get or register the push service worker
+ * Note: The service worker is auto-registered in the layout,
+ * but this function ensures it's ready before we try to use it
  */
 export async function registerPushServiceWorker(): Promise<ServiceWorkerRegistration> {
 	if (!("serviceWorker" in navigator)) {
 		throw new Error("Service workers are not supported in this browser");
 	}
 
-	// Check if already registered
-	let registration = await navigator.serviceWorker.getRegistration("/push-sw.js");
+	// Wait for the service worker to be ready (it's registered in the layout)
+	const registration = await navigator.serviceWorker.ready;
 	
-	if (!registration) {
-		registration = await navigator.serviceWorker.register("/push-sw.js", {
-			scope: "/",
-		});
-	}
-	
-	// Wait for the service worker to be ready
-	await navigator.serviceWorker.ready;
+	console.log("[Push Notifications] Service worker is ready");
 	
 	return registration;
 }
@@ -60,11 +55,12 @@ export async function subscribeToPushNotifications(
 	let subscription = await registration.pushManager.getSubscription();
 	
 	if (subscription) {
-		// Subscription already exists
+		console.log("[Push Notifications] Existing subscription found");
 		return subscription;
 	}
 
 	// Create new subscription
+	console.log("[Push Notifications] Creating new subscription");
 	subscription = await registration.pushManager.subscribe({
 		userVisibleOnly: true,
 		applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
@@ -81,9 +77,9 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
 		return null;
 	}
 
-	const registration = await navigator.serviceWorker.getRegistration(
-		"/push-sw.js",
-	);
+	// Wait for the service worker to be ready
+	const registration = await navigator.serviceWorker.ready;
+	
 	if (!registration) {
 		return null;
 	}
