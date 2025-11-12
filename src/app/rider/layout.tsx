@@ -70,7 +70,7 @@ export default function RiderLayout({
   return (
     <RiderLocationProvider>
         <SidebarProvider>
-        <div className="flex min-h-screen">
+        <div className="flex h-screen overflow-hidden">
             <Sidebar className="hidden md:flex md:flex-col">
             <SidebarHeader>
                 <div className="flex items-center gap-2">
@@ -110,8 +110,8 @@ export default function RiderLayout({
                 </div>
             </SidebarFooter>
             </Sidebar>
-            <div className="flex flex-col flex-1 min-w-0">
-            <div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10 md:hidden">
+            <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+            <div className="p-4 flex items-center gap-4 bg-background border-b md:hidden">
                 <SidebarTrigger />
                 <h1 className="text-lg font-semibold">Rider Panel</h1>
             </div>
