@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -16,7 +15,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, ArrowLeft, Star, Clock, ShoppingCart, Search, X } from "lucide-react";
+import {
+	PlusCircle,
+	ArrowLeft,
+	Star,
+	Clock,
+	ShoppingCart,
+	Search,
+	X,
+} from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,16 +35,16 @@ import { Input } from "@/components/ui/input";
 
 // Custom hook for debouncing
 function useDebounce(value, delay) {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
-    return debouncedValue;
+	const [debouncedValue, setDebouncedValue] = useState(value);
+	useEffect(() => {
+		const handler = setTimeout(() => {
+			setDebouncedValue(value);
+		}, delay);
+		return () => {
+			clearTimeout(handler);
+		};
+	}, [value, delay]);
+	return debouncedValue;
 }
 
 const MenuPageSkeleton = () => (
@@ -75,7 +82,7 @@ const FloatingCartButton = ({
 	const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
 	return (
-		<div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20">
+		<div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20">
 			<Button
 				onClick={onCheckout}
 				size="lg"
@@ -110,9 +117,9 @@ export default function RestaurantMenuPage() {
 	const [orderForCheckout, setOrderForCheckout] = useState<Order | null>(null);
 
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const debouncedSearchQuery = useDebounce(searchQuery, 200);
-    const searchInputRef = useRef<HTMLInputElement>(null);
+	const [searchQuery, setSearchQuery] = useState("");
+	const debouncedSearchQuery = useDebounce(searchQuery, 200);
+	const searchInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		const storedUser = localStorage.getItem("user");
@@ -168,35 +175,34 @@ export default function RestaurantMenuPage() {
 			setCheckoutOpen(true);
 		}
 	};
-	
-	const filteredMenuItems = useMemo(() => {
-        if (!debouncedSearchQuery) {
-            return menuItems;
-        }
-        return menuItems.filter(item =>
-            item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-        );
-    }, [menuItems, debouncedSearchQuery]);
 
-    const categories = useMemo(() => {
-        return filteredMenuItems.reduce((acc, item) => {
-            const category = item.category || "Other";
-            if (!acc[category]) {
-                acc[category] = [];
-            }
-            acc[category].push(item);
-            return acc;
-        }, {} as Record<string, MenuItem[]>);
-    }, [filteredMenuItems]);
+	const filteredMenuItems = useMemo(() => {
+		if (!debouncedSearchQuery) {
+			return menuItems;
+		}
+		return menuItems.filter((item) =>
+			item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()),
+		);
+	}, [menuItems, debouncedSearchQuery]);
+
+	const categories = useMemo(() => {
+		return filteredMenuItems.reduce((acc, item) => {
+			const category = item.category || "Other";
+			if (!acc[category]) {
+				acc[category] = [];
+			}
+			acc[category].push(item);
+			return acc;
+		}, {} as Record<string, MenuItem[]>);
+	}, [filteredMenuItems]);
 
 	const defaultTab = Object.keys(categories)[0] || "";
 
 	useEffect(() => {
-        if (isSearchOpen) {
-            searchInputRef.current?.focus();
-        }
-    }, [isSearchOpen]);
-
+		if (isSearchOpen) {
+			searchInputRef.current?.focus();
+		}
+	}, [isSearchOpen]);
 
 	if (isLoading) {
 		return <MenuPageSkeleton />;
@@ -231,37 +237,40 @@ export default function RestaurantMenuPage() {
 					</Link>
 				</Button>
 				<div className="inline-flex items-center justify-between gap-2">
-					<Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(!isSearchOpen)}>
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={() => setIsSearchOpen(!isSearchOpen)}
+					>
 						<Search className="h-5 w-5" />
 					</Button>
 				</div>
 			</div>
-			
-			{isSearchOpen && (
-                <div className="relative w-full mb-4">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        ref={searchInputRef}
-                        type="text"
-                        placeholder="Search for a menu item..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 pr-9"
-                    />
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                        onClick={() => {
-                            setSearchQuery("");
-                            setIsSearchOpen(false);
-                        }}
-                    >
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
-            )}
 
+			{isSearchOpen && (
+				<div className="relative w-full mb-4">
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+					<Input
+						ref={searchInputRef}
+						type="text"
+						placeholder="Search for a menu item..."
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						className="pl-9 pr-9"
+					/>
+					<Button
+						variant="ghost"
+						size="icon"
+						className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+						onClick={() => {
+							setSearchQuery("");
+							setIsSearchOpen(false);
+						}}
+					>
+						<X className="h-4 w-4" />
+					</Button>
+				</div>
+			)}
 
 			<div className="relative h-48 md:h-64 rounded-2xl overflow-hidden mb-8">
 				<Image
@@ -293,72 +302,74 @@ export default function RestaurantMenuPage() {
 			</div>
 
 			{Object.keys(categories).length > 0 ? (
-                <Tabs defaultValue={defaultTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-                        {Object.keys(categories).map((category) => (
-                            <TabsTrigger key={category} value={category}>
-                                {category}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-                    {Object.entries(categories).map(([category, items]) => (
-                        <TabsContent key={category} value={category}>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-                                {items.map((item) => {
-                                    const imageUrl =
-                                        item.image_url && item.image_url.startsWith("http")
-                                            ? item.image_url
-                                            : "https://placehold.co/200x200.png";
-                                    return (
-                                        <Card
-                                            key={item.id}
-                                            className={cn(
-                                                "overflow-hidden transition-all hover:shadow-md w-fit",
-                                                { "opacity-60": !item.is_available },
-                                            )}
-                                        >
-                                            <CardContent className="p-4 flex gap-4">
-                                                <div className="flex-1">
-                                                    <CardTitle className="text-lg font-semibold mb-1">
-                                                        {item.name}
-                                                    </CardTitle>
-                                                    <CardDescription className="text-sm line-clamp-2">
-                                                        {item.description}
-                                                    </CardDescription>
-                                                    <p className="font-bold text-md mt-2">
-                                                        ₦{parseFloat(item.price).toFixed(2)}
-                                                    </p>
-                                                </div>
-                                                <div className="relative w-24 h-24 flex-shrink-0">
-                                                    <Image
-                                                        src={imageUrl}
-                                                        alt={item.name}
-                                                        fill
-                                                        className="rounded-md object-cover"
-                                                    />
-                                                    <Button
-                                                        size="icon"
-                                                        className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full shadow-lg"
-                                                        onClick={() => handleAddItem(item)}
-                                                        disabled={!item.is_available}
-                                                        aria-label={`Add ${item.name} to cart`}
-                                                    >
-                                                        <PlusCircle className="h-5 w-5" />
-                                                    </Button>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    );
-                                })}
-                            </div>
-                        </TabsContent>
-                    ))}
-                </Tabs>
-             ) : (
-                <div className="text-center py-16">
-                    <p className="text-muted-foreground">No menu items match your search for "{searchQuery}".</p>
-                </div>
-            )}
+				<Tabs defaultValue={defaultTab} className="w-full">
+					<TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+						{Object.keys(categories).map((category) => (
+							<TabsTrigger key={category} value={category}>
+								{category}
+							</TabsTrigger>
+						))}
+					</TabsList>
+					{Object.entries(categories).map(([category, items]) => (
+						<TabsContent key={category} value={category}>
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+								{items.map((item) => {
+									const imageUrl =
+										item.image_url && item.image_url.startsWith("http")
+											? item.image_url
+											: "https://placehold.co/200x200.png";
+									return (
+										<Card
+											key={item.id}
+											className={cn(
+												"overflow-hidden transition-all hover:shadow-md w-fit",
+												{ "opacity-60": !item.is_available },
+											)}
+										>
+											<CardContent className="p-4 flex gap-4">
+												<div className="flex-1">
+													<CardTitle className="text-lg font-semibold mb-1">
+														{item.name}
+													</CardTitle>
+													<CardDescription className="text-sm line-clamp-2">
+														{item.description}
+													</CardDescription>
+													<p className="font-bold text-md mt-2">
+														₦{parseFloat(item.price).toFixed(2)}
+													</p>
+												</div>
+												<div className="relative w-24 h-24 flex-shrink-0">
+													<Image
+														src={imageUrl}
+														alt={item.name}
+														fill
+														className="rounded-md object-cover"
+													/>
+													<Button
+														size="icon"
+														className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full shadow-lg"
+														onClick={() => handleAddItem(item)}
+														disabled={!item.is_available}
+														aria-label={`Add ${item.name} to cart`}
+													>
+														<PlusCircle className="h-5 w-5" />
+													</Button>
+												</div>
+											</CardContent>
+										</Card>
+									);
+								})}
+							</div>
+						</TabsContent>
+					))}
+				</Tabs>
+			) : (
+				<div className="text-center py-16">
+					<p className="text-muted-foreground">
+						No menu items match your search for "{searchQuery}".
+					</p>
+				</div>
+			)}
 
 			<FloatingCartButton order={currentOrder} onCheckout={handleCheckout} />
 		</div>

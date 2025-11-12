@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -30,11 +29,11 @@ import VendorAddressModal from "@/components/vendor/vendor-address-modal";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 
 const vendorNavLinks = [
-  { href: "/vendor/dashboard", label: "Dashboard", icon: Home },
-  { href: "/vendor/orders", label: "Orders", icon: ShoppingBag },
-  { href: "/vendor/analytics", label: "Analytics", icon: LineChart },
-  { href: "/vendor/config", label: "Config", icon: Settings },
-  { href: "/vendor/profile", label: "Profile", icon: User },
+	{ href: "/vendor/dashboard", label: "Dashboard", icon: Home },
+	{ href: "/vendor/orders", label: "Orders", icon: ShoppingBag },
+	{ href: "/vendor/analytics", label: "Analytics", icon: LineChart },
+	{ href: "/vendor/config", label: "Config", icon: Settings },
+	{ href: "/vendor/profile", label: "Profile", icon: User },
 ];
 
 export default function VendorLayout({
@@ -74,7 +73,7 @@ export default function VendorLayout({
 
 	return (
 		<SidebarProvider>
-			<div className="flex min-h-screen">
+			<div className="flex h-screen overflow-hidden">
 				<VendorAddressModal
 					isOpen={showAddressModal}
 					onAddressSaved={handleAddressSaved}
@@ -88,7 +87,7 @@ export default function VendorLayout({
 					</SidebarHeader>
 					<SidebarContent>
 						<SidebarMenu>
-							{vendorNavLinks.map(link => (
+							{vendorNavLinks.map((link) => (
 								<SidebarMenuItem key={link.href}>
 									<SidebarMenuButton asChild>
 										<Link href={link.href}>
@@ -125,8 +124,8 @@ export default function VendorLayout({
 						</div>
 					</SidebarFooter>
 				</Sidebar>
-				<div className="flex flex-col flex-1 min-w-0">
-					<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10 md:hidden">
+				<div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+					<div className="p-4 flex items-center gap-4 bg-background border-b md:hidden">
 						<SidebarTrigger />
 						<h1 className="text-lg font-semibold">Vendor Panel</h1>
 					</div>

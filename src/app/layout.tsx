@@ -43,9 +43,7 @@ export default function RootLayout({
 		<html lang="en" className={`${inter.variable} ${poppins.variable} h-full`}>
 			<body className="antialiased flex flex-col h-full bg-background">
 				<Providers>
-					<AuthGuard>
-						{children}
-					</AuthGuard>
+					<AuthGuard>{children}</AuthGuard>
 					<PWAInstallPrompt />
 					<Toaster />
 				</Providers>
