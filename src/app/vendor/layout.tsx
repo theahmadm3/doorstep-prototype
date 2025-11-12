@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -30,11 +29,11 @@ import VendorAddressModal from "@/components/vendor/vendor-address-modal";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 
 const vendorNavLinks = [
-  { href: "/vendor/dashboard", label: "Dashboard", icon: Home },
-  { href: "/vendor/orders", label: "Orders", icon: ShoppingBag },
-  { href: "/vendor/analytics", label: "Analytics", icon: LineChart },
-  { href: "/vendor/config", label: "Config", icon: Settings },
-  { href: "/vendor/profile", label: "Profile", icon: User },
+	{ href: "/vendor/dashboard", label: "Dashboard", icon: Home },
+	{ href: "/vendor/orders", label: "Orders", icon: ShoppingBag },
+	{ href: "/vendor/analytics", label: "Analytics", icon: LineChart },
+	{ href: "/vendor/config", label: "Config", icon: Settings },
+	{ href: "/vendor/profile", label: "Profile", icon: User },
 ];
 
 export default function VendorLayout({
@@ -88,7 +87,7 @@ export default function VendorLayout({
 					</SidebarHeader>
 					<SidebarContent>
 						<SidebarMenu>
-							{vendorNavLinks.map(link => (
+							{vendorNavLinks.map((link) => (
 								<SidebarMenuItem key={link.href}>
 									<SidebarMenuButton asChild>
 										<Link href={link.href}>

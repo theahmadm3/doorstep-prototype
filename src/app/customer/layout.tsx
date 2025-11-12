@@ -98,6 +98,7 @@ export default function CustomerLayout({
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 							))}
+							
 						</SidebarMenu>
 					</SidebarContent>
 					

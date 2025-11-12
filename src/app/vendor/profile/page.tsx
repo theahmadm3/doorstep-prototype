@@ -10,9 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Star, MapPin, LocateFixed, Search, Save, PlusCircle } from "lucide-react";
+import { Edit, Star, MapPin, LocateFixed, Search, Save, PlusCircle, Bell } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { getRestaurantProfile, updateRestaurantProfile } from "@/lib/api";
+import { getRestaurantProfile, updateRestaurantProfile, subscribeToNotifications } from "@/lib/api";
 import { VendorProfile, VendorProfileUpdatePayload } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,13 @@ import Image from "next/image";
 import { useLoadScript } from "@react-google-maps/api";
 import usePlacesAutocomplete, { getGeocode, getLatLng } from "use-places-autocomplete";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+    registerPushServiceWorker, 
+    subscribeToPushNotifications, 
+    getCurrentSubscription,
+    isPushNotificationSupported,
+    detectPlatform
+} from "@/lib/push-notifications";
 
 const libraries: ("places")[] = ['places'];
 
@@ -111,6 +118,16 @@ function VendorProfilePage() {
     const [isActive, setIsActive] = useState(true);
     const [addressState, setAddressState] = useState<{ street_name: string | null; latitude: number; longitude: number; }>({ street_name: null, latitude: 0, longitude: 0 });
 
+    // Push notification states
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [isSubscribing, setIsSubscribing] = useState(false);
+    const [platformInfo, setPlatformInfo] = useState({
+        isIOS: false,
+        isSafari: false,
+        isStandalone: false,
+        needsPWAInstall: false,
+    });
+
     const { toast } = useToast();
 
     const fetchProfile = useCallback(async () => {
@@ -134,7 +151,76 @@ function VendorProfilePage() {
 
     useEffect(() => {
         fetchProfile();
+
+        // Detect platform
+        if (typeof window !== 'undefined') {
+            setPlatformInfo(detectPlatform());
+        }
+        
+        // Register service worker and check subscription
+        const initPushNotifications = async () => {
+            try {
+                if (isPushNotificationSupported()) {
+                    await registerPushServiceWorker();
+                    const subscription = await getCurrentSubscription();
+                    setIsSubscribed(!!subscription);
+                }
+            } catch (error) {
+                console.error('Failed to initialize push notifications:', error);
+            }
+        };
+
+        initPushNotifications();
     }, [fetchProfile]);
+
+    const handleEnableNotifications = async () => {
+        if (platformInfo.needsPWAInstall) {
+            toast({
+                title: "Install as PWA",
+                description: "On iOS, please install this app to your home screen to enable notifications. Tap the Share button and select 'Add to Home Screen'.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsSubscribing(true);
+        try {
+            // Request permission
+            const permission = await Notification.requestPermission();
+            
+            if (permission !== 'granted') {
+                toast({
+                    title: "Permission Denied",
+                    description: "Please enable notifications in your browser settings to receive updates.",
+                    variant: "destructive",
+                });
+                setIsSubscribing(false);
+                return;
+            }
+
+            // Register service worker and subscribe
+            const registration = await registerPushServiceWorker();
+            const subscription = await subscribeToPushNotifications(registration);
+
+            // Send subscription to backend
+            await subscribeToNotifications(subscription);
+
+            setIsSubscribed(true);
+            toast({
+                title: "Success",
+                description: "Push notifications have been enabled successfully!",
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Failed to enable notifications";
+            toast({
+                title: "Error",
+                description: message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubscribing(false);
+        }
+    };
     
     const openInfoModal = () => {
         if (!profile) return;
@@ -312,6 +398,55 @@ function VendorProfilePage() {
                              <div className="space-y-2 text-sm">
                                 <p><strong>Address:</strong> {profile.address?.street_name || 'N/A'}</p>
                              </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Notification Settings Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Bell className="h-5 w-5" />
+                                Notification Settings
+                            </CardTitle>
+                            <CardDescription>Manage push notifications for order updates.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {platformInfo.needsPWAInstall && (
+                                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                        <strong>iOS Users:</strong> To enable push notifications, please install this app to your home screen. 
+                                        Tap the Share button <span className="inline-block">📤</span> and select "Add to Home Screen".
+                                    </p>
+                                </div>
+                            )}
+                            
+                            {isPushNotificationSupported() ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium">
+                                                Push Notifications
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {isSubscribed 
+                                                    ? "You're subscribed to push notifications" 
+                                                    : "Enable notifications to receive order updates"}
+                                            </p>
+                                        </div>
+                                        <Button 
+                                            onClick={handleEnableNotifications}
+                                            disabled={isSubscribed || isSubscribing || platformInfo.needsPWAInstall}
+                                            variant={isSubscribed ? "outline" : "default"}
+                                        >
+                                            {isSubscribing ? "Enabling..." : isSubscribed ? "Enabled" : "Enable Notifications"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    Push notifications are not supported in your browser.
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
