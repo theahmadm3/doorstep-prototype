@@ -1,3 +1,4 @@
+
 import {
 	PaginatedResponse,
 	Restaurant,
@@ -39,9 +40,15 @@ if (!BASE_URL) {
 async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 	const token =
 		typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json",
-	};
+	
+	const isFormData = options.body instanceof FormData;
+
+	const headers: Record<string, string> = {};
+
+	if (!isFormData) {
+		headers["Content-Type"] = "application/json";
+	}
+
 	if (token) {
 		headers["Authorization"] = `Bearer ${token}`;
 	}
@@ -189,9 +196,24 @@ export async function getVendorMenuItems(): Promise<MenuItem[]> {
 export async function createVendorMenuItem(
 	itemData: MenuItemPayload,
 ): Promise<MenuItem> {
+	// Don't send image data in the initial creation request
+	const { image, ...payload } = itemData;
 	return fetcher<MenuItem>("/restaurants/me/menu/", {
 		method: "POST",
-		body: JSON.stringify(itemData),
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function uploadMenuItemImage(
+	itemId: string,
+	image: File,
+): Promise<MenuItem> {
+	const formData = new FormData();
+	formData.append("image", image);
+
+	return fetcher<MenuItem>(`/menu-items/${itemId}/upload-image/`, {
+		method: "POST",
+		body: formData,
 	});
 }
 
@@ -199,9 +221,11 @@ export async function updateVendorMenuItem(
 	itemId: string,
 	itemData: MenuItemPayload,
 ): Promise<MenuItem> {
+	// Don't send image data in the update request
+	const { image, ...payload } = itemData;
 	return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/`, {
 		method: "PUT",
-		body: JSON.stringify(itemData),
+		body: JSON.stringify(payload),
 	});
 }
 

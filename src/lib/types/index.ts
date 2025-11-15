@@ -142,7 +142,7 @@ export interface MenuItemPayload {
     description: string;
     price: string;
     is_available: boolean;
-    image_url?: string;
+    image?: File;
 }
 
 // Order Management Types
@@ -387,7 +387,7 @@ export interface RiderOrder {
     delivery_fee: string;
     restaurant_latitude: string;
     restaurant_longitude: string;
-    delivery_latitude: string;
+c    delivery_latitude: string;
     delivery_longitude: string;
     order_type?: "delivery" | "pickup";
     customer: RiderCustomer;
