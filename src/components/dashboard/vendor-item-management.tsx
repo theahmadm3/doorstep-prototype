@@ -1,6 +1,11 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -36,6 +41,15 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,10 +81,29 @@ import {
 } from "@/lib/api";
 import { Skeleton } from "../ui/skeleton";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
-type ItemUpdateStatus = "idle" | "updating" | "success" | "error";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+
+const itemFormSchema = z.object({
+	name: z.string().min(2, "Name must be at least 2 characters."),
+	description: z.string().min(10, "Description must be at least 10 characters."),
+	price: z.coerce.number().positive("Price must be a positive number."),
+	is_available: z.boolean().default(true),
+	image: z
+		.any()
+		.refine((files) => files?.[0], { message: "Image is required." })
+		.refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, {
+			message: `Max file size is 5MB.`,
+		})
+		.refine((files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type), {
+			message: "Only .jpg, .jpeg, and .png formats are supported.",
+		})
+		.optional(),
+});
+
+type ItemFormData = z.infer<typeof itemFormSchema>;
 
 export default function VendorItemManagement() {
 	const [items, setItems] = useState<MenuItem[]>([]);
@@ -79,15 +112,36 @@ export default function VendorItemManagement() {
 	const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 	const { toast } = useToast();
 	const [updatingStatus, setUpdatingStatus] = useState<
-		Record<string, ItemUpdateStatus>
+		Record<string, "idle" | "updating" | "success" | "error">
 	>({});
 	const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
-	const [isSaving, setIsSaving] = useState(false);
-	const [savingStep, setSavingStep] = useState("");
-	const [selectedImage, setSelectedImage] = useState<File | null>(null);
 	const [previewImage, setPreviewImage] = useState<string | null>(null);
-	const [imageError, setImageError] = useState<string | null>(null);
-	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	const form = useForm<ItemFormData>({
+		resolver: zodResolver(itemFormSchema),
+		mode: "onChange",
+	});
+
+	const {
+		formState: { isSubmitting, isValid },
+		watch,
+	} = form;
+	const imageFile = watch("image");
+
+	useEffect(() => {
+		if (imageFile && imageFile.length > 0) {
+			const file = imageFile[0];
+			if (file instanceof File) {
+				const reader = new FileReader();
+				reader.onloadend = () => {
+					setPreviewImage(reader.result as string);
+				};
+				reader.readAsDataURL(file);
+			}
+		} else {
+			setPreviewImage(null);
+		}
+	}, [imageFile]);
 
 	const fetchItems = async () => {
 		setIsLoading(true);
@@ -110,69 +164,49 @@ export default function VendorItemManagement() {
 		fetchItems();
 	}, [toast]);
 
-	useEffect(() => {
-		if (!isDialogOpen) {
-			// Reset state when modal is closed
-			setEditingItem(null);
-			setSelectedImage(null);
-			setPreviewImage(null);
-			setImageError(null);
+	const handleOpenDialog = (item: MenuItem | null) => {
+		setEditingItem(item);
+		if (item) {
+			// Editing existing item, image is not required to be re-uploaded
+			const editSchema = itemFormSchema.extend({
+				image: itemFormSchema.shape.image.optional(),
+			});
+			form.reset({
+				...item,
+				price: parseFloat(item.price),
+			});
+		} else {
+			// Adding new item, image is required
+			form.reset({
+				name: "",
+				description: "",
+				price: undefined,
+				is_available: true,
+			});
 		}
-	}, [isDialogOpen]);
-
-	const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		const file = event.target.files?.[0];
-		if (!file) return;
-
-		setImageError(null);
-
-		if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-			setImageError("Invalid file type. Please use PNG, JPG, or JPEG.");
-			return;
-		}
-		if (file.size > MAX_FILE_SIZE) {
-			setImageError("File is too large. Maximum size is 5MB.");
-			return;
-		}
-
-		setSelectedImage(file);
-		setPreviewImage(URL.createObjectURL(file));
+		setPreviewImage(item?.image_url || null);
+		setDialogOpen(true);
 	};
 
-	const handleSaveItem = async (event: React.FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		const formData = new FormData(event.currentTarget);
-
-		// For new items, an image is required
-		if (!editingItem && !selectedImage) {
-			setImageError("An image is required to create a new item.");
-			return;
-		}
-
-		setIsSaving(true);
-
+	const handleSaveItem = async (data: ItemFormData) => {
 		const payload: MenuItemPayload = {
-			name: formData.get("name") as string,
-			description: formData.get("description") as string,
-			price: String(parseFloat(formData.get("price") as string)),
-			is_available: formData.get("is_available") === "on",
+			name: data.name,
+			description: data.description,
+			price: String(data.price),
+			is_available: data.is_available,
 		};
+		const imageFile = data.image?.[0];
 
 		try {
 			if (editingItem) {
-				// --- Editing Flow ---
-				setSavingStep("Updating item details...");
 				const updatedItemData = await updateVendorMenuItem(
 					editingItem.id,
 					payload,
 				);
-
 				let finalItem = updatedItemData;
 
-				// If a new image was selected during edit, upload it
-				if (selectedImage) {
-					setSavingStep("Uploading new image...");
-					finalItem = await uploadMenuItemImage(editingItem.id, selectedImage);
+				if (imageFile) {
+					finalItem = await uploadMenuItemImage(editingItem.id, imageFile);
 				}
 
 				setItems(
@@ -183,22 +217,12 @@ export default function VendorItemManagement() {
 					description: `${payload.name} has been successfully updated.`,
 				});
 			} else {
-				// --- Creating Flow ---
-				if (!selectedImage) {
-					// Redundant check, but good for safety
-					throw new Error("Image not selected");
-				}
+				if (!imageFile) throw new Error("Image is required for new items.");
 
-				setSavingStep("Creating menu item...");
 				const newItem = await createVendorMenuItem(payload);
+				const newItemWithImage = await uploadMenuItemImage(newItem.id, imageFile);
 
-				setSavingStep("Uploading image...");
-				const newItemWithImage = await uploadMenuItemImage(
-					newItem.id,
-					selectedImage,
-				);
-
-				setItems([newItemWithImage, ...items]); // Add new item to the top of the list
+				setItems([newItemWithImage, ...items]);
 				toast({
 					title: "Item Added",
 					description: `${payload.name} has been successfully added.`,
@@ -210,21 +234,16 @@ export default function VendorItemManagement() {
 				error instanceof Error
 					? error.message
 					: "An unexpected error occurred.";
-			const action = editingItem ? "Update" : "Add";
 			toast({
-				title: `Failed to ${action} Item`,
+				title: `Failed to ${editingItem ? "Update" : "Add"} Item`,
 				description: message,
 				variant: "destructive",
 			});
-		} finally {
-			setIsSaving(false);
-			setSavingStep("");
 		}
 	};
 
 	const handleDeleteItem = async () => {
 		if (!itemToDelete) return;
-
 		try {
 			await deleteVendorMenuItem(itemToDelete.id);
 			setItems(items.filter((item) => item.id !== itemToDelete.id));
@@ -316,11 +335,9 @@ export default function VendorItemManagement() {
 							Add, edit, or remove items from your menu.
 						</CardDescription>
 					</div>
-					<DialogTrigger asChild>
-						<Button>
-							<PlusCircle className="mr-2 h-4 w-4" /> Add Item
-						</Button>
-					</DialogTrigger>
+					<Button onClick={() => handleOpenDialog(null)}>
+						<PlusCircle className="mr-2 h-4 w-4" /> Add Item
+					</Button>
 				</CardHeader>
 				<CardContent>
 					{isLoading ? (
@@ -367,11 +384,9 @@ export default function VendorItemManagement() {
 							<p className="text-muted-foreground mb-4">
 								No menu items available. Please add a new item.
 							</p>
-							<DialogTrigger asChild>
-								<Button>
-									<PlusCircle className="mr-2 h-4 w-4" /> Add Your First Item
-								</Button>
-							</DialogTrigger>
+							<Button onClick={() => handleOpenDialog(null)}>
+								<PlusCircle className="mr-2 h-4 w-4" /> Add Your First Item
+							</Button>
 						</div>
 					) : (
 						<Table>
@@ -441,9 +456,9 @@ export default function VendorItemManagement() {
 															variant={
 																item.is_available ? "default" : "outline"
 															}
-															className={
-																item.is_available ? "bg-green-600" : ""
-															}
+															className={cn(
+																item.is_available ? "bg-green-600" : "",
+															)}
 														>
 															{item.is_available ? "On" : "Off"}
 														</Badge>
@@ -466,10 +481,7 @@ export default function VendorItemManagement() {
 													</DropdownMenuTrigger>
 													<DropdownMenuContent align="end">
 														<DropdownMenuItem
-															onClick={() => {
-																setEditingItem(item);
-																setDialogOpen(true);
-															}}
+															onClick={() => handleOpenDialog(item)}
 														>
 															<Edit className="mr-2 h-4 w-4" /> Edit
 														</DropdownMenuItem>
@@ -500,107 +512,117 @@ export default function VendorItemManagement() {
 						Fill in the details for your menu item below.
 					</DialogDescription>
 				</DialogHeader>
-				<form id="item-form" onSubmit={handleSaveItem}>
-					<div className="grid gap-4 py-4">
-						<div className="grid grid-cols-4 items-start gap-4">
-							<Label htmlFor="image" className="text-right pt-2">
-								Image
-							</Label>
-							<div className="col-span-3">
-								<Input
-									id="image"
-									name="image"
-									type="file"
-									ref={fileInputRef}
-									onChange={handleImageChange}
-									accept={ACCEPTED_IMAGE_TYPES.join(",")}
-									className="hidden"
-								/>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => fileInputRef.current?.click()}
-									className="w-full"
-								>
-									<UploadCloud className="mr-2 h-4 w-4" />
-									{selectedImage ? "Change Image" : "Upload Image"}
-								</Button>
-								{(previewImage || editingItem?.image_url) && (
-									<div className="mt-4 relative w-32 h-32">
-										<Image
-											src={
-												previewImage ||
-												editingItem?.image_url ||
-												"https://placehold.co/128x128.png"
-											}
-											alt="Item preview"
-											layout="fill"
-											className="rounded-md object-cover"
+				<Form {...form}>
+					<form
+						id="item-form"
+						onSubmit={form.handleSubmit(handleSaveItem)}
+						className="space-y-4 py-4"
+					>
+						<FormField
+							control={form.control}
+							name="image"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Image</FormLabel>
+									<FormControl>
+										<Input
+											type="file"
+											accept={ACCEPTED_IMAGE_TYPES.join(",")}
+											onChange={(e) => field.onChange(e.target.files)}
 										/>
-									</div>
-								)}
-								{imageError && (
-									<p className="text-sm text-red-500 mt-2">{imageError}</p>
-								)}
-							</div>
-						</div>
+									</FormControl>
+									<FormMessage />
+									{(previewImage || editingItem?.image_url) && (
+										<div className="mt-4 relative w-32 h-32">
+											<Image
+												src={
+													previewImage ||
+													editingItem?.image_url ||
+													"https://placehold.co/128x128.png"
+												}
+												alt="Item preview"
+												fill
+												className="rounded-md object-cover"
+											/>
+										</div>
+									)}
+								</FormItem>
+							)}
+						/>
 
-						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="name" className="text-right">
-								Name
-							</Label>
-							<Input
-								id="name"
-								name="name"
-								defaultValue={editingItem?.name}
-								className="col-span-3"
-								required
-							/>
-						</div>
-						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="description" className="text-right">
-								Description
-							</Label>
-							<Textarea
-								id="description"
-								name="description"
-								defaultValue={editingItem?.description || ""}
-								className="col-span-3"
-								required
-							/>
-						</div>
-						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="price" className="text-right">
-								Price (₦)
-							</Label>
-							<Input
-								id="price"
-								name="price"
-								type="number"
-								step="0.01"
-								defaultValue={editingItem?.price}
-								className="col-span-3"
-								required
-							/>
-						</div>
-						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="is_available" className="text-right">
-								Available
-							</Label>
-							<Switch
-								id="is_available"
-								name="is_available"
-								defaultChecked={editingItem?.is_available ?? true}
-							/>
-						</div>
-					</div>
-				</form>
+						<FormField
+							control={form.control}
+							name="name"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Name</FormLabel>
+									<FormControl>
+										<Input {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="description"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Description</FormLabel>
+									<FormControl>
+										<Textarea {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="price"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Price (₦)</FormLabel>
+									<FormControl>
+										<Input type="number" step="0.01" {...field} />
+									</FormControl>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+
+						<FormField
+							control={form.control}
+							name="is_available"
+							render={({ field }) => (
+								<FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+									<div className="space-y-0.5">
+										<FormLabel>Available for ordering</FormLabel>
+									</div>
+									<FormControl>
+										<Switch
+											checked={field.value}
+											onCheckedChange={field.onChange}
+										/>
+									</FormControl>
+								</FormItem>
+							)}
+						/>
+					</form>
+				</Form>
 				<DialogFooter>
-					<Button type="submit" form="item-form" disabled={isSaving}>
-						{isSaving ? savingStep || "Saving..." : "Save changes"}
+					<Button
+						type="submit"
+						form="item-form"
+						disabled={isSubmitting || !isValid}
+					>
+						{isSubmitting ? "Saving..." : "Save changes"}
 					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);
 }
+
+    
