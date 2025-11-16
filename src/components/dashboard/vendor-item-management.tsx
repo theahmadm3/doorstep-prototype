@@ -339,7 +339,7 @@ export default function VendorItemManagement() {
 							</TableHeader>
 							<TableBody>
 								{Array.from({ length: 5 }).map((_, i) => (
-									<TableRow key={`skeleton-${i}`}>
+									<TableRow key={`menu-skeleton-${i}`}>
 										<TableCell className="hidden sm:table-cell">
 											<Skeleton className="h-16 w-16 rounded-md" />
 										</TableCell>
