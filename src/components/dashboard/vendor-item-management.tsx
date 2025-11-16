@@ -129,17 +129,28 @@ export default function VendorItemManagement() {
 	const imageFile = watch("image");
 
 	useEffect(() => {
-		if (imageFile && imageFile.length > 0) {
+		let fileReader: FileReader, isCancel = false;
+		if (imageFile && imageFile.length) {
 			const file = imageFile[0];
 			if (file instanceof File) {
-				const reader = new FileReader();
-				reader.onloadend = () => {
-					setPreviewImage(reader.result as string);
-				};
-				reader.readAsDataURL(file);
+				fileReader = new FileReader();
+				fileReader.onload = (e) => {
+					const { result } = e.target as FileReader;
+					if (result && !isCancel) {
+						setPreviewImage(result as string);
+					}
+				}
+				fileReader.readAsDataURL(file);
 			}
 		} else {
 			setPreviewImage(null);
+		}
+	
+		return () => {
+			isCancel = true;
+			if (fileReader && fileReader.readyState === 1) {
+				fileReader.abort();
+			}
 		}
 	}, [imageFile]);
 
@@ -162,7 +173,8 @@ export default function VendorItemManagement() {
 
 	useEffect(() => {
 		fetchItems();
-	}, [toast]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const handleOpenDialog = (item: MenuItem | null) => {
 		setEditingItem(item);
@@ -624,5 +636,3 @@ export default function VendorItemManagement() {
 		</Dialog>
 	);
 }
-
-    
