@@ -22,15 +22,6 @@ export const metadata: Metadata = {
 		statusBarStyle: "default",
 		title: "Doorstep",
 	},
-	icons: {
-		apple: [
-			{
-				url: "/doorstep-logo.png",
-				sizes: "180x180",
-				type: "image/png",
-			},
-		],
-	},
 };
 
 export const viewport: Viewport = {
