@@ -1,4 +1,3 @@
-
 import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
@@ -26,7 +25,7 @@ export const metadata: Metadata = {
 	icons: {
 		apple: [
 			{
-				url: "/icons/apple-icon-180.png",
+				url: "/doorstep-logo.png",
 				sizes: "180x180",
 				type: "image/png",
 			},
@@ -35,9 +34,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#005380",
+	themeColor: "#005380",
 };
-
 
 export default function RootLayout({
 	children,
