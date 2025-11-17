@@ -33,8 +33,6 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { Input } from "@/components/ui/input";
 import AddToCartModal from "@/components/checkout/add-to-cart-modal";
-import { useIsMobile } from "@/hooks/use-mobile";
-
 
 // Custom hook for debouncing
 function useDebounce(value, delay) {
@@ -112,7 +110,6 @@ export default function RestaurantMenuPage() {
 	const params = useParams();
 	const router = useRouter();
 	const restaurantId = params.restaurantId as string;
-	const isMobile = useIsMobile();
 
 	const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -185,11 +182,7 @@ export default function RestaurantMenuPage() {
 
 	const handleCheckout = () => {
 		if (currentOrder) {
-			if (isMobile) {
-				router.push('/customer/cart');
-			} else {
-				setCheckoutOpen(true);
-			}
+			setCheckoutOpen(true);
 		}
 	};
 
@@ -240,11 +233,11 @@ export default function RestaurantMenuPage() {
 
 	return (
 		<div className="pb-24">
-			{!isMobile && <CheckoutModal
+			<CheckoutModal
 				isOpen={isCheckoutOpen}
 				onClose={() => setCheckoutOpen(false)}
 				order={currentOrder}
-			/>}
+			/>
 
 			{selectedItem && (
                 <AddToCartModal
