@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -27,9 +26,9 @@ import { usePathname } from "next/navigation";
 import AuthGuard from "@/components/auth/auth-guard";
 
 const customerNavLinks = [
-  { href: "/customer/dashboard", label: "Dashboard", icon: Home },
-  { href: "/customer/orders", label: "My Orders", icon: Package },
-  { href: "/customer/profile", label: "Profile", icon: User },
+	{ href: "/customer/dashboard", label: "Home", icon: Home },
+	{ href: "/customer/orders", label: "Orders", icon: Package },
+	{ href: "/customer/profile", label: "Profile", icon: User },
 ];
 
 export default function CustomerLayout({
@@ -43,7 +42,7 @@ export default function CustomerLayout({
 	const [isClient, setIsClient] = useState(false);
 	const pathname = usePathname();
 
-	const showHeader = pathname === '/customer/dashboard';
+	const showHeader = pathname === "/customer/dashboard";
 
 	useEffect(() => {
 		setIsClient(true);
@@ -78,19 +77,21 @@ export default function CustomerLayout({
 					isOpen={isAddressModalRequired}
 					onClose={handleModalClose}
 				/>
-				
+
 				<div className="flex min-h-screen w-full">
 					<Sidebar className="hidden md:flex md:flex-col">
 						<SidebarHeader className="p-4 border-b">
 							<div className="flex items-center gap-2">
 								<Utensils className="w-8 h-8 text-primary" />
-								<span className="text-xl font-bold font-headline">Doorstep</span>
+								<span className="text-xl font-bold font-headline">
+									Doorstep
+								</span>
 							</div>
 						</SidebarHeader>
-						
+
 						<SidebarContent className="flex-1 overflow-y-auto py-4">
 							<SidebarMenu>
-								{customerNavLinks.map(link => (
+								{customerNavLinks.map((link) => (
 									<SidebarMenuItem key={link.href}>
 										<SidebarMenuButton asChild>
 											<Link href={link.href}>
@@ -100,10 +101,9 @@ export default function CustomerLayout({
 										</SidebarMenuButton>
 									</SidebarMenuItem>
 								))}
-								
 							</SidebarMenu>
 						</SidebarContent>
-						
+
 						<SidebarFooter className="p-4 border-t">
 							{!isClient || !user ? (
 								<div className="flex items-center gap-3 p-3">
@@ -139,13 +139,11 @@ export default function CustomerLayout({
 							)}
 						</SidebarFooter>
 					</Sidebar>
-					
+
 					<div className="flex-1 flex flex-col min-w-0">
 						{showHeader && <ClientHeader />}
 						<main className="flex-1 overflow-y-auto">
-							<div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
-								{children}
-							</div>
+							<div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">{children}</div>
 						</main>
 						<BottomNavigation links={customerNavLinks} />
 					</div>
