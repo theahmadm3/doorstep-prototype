@@ -1,4 +1,3 @@
-
 import create from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MenuItem, Order, OrderItem, OrderStatus } from '@/lib/types';
@@ -6,10 +5,11 @@ import { v4 as uuidv4 } from 'uuid';
 
 interface CartState {
   orders: Order[];
-  addOrUpdateOrder: (item: MenuItem) => Order;
+  addOrUpdateItem: (item: MenuItem, quantity: number) => Order;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   increaseOrderItemQuantity: (orderId: string, itemId: string) => void;
   decreaseOrderItemQuantity: (orderId: string, itemId: string) => void;
+  removeOrderItem: (orderId: string, itemId: string) => void;
   removeUnsubmittedOrder: (orderId: string) => void;
   clearUserOrders: () => void;
 }
@@ -23,7 +23,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       orders: [],
 
-      addOrUpdateOrder: (item: MenuItem) => {
+      addOrUpdateItem: (item: MenuItem, quantity: number) => {
         const { orders } = get();
         const existingUnsubmittedOrder = orders.find(o => o.restaurantId === item.restaurant && o.status === 'unsubmitted');
         let updatedOrder: Order;
@@ -32,21 +32,24 @@ export const useCartStore = create<CartState>()(
           const existingItem = existingUnsubmittedOrder.items.find(i => i.id === item.id);
           let newItems: OrderItem[];
           if (existingItem) {
-            newItems = existingUnsubmittedOrder.items.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
+            // Item exists, update its quantity
+            newItems = existingUnsubmittedOrder.items.map(i => i.id === item.id ? { ...i, quantity: i.quantity + quantity } : i);
           } else {
-            newItems = [...existingUnsubmittedOrder.items, { ...item, quantity: 1 }];
+            // Item does not exist, add it
+            newItems = [...existingUnsubmittedOrder.items, { ...item, quantity: quantity }];
           }
           updatedOrder = { ...existingUnsubmittedOrder, items: newItems, total: calculateOrderTotal(newItems) };
           set({ orders: orders.map(o => o.id === updatedOrder.id ? updatedOrder : o) });
         } else {
-          // If ordering from a new restaurant, clear other unsubmitted orders
+          // No unsubmitted order for this restaurant, create a new one
+          // Also, clear any other unsubmitted orders from other restaurants
           const otherUnsubmittedOrders = orders.filter(o => o.status !== 'unsubmitted');
           updatedOrder = {
             id: uuidv4(),
             restaurantId: item.restaurant,
-            items: [{ ...item, quantity: 1 }],
+            items: [{ ...item, quantity: quantity }],
             status: 'unsubmitted',
-            total: parseFloat(item.price)
+            total: parseFloat(item.price) * quantity
           };
           set({ orders: [...otherUnsubmittedOrders, updatedOrder] });
         }
@@ -79,21 +82,22 @@ export const useCartStore = create<CartState>()(
           if (!orderToUpdate) return state;
 
           const itemToUpdate = orderToUpdate.items.find(item => item.id === itemId);
-          if (!itemToUpdate) return state;
-
-          if (itemToUpdate.quantity === 1) {
-            const newItems = orderToUpdate.items.filter(item => item.id !== itemId);
-            if (newItems.length === 0) {
-              return { orders: state.orders.filter(order => order.id !== orderId) };
-            }
-            return {
-              orders: state.orders.map(order =>
-                order.id === orderId
-                  ? { ...order, items: newItems, total: calculateOrderTotal(newItems) }
-                  : order
-              )
-            };
+          if (!itemToUpdate || itemToUpdate.quantity <= 1) {
+              // If quantity is 1, remove the item instead of just decrementing
+              const newItems = orderToUpdate.items.filter(item => item.id !== itemId);
+              if (newItems.length === 0) {
+                  // If no items left, remove the whole order
+                  return { orders: state.orders.filter(order => order.id !== orderId) };
+              }
+              return {
+                  orders: state.orders.map(order =>
+                  order.id === orderId
+                      ? { ...order, items: newItems, total: calculateOrderTotal(newItems) }
+                      : order
+                  )
+              };
           } else {
+            // Decrement quantity if greater than 1
             const newItems = orderToUpdate.items.map(item =>
               item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item
             );
@@ -105,6 +109,27 @@ export const useCartStore = create<CartState>()(
               )
             };
           }
+        });
+      },
+      
+      removeOrderItem: (orderId: string, itemId: string) => {
+        set(state => {
+           const orderToUpdate = state.orders.find(order => order.id === orderId);
+           if (!orderToUpdate) return state;
+
+           const newItems = orderToUpdate.items.filter(item => item.id !== itemId);
+           if (newItems.length === 0) {
+               // Remove order if no items left
+               return { orders: state.orders.filter(order => order.id !== orderId) };
+           }
+           // Update order with new items list
+           return {
+               orders: state.orders.map(order =>
+                    order.id === orderId
+                        ? { ...order, items: newItems, total: calculateOrderTotal(newItems) }
+                        : order
+                )
+           }
         });
       },
 

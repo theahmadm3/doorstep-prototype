@@ -32,6 +32,9 @@ import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { Input } from "@/components/ui/input";
+import AddToCartModal from "@/components/checkout/add-to-cart-modal";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 
 // Custom hook for debouncing
 function useDebounce(value, delay) {
@@ -102,19 +105,23 @@ const FloatingCartButton = ({
 };
 
 export default function RestaurantMenuPage() {
-	const { addOrUpdateOrder, orders } = useCartStore();
+	const { addOrUpdateItem } = useCartStore();
+	const orders = useCartStore(state => state.orders);
 	const { viewedRestaurant } = useUIStore();
 	const { toast } = useToast();
 	const params = useParams();
 	const router = useRouter();
 	const restaurantId = params.restaurantId as string;
+	const isMobile = useIsMobile();
 
 	const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [user, setUser] = useState<User | null>(null);
 
 	const [isCheckoutOpen, setCheckoutOpen] = useState(false);
-	const [orderForCheckout, setOrderForCheckout] = useState<Order | null>(null);
+
+	const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+    const [isAddToCartModalOpen, setAddToCartModalOpen] = useState(false);
 
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -152,7 +159,13 @@ export default function RestaurantMenuPage() {
 		(o) => o.restaurantId === restaurantId && o.status === "unsubmitted",
 	);
 
-	const handleAddItem = (item: MenuItem) => {
+	const handleOpenAddToCartModal = (item: MenuItem) => {
+        if (!item.is_available) return;
+        setSelectedItem(item);
+        setAddToCartModalOpen(true);
+    };
+
+	const handleAddItem = (item: MenuItem, quantity: number) => {
 		if (!user) {
 			toast({
 				title: "Authentication Error",
@@ -161,18 +174,22 @@ export default function RestaurantMenuPage() {
 			});
 			return;
 		}
-		const updatedOrder = addOrUpdateOrder(item);
-		setOrderForCheckout(updatedOrder);
+		addOrUpdateItem(item, quantity);
 		toast({
 			title: "Item Added",
-			description: `${item.name} has been added to your order.`,
+			description: `${quantity} x ${item.name} has been added to your order.`,
 		});
+		setAddToCartModalOpen(false);
+        setSelectedItem(null);
 	};
 
 	const handleCheckout = () => {
 		if (currentOrder) {
-			setOrderForCheckout(currentOrder);
-			setCheckoutOpen(true);
+			if (isMobile) {
+				router.push('/customer/cart');
+			} else {
+				setCheckoutOpen(true);
+			}
 		}
 	};
 
@@ -223,11 +240,20 @@ export default function RestaurantMenuPage() {
 
 	return (
 		<div className="pb-24">
-			<CheckoutModal
+			{!isMobile && <CheckoutModal
 				isOpen={isCheckoutOpen}
 				onClose={() => setCheckoutOpen(false)}
-				order={orderForCheckout}
-			/>
+				order={currentOrder}
+			/>}
+
+			{selectedItem && (
+                <AddToCartModal
+                    isOpen={isAddToCartModalOpen}
+                    onClose={() => setAddToCartModalOpen(false)}
+                    item={selectedItem}
+                    onAddToCart={handleAddItem}
+                />
+            )}
 
 			<div className="mb-4 w-full inline-flex items-center justify-between restaurant-header">
 				<Button asChild variant="ghost" className="px-2">
@@ -322,11 +348,12 @@ export default function RestaurantMenuPage() {
 										<Card
 											key={item.id}
 											className={cn(
-												"overflow-hidden transition-all hover:shadow-md w-fit",
-												{ "opacity-60": !item.is_available },
+												"overflow-hidden transition-all hover:shadow-md w-full flex flex-col cursor-pointer",
+												{ "opacity-60 cursor-not-allowed": !item.is_available },
 											)}
+											onClick={() => handleOpenAddToCartModal(item)}
 										>
-											<CardContent className="p-4 flex gap-4">
+											<CardContent className="p-4 flex gap-4 items-start flex-grow">
 												<div className="flex-1">
 													<CardTitle className="text-lg font-semibold mb-1">
 														{item.name}
@@ -345,17 +372,19 @@ export default function RestaurantMenuPage() {
 														fill
 														className="rounded-md object-cover"
 													/>
-													<Button
-														size="icon"
-														className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full shadow-lg"
-														onClick={() => handleAddItem(item)}
-														disabled={!item.is_available}
-														aria-label={`Add ${item.name} to cart`}
-													>
-														<PlusCircle className="h-5 w-5" />
-													</Button>
 												</div>
 											</CardContent>
+											<CardFooter className="p-4 pt-0 mt-auto">
+												<Button
+													size="sm"
+													className="w-full"
+													disabled={!item.is_available}
+													aria-label={`Add ${item.name} to cart`}
+												>
+													<PlusCircle className="mr-2 h-4 w-4" />
+													Add to cart
+												</Button>
+											</CardFooter>
 										</Card>
 									);
 								})}
