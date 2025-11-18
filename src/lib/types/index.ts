@@ -136,6 +136,29 @@ export interface Restaurant {
 	updated_at: string;
 }
 
+export const menuItemSchema = z.object({
+	name: z.string().min(1, "Item name is required."),
+	description: z.string().min(1, "Description is required."),
+	price: z.preprocess(
+		(a) => parseFloat(z.string().parse(a)),
+		z.number().positive("Price must be a positive number."),
+	),
+	is_available: z.boolean().default(true),
+	image: z
+		.any()
+		.refine((file) => file, "Image is required.")
+		.refine(
+			(file) => file?.size <= 5 * 1024 * 1024,
+			`Max image size is 5MB.`,
+		)
+		.refine(
+			(file) => ["image/jpeg", "image/jpg", "image/png"].includes(file?.type),
+			"Only .jpg, .jpeg and .png formats are supported.",
+		)
+		.optional(),
+});
+export type MenuItemFormValues = z.infer<typeof menuItemSchema>;
+
 export interface MenuItem {
 	id: string;
 	restaurant: string;
@@ -154,7 +177,6 @@ export interface MenuItemPayload {
 	description: string;
 	price: string;
 	is_available: boolean;
-	image?: File;
 }
 
 // Order Management Types
@@ -465,3 +487,43 @@ export interface PlatformInfo {
 	isStandalone: boolean;
 	needsPWAInstall: boolean;
 }
+
+// Payout Types
+export interface WalletBalance {
+	balance: number;
+	currency: string;
+}
+
+export interface PayoutRecipientDetails {
+	account_number: string;
+	account_name: string;
+	bank_code: string;
+	bank_name: string;
+}
+
+export interface PayoutRecipient {
+	name: string;
+	recipient_code: string;
+	details: PayoutRecipientDetails;
+}
+
+export const createRecipientSchema = z.object({
+	name: z.string().min(2, "Full account owner name is required."),
+	account_number: z.string().length(10, "Account number must be 10 digits."),
+	bank_code: z.string().min(1, "Please select a bank."),
+});
+
+export type CreateRecipientPayload = z.infer<typeof createRecipientSchema>;
+
+export const requestPayoutSchema = z.object({
+	amount: z.preprocess(
+		(a) => parseFloat(z.string().parse(a)),
+		z
+			.number()
+			.min(1000, "Payout amount must be at least ₦1000.")
+			.positive("Amount must be a positive number."),
+	),
+	recipient_code: z.string().min(1, "Please select a recipient account."),
+});
+
+export type InitiatePayoutPayload = z.infer<typeof requestPayoutSchema>;

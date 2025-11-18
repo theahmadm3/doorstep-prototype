@@ -19,6 +19,7 @@ import {
 	ShoppingBag,
 	User,
 	Utensils,
+    CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,6 +36,7 @@ const vendorNavLinks = [
 	{ href: "/vendor/orders", label: "Orders", icon: ShoppingBag },
 	{ href: "/vendor/analytics", label: "Analytics", icon: LineChart },
 	{ href: "/vendor/config", label: "Config", icon: Settings },
+    { href: "/vendor/payouts", label: "Payouts", icon: CreditCard },
 	{ href: "/vendor/profile", label: "Profile", icon: User },
 ];
 

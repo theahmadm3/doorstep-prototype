@@ -24,6 +24,10 @@ import {
 	RiderOrderResponse,
 	PickupConfirmationPayload,
 	RiderOrder,
+	WalletBalance,
+	PayoutRecipient,
+	CreateRecipientPayload,
+	InitiatePayoutPayload,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -40,7 +44,7 @@ if (!BASE_URL) {
 async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 	const token =
 		typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-	
+
 	const isFormData = options.body instanceof FormData;
 
 	const headers: Record<string, string> = {};
@@ -196,11 +200,9 @@ export async function getVendorMenuItems(): Promise<MenuItem[]> {
 export async function createVendorMenuItem(
 	itemData: MenuItemPayload,
 ): Promise<MenuItem> {
-	// Don't send image data in the initial creation request
-	const { image, ...payload } = itemData;
 	return fetcher<MenuItem>("/restaurants/me/menu/", {
 		method: "POST",
-		body: JSON.stringify(payload),
+		body: JSON.stringify(itemData),
 	});
 }
 
@@ -221,11 +223,9 @@ export async function updateVendorMenuItem(
 	itemId: string,
 	itemData: MenuItemPayload,
 ): Promise<MenuItem> {
-	// Don't send image data in the update request
-	const { image, ...payload } = itemData;
 	return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/`, {
 		method: "PUT",
-		body: JSON.stringify(payload),
+		body: JSON.stringify(itemData),
 	});
 }
 
@@ -406,5 +406,29 @@ export async function subscribeToNotifications(
 	await fetcher<void>("/subscribe/", {
 		method: "POST",
 		body: JSON.stringify(subscription.toJSON()),
+	});
+}
+
+// Payout API
+export async function getWalletBalance(): Promise<WalletBalance> {
+	return fetcher<WalletBalance>("/payouts/balance/");
+}
+
+export async function getPayoutRecipients(): Promise<PayoutRecipient[]> {
+	const response = await fetcher<PaginatedResponse<PayoutRecipient>>("/payouts/recipients/");
+	return response.results;
+}
+
+export async function createPayoutRecipient(payload: CreateRecipientPayload): Promise<PayoutRecipient> {
+	return fetcher<PayoutRecipient>("/payout/recipient/create/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function initiatePayout(payload: InitiatePayoutPayload): Promise<{ message: string }> {
+	return fetcher<{ message: string }>("/payout/initiate/", {
+		method: "POST",
+		body: JSON.stringify(payload),
 	});
 }

@@ -16,7 +16,8 @@ import {
   Home,
   Package,
   User,
-  Utensils
+  Utensils,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,6 +31,7 @@ import AuthGuard from '@/components/auth/auth-guard';
 const riderNavLinks = [
   { href: "/rider/dashboard", label: "Dashboard", icon: Home },
   { href: "/rider/orders", label: "Orders", icon: Package },
+  { href: "/rider/payouts", label: "Payouts", icon: CreditCard },
   { href: "/rider/profile", label: "Profile", icon: User },
 ];
 
