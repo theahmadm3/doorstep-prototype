@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -65,17 +65,19 @@ const formatCurrency = (value: number | undefined) => {
   })}`;
 };
 
-export default function PayoutManagement() {
+const PayoutManagement = forwardRef((props, ref) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddRecipientOpen, setAddRecipientOpen] = useState(false);
 
-  const { data: balance, isLoading: isBalanceLoading } = useQuery<
+  const { data: balance, isLoading: isBalanceLoading, refetch: refetchBalance } = useQuery<
     WalletBalance,
     Error
   >({
     queryKey: ["walletBalance"],
     queryFn: getWalletBalance,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const {
@@ -85,7 +87,16 @@ export default function PayoutManagement() {
   } = useQuery<PayoutRecipient[], Error>({
     queryKey: ["payoutRecipients"],
     queryFn: getPayoutRecipients,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
+
+  useImperativeHandle(ref, () => ({
+    refetch() {
+      refetchBalance();
+      refetchRecipients();
+    }
+  }));
 
   const addRecipientForm = useForm<CreateRecipientPayload>({
     resolver: zodResolver(createRecipientSchema),
@@ -400,8 +411,8 @@ export default function PayoutManagement() {
                     <div>
                       <p className="font-semibold">{getBankName(r.bank_code)}</p>
                       <p className="text-sm text-muted-foreground">
-                        {r.name} -{" "}
-                        {r.account_number}
+                        {r.name} - ****
+                        {r.account_number.slice(-4)}
                       </p>
                     </div>
                   </div>
@@ -421,4 +432,7 @@ export default function PayoutManagement() {
       </div>
     </div>
   );
-}
+});
+PayoutManagement.displayName = 'PayoutManagement';
+
+export default PayoutManagement;
