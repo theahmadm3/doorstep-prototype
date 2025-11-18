@@ -436,3 +436,9 @@ export async function initiatePayout(
 		body: JSON.stringify(payload),
 	});
 }
+
+export async function deletePayoutRecipient(recipientCode: string): Promise<void> {
+  await fetcher<void>(`/recipients/${recipientCode}/delete/`, {
+    method: "DELETE",
+  });
+}
