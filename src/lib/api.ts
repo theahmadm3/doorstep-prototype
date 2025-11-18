@@ -1,4 +1,3 @@
-
 import {
 	PaginatedResponse,
 	Restaurant,
@@ -411,22 +410,28 @@ export async function subscribeToNotifications(
 
 // Payout API
 export async function getWalletBalance(): Promise<WalletBalance> {
-	return fetcher<WalletBalance>("/payouts/balance/");
+	return fetcher<WalletBalance>("/wallet/");
 }
 
 export async function getPayoutRecipients(): Promise<PayoutRecipient[]> {
-	const response = await fetcher<PaginatedResponse<PayoutRecipient>>("/payouts/recipients/");
+	const response = await fetcher<PaginatedResponse<PayoutRecipient>>(
+		"/payout/recipients/",
+	);
 	return response.results;
 }
 
-export async function createPayoutRecipient(payload: CreateRecipientPayload): Promise<PayoutRecipient> {
+export async function createPayoutRecipient(
+	payload: CreateRecipientPayload,
+): Promise<PayoutRecipient> {
 	return fetcher<PayoutRecipient>("/payout/recipient/create/", {
 		method: "POST",
 		body: JSON.stringify(payload),
 	});
 }
 
-export async function initiatePayout(payload: InitiatePayoutPayload): Promise<{ message: string }> {
+export async function initiatePayout(
+	payload: InitiatePayoutPayload,
+): Promise<{ message: string }> {
 	return fetcher<{ message: string }>("/payout/initiate/", {
 		method: "POST",
 		body: JSON.stringify(payload),
