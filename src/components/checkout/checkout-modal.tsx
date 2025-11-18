@@ -1,17 +1,14 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import type { User, Order, Restaurant, OrderPayload, OrderItemPayload } from "@/lib/types";
-import type { PaystackConfig, PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
+import type { User, Order, OrderPayload, OrderItemPayload } from "@/lib/types";
+import type { PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
 import {
   Dialog,
   DialogContent,
@@ -29,17 +26,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { placeOrder, initializePayment } from "@/lib/api";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Minus, Plus, Edit, Info, Truck, Package } from "lucide-react";
+import { Minus, Plus, Edit, Info, Truck, Package, Trash2 } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import AddressSelectionModal from "../location/address-selection-modal";
 import { haversineDistance } from "@/lib/utils";
-import { Skeleton } from "../ui/skeleton";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { ScrollArea } from "../ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { Label } from "../ui/label";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -54,13 +50,13 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     increaseOrderItemQuantity, 
     decreaseOrderItemQuantity, 
     removeUnsubmittedOrder,
+    removeOrderItem,
   } = useCartStore();
   
   const { selectedAddress, viewedRestaurant } = useUIStore();
   
   const router = useRouter();
   const { toast } = useToast();
-  const [isClient, setIsClient] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   
@@ -77,11 +73,9 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const order = initialOrder ? orders.find(o => o.id === initialOrder.id) : null;
 
   useEffect(() => {
-    setIsClient(true);
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+        setUser(JSON.parse(storedUser));
     }
   }, []);
 
@@ -131,8 +125,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     if (!order) return;
     if (orderType === 'delivery' && !selectedAddress) return;
 
+    setIsPlacingOrder(true);
     try {
-      setIsPlacingOrder(true);
       const orderItemsPayload: OrderItemPayload[] = order.items.map(item => ({
         menu_item_id: item.id,
         quantity: item.quantity,
@@ -277,9 +271,15 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     }
   };
 
+  const handleRemoveItem = (itemId: string) => {
+    if(order) {
+      removeOrderItem(order.id, itemId);
+    }
+  }
+
   const isPaymentDisabled = isPlacingOrder || !viewedRestaurant || (orderType === 'delivery' && (!selectedAddress || deliveryFee > 2500));
 
-  if (!isClient || !isOpen || !order || checkoutItems.length === 0) {
+  if (!isOpen || !order || checkoutItems.length === 0) {
     if (isOpen && (!order || checkoutItems.length === 0)) {
         onClose();
     }
@@ -315,33 +315,23 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                 </DialogHeader>
                 <Card className="border-0 shadow-none">
                     <CardHeader className="px-1">
-                        <CardTitle>Order Information</CardTitle>
+                        <CardTitle>Delivery Information</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 px-1">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
-                            <Input id="name" placeholder="John Doe" defaultValue={user?.full_name || ''} readOnly/>
-                            </div>
-                            <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" placeholder="0801 234 5678" defaultValue={user?.phone_number || ''} readOnly/>
-                            </div>
-                        </div>
                         
                          <div className="space-y-2">
                             <Label>Order Type</Label>
                             <RadioGroup defaultValue="delivery" value={orderType} onValueChange={(value: 'delivery' | 'pickup') => setOrderType(value)} className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <RadioGroupItem value="delivery" id="delivery" className="peer sr-only" />
-                                    <Label htmlFor="delivery" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                    <RadioGroupItem value="delivery" id="delivery-modal" className="peer sr-only" />
+                                    <Label htmlFor="delivery-modal" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                                         <Truck className="mb-3 h-6 w-6" />
                                         Delivery
                                     </Label>
                                 </div>
                                 <div>
-                                    <RadioGroupItem value="pickup" id="pickup" className="peer sr-only" />
-                                    <Label htmlFor="pickup" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                    <RadioGroupItem value="pickup" id="pickup-modal" className="peer sr-only" />
+                                    <Label htmlFor="pickup-modal" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                                         <Package className="mb-3 h-6 w-6" />
                                         Pickup
                                     </Label>
@@ -387,13 +377,13 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                     <ScrollArea className="max-h-60 pr-4">
                     <div className="space-y-4">
                     {checkoutItems.map(item => (
-                        <div key={item.id} className="flex justify-between items-center">
+                        <div key={item.id} className="flex justify-between items-start">
                             <div className="flex items-center gap-3">
                                 <Image src={(item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/48x48.png"} alt={item.name} width={48} height={48} className="rounded-md" />
                                 <div>
                                     <p className="font-medium text-sm">{item.name}</p>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleDecrease(item.id)} disabled={item.quantity === 1}>
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleDecrease(item.id)}>
                                             <Minus className="h-3 w-3" />
                                         </Button>
                                         <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
@@ -403,7 +393,12 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                                     </div>
                                 </div>
                             </div>
-                            <p className="text-sm font-semibold">₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                             <div className="text-right">
+                                <p className="text-sm font-semibold">₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveItem(item.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     ))}
                     </div>
@@ -423,7 +418,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>This is what we charge for maintaining this system</p>
+                                <p>This fee helps us operate the platform.</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>

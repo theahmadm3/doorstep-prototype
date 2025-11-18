@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -24,11 +23,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { usePathname } from "next/navigation";
+import AuthGuard from "@/components/auth/auth-guard";
 
 const customerNavLinks = [
-  { href: "/customer/dashboard", label: "Dashboard", icon: Home },
-  { href: "/customer/orders", label: "My Orders", icon: Package },
-  { href: "/customer/profile", label: "Profile", icon: User },
+	{ href: "/customer/dashboard", label: "Home", icon: Home },
+	{ href: "/customer/orders", label: "Orders", icon: Package },
+	{ href: "/customer/profile", label: "Profile", icon: User },
 ];
 
 export default function CustomerLayout({
@@ -42,7 +42,7 @@ export default function CustomerLayout({
 	const [isClient, setIsClient] = useState(false);
 	const pathname = usePathname();
 
-	const showHeader = pathname === '/customer/dashboard';
+	const showHeader = pathname === "/customer/dashboard";
 
 	useEffect(() => {
 		setIsClient(true);
@@ -71,83 +71,84 @@ export default function CustomerLayout({
 	};
 
 	return (
-		<SidebarProvider>
-			<AddressSelectionModal
-				isOpen={isAddressModalRequired}
-				onClose={handleModalClose}
-			/>
-			
-			<div className="flex min-h-screen w-full">
-				<Sidebar className="hidden md:flex md:flex-col">
-					<SidebarHeader className="p-4 border-b">
-						<div className="flex items-center gap-2">
-							<Utensils className="w-8 h-8 text-primary" />
-							<span className="text-xl font-bold font-headline">Doorstep</span>
-						</div>
-					</SidebarHeader>
-					
-					<SidebarContent className="flex-1 overflow-y-auto py-4">
-						<SidebarMenu>
-							{customerNavLinks.map(link => (
-								<SidebarMenuItem key={link.href}>
-									<SidebarMenuButton asChild>
-										<Link href={link.href}>
-											<link.icon />
-											{link.label}
-										</Link>
-									</SidebarMenuButton>
-								</SidebarMenuItem>
-							))}
-							
-						</SidebarMenu>
-					</SidebarContent>
-					
-					<SidebarFooter className="p-4 border-t">
-						{!isClient || !user ? (
-							<div className="flex items-center gap-3 p-3">
-								<Skeleton className="h-10 w-10 rounded-full" />
-								<div className="flex-1 space-y-2">
-									<Skeleton className="h-4 w-24" />
-									<Skeleton className="h-3 w-32" />
-								</div>
+		<AuthGuard>
+			<SidebarProvider>
+				<AddressSelectionModal
+					isOpen={isAddressModalRequired}
+					onClose={handleModalClose}
+				/>
+
+				<div className="flex min-h-screen w-full">
+					<Sidebar className="hidden md:flex md:flex-col">
+						<SidebarHeader className="p-4 border-b">
+							<div className="flex items-center gap-2">
+								<Utensils className="w-8 h-8 text-primary" />
+								<span className="text-xl font-bold font-headline">
+									Doorstep
+								</span>
 							</div>
-						) : (
-							<div className="flex flex-col gap-3 p-3 rounded-lg bg-muted">
-								<div className="flex items-center gap-3">
-									<Avatar className="h-10 w-10">
-										<AvatarImage
-											src={user.avatar_url || "https://github.com/shadcn.png"}
-											alt={user.full_name || "Customer"}
-										/>
-										<AvatarFallback>
-											{user.full_name?.[0]?.toUpperCase() || "C"}
-										</AvatarFallback>
-									</Avatar>
-									<div className="flex flex-col min-w-0 flex-1">
-										<span className="text-sm font-semibold truncate">
-											{user.full_name || "Customer User"}
-										</span>
-										<span className="text-xs text-muted-foreground truncate">
-											{user.email || "customer@doorstep.com"}
-										</span>
+						</SidebarHeader>
+
+						<SidebarContent className="flex-1 overflow-y-auto py-4">
+							<SidebarMenu>
+								{customerNavLinks.map((link) => (
+									<SidebarMenuItem key={link.href}>
+										<SidebarMenuButton asChild>
+											<Link href={link.href}>
+												<link.icon />
+												{link.label}
+											</Link>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								))}
+							</SidebarMenu>
+						</SidebarContent>
+
+						<SidebarFooter className="p-4 border-t">
+							{!isClient || !user ? (
+								<div className="flex items-center gap-3 p-3">
+									<Skeleton className="h-10 w-10 rounded-full" />
+									<div className="flex-1 space-y-2">
+										<Skeleton className="h-4 w-24" />
+										<Skeleton className="h-3 w-32" />
 									</div>
 								</div>
-								<LogoutButton />
-							</div>
-						)}
-					</SidebarFooter>
-				</Sidebar>
-				
-				<div className="flex-1 flex flex-col min-w-0">
-					{showHeader && <ClientHeader />}
-					<main className="flex-1 overflow-y-auto">
-						<div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
-							{children}
-						</div>
-					</main>
-					<BottomNavigation links={customerNavLinks} />
+							) : (
+								<div className="flex flex-col gap-3 p-3 rounded-lg bg-muted">
+									<div className="flex items-center gap-3">
+										<Avatar className="h-10 w-10">
+											<AvatarImage
+												src={user.avatar_url || "https://github.com/shadcn.png"}
+												alt={user.full_name || "Customer"}
+											/>
+											<AvatarFallback>
+												{user.full_name?.[0]?.toUpperCase() || "C"}
+											</AvatarFallback>
+										</Avatar>
+										<div className="flex flex-col min-w-0 flex-1">
+											<span className="text-sm font-semibold truncate">
+												{user.full_name || "Customer User"}
+											</span>
+											<span className="text-xs text-muted-foreground truncate">
+												{user.email || "customer@doorstep.com"}
+											</span>
+										</div>
+									</div>
+									<LogoutButton />
+								</div>
+							)}
+						</SidebarFooter>
+					</Sidebar>
+
+					<div className="flex-1 flex flex-col min-w-0">
+						{showHeader && <ClientHeader />}
+						<main className="flex-1 overflow-y-auto">
+							<div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">{children}</div>
+						</main>
+						<BottomNavigation links={customerNavLinks} />
+					</div>
 				</div>
-			</div>
-		</SidebarProvider>
+			</SidebarProvider>
+		</AuthGuard>
 	);
 }

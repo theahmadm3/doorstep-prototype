@@ -23,6 +23,10 @@ import {
 	RiderOrderResponse,
 	PickupConfirmationPayload,
 	RiderOrder,
+	WalletBalance,
+	PayoutRecipient,
+	CreateRecipientPayload,
+	InitiatePayoutPayload,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -39,9 +43,15 @@ if (!BASE_URL) {
 async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 	const token =
 		typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json",
-	};
+
+	const isFormData = options.body instanceof FormData;
+
+	const headers: Record<string, string> = {};
+
+	if (!isFormData) {
+		headers["Content-Type"] = "application/json";
+	}
+
 	if (token) {
 		headers["Authorization"] = `Bearer ${token}`;
 	}
@@ -192,6 +202,19 @@ export async function createVendorMenuItem(
 	return fetcher<MenuItem>("/restaurants/me/menu/", {
 		method: "POST",
 		body: JSON.stringify(itemData),
+	});
+}
+
+export async function uploadMenuItemImage(
+	itemId: string,
+	image: File,
+): Promise<MenuItem> {
+	const formData = new FormData();
+	formData.append("image", image);
+
+	return fetcher<MenuItem>(`/menu-items/${itemId}/upload-image/`, {
+		method: "POST",
+		body: formData,
 	});
 }
 
@@ -383,4 +406,39 @@ export async function subscribeToNotifications(
 		method: "POST",
 		body: JSON.stringify(subscription.toJSON()),
 	});
+}
+
+// Payout API
+export async function getWalletBalance(): Promise<WalletBalance> {
+	return fetcher<WalletBalance>("/wallet/");
+}
+
+export async function getPayoutRecipients(): Promise<PayoutRecipient[]> {
+	return fetcher<PayoutRecipient[]>(
+		"/payout/recipients/",
+	);
+}
+
+export async function createPayoutRecipient(
+	payload: CreateRecipientPayload,
+): Promise<PayoutRecipient> {
+	return fetcher<PayoutRecipient>("/payout/recipient/create/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function initiatePayout(
+	payload: InitiatePayoutPayload,
+): Promise<{ message: string }> {
+	return fetcher<{ message: string }>("/payout/initiate/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function deletePayoutRecipient(recipientCode: string): Promise<void> {
+  await fetcher<void>(`/recipients/${recipientCode}/delete/`, {
+    method: "DELETE",
+  });
 }
