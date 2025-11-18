@@ -1,4 +1,3 @@
-
 import * as z from "zod";
 
 // Generic
@@ -137,21 +136,22 @@ export interface Restaurant {
 	updated_at: string;
 }
 
-export const menuItemSchema = z.object({
-    name: z.string().min(1, "Item name is required."),
-    description: z.string().min(1, "Description is required."),
-    price: z.preprocess(
-        (a) => parseFloat(z.string().parse(a)),
-        z.number().positive("Price must be a positive number.")
-    ),
-    is_available: z.boolean().default(true),
-    image: z.any().optional(),
-}).refine(data => {
-    // Conditional validation: 'image' is required only if it's a new item (no ID yet)
-    // This logic needs to be applied in the component as Zod schema can't see the component's state.
-    return true;
-});
-
+export const menuItemSchema = z
+	.object({
+		name: z.string().min(1, "Item name is required."),
+		description: z.string().min(1, "Description is required."),
+		price: z.preprocess(
+			(a) => parseFloat(z.string().parse(a)),
+			z.number().positive("Price must be a positive number."),
+		),
+		is_available: z.boolean().default(true),
+		image: z.any().optional(),
+	})
+	.refine((data) => {
+		// Conditional validation: 'image' is required only if it's a new item (no ID yet)
+		// This logic needs to be applied in the component as Zod schema can't see the component's state.
+		return true;
+	});
 
 export type MenuItemFormValues = z.infer<typeof menuItemSchema>;
 
@@ -173,7 +173,7 @@ export interface MenuItemPayload {
 	description: string;
 	price: string;
 	is_available: boolean;
-    image?: File;
+	image?: File;
 }
 
 // Order Management Types
@@ -488,7 +488,7 @@ export interface PlatformInfo {
 // Payout Types
 export interface WalletBalance {
 	balance: number;
-    withdrawable_balance: number;
+	withdrawable_balance: number;
 	currency: string;
 }
 
@@ -497,6 +497,7 @@ export interface PayoutRecipient {
 	name: string;
 	account_number: string;
 	bank_code: string;
+	bank_name: string;
 	recipient_code: string;
 }
 
