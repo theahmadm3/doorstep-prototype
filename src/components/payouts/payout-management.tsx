@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Banknote, PlusCircle, Landmark, Wallet } from "lucide-react";
+import { Banknote, PlusCircle, Landmark, Wallet, Eye } from "lucide-react";
 
 const formatCurrency = (value: number | undefined) => {
   if (value === undefined) return "₦0.00";
@@ -141,10 +141,10 @@ export default function PayoutManagement() {
   };
 
   const onRequestPayoutSubmit = (data: InitiatePayoutPayload) => {
-    if (balance && data.amount > balance.balance) {
+    if (balance && data.amount > balance.withdrawable_balance) {
       toast({
         title: "Insufficient Balance",
-        description: "You cannot request a payout greater than your wallet balance.",
+        description: "You cannot request a payout greater than your withdrawable balance.",
         variant: "destructive"
       });
       return;
@@ -152,30 +152,57 @@ export default function PayoutManagement() {
     initiatePayoutMutation.mutate(data);
   };
 
+  const getBankName = (bankCode: string) => {
+    return nigerianBanks.find(b => b.code === bankCode)?.name || 'Unknown Bank';
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Left side */}
       <div className="lg:col-span-2 space-y-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wallet className="h-6 w-6 text-primary" />
-              Your Wallet
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isBalanceLoading ? (
-              <Skeleton className="h-12 w-48" />
-            ) : (
-              <p className="text-4xl font-bold">
-                {formatCurrency(balance?.balance)}
-              </p>
-            )}
-            <p className="text-sm text-muted-foreground mt-1">
-              Available for payout
-            </p>
-          </CardContent>
-        </Card>
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-6 w-6 text-primary" />
+                Total Balance
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                {isBalanceLoading ? (
+                <Skeleton className="h-12 w-48" />
+                ) : (
+                <p className="text-4xl font-bold">
+                    {formatCurrency(balance?.balance)}
+                </p>
+                )}
+                <p className="text-sm text-muted-foreground mt-1">
+                This includes all earnings.
+                </p>
+            </CardContent>
+            </Card>
+             <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                <Eye className="h-6 w-6 text-green-500" />
+                Withdrawable Balance
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                {isBalanceLoading ? (
+                <Skeleton className="h-12 w-48" />
+                ) : (
+                <p className="text-4xl font-bold">
+                    {formatCurrency(balance?.withdrawable_balance)}
+                </p>
+                )}
+                <p className="text-sm text-muted-foreground mt-1">
+                Available for immediate payout.
+                </p>
+            </CardContent>
+            </Card>
+        </div>
+
 
         <Card>
           <CardHeader>
@@ -212,8 +239,8 @@ export default function PayoutManagement() {
                               key={r.recipient_code}
                               value={r.recipient_code}
                             >
-                              {r.details.bank_name} - ****
-                              {r.details.account_number.slice(-4)}
+                              {getBankName(r.bank_code)} - ****
+                              {r.account_number.slice(-4)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -371,10 +398,10 @@ export default function PayoutManagement() {
                       <Landmark className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold">{r.details.bank_name}</p>
+                      <p className="font-semibold">{getBankName(r.bank_code)}</p>
                       <p className="text-sm text-muted-foreground">
-                        {r.details.account_name} -{" "}
-                        {r.details.account_number}
+                        {r.name} -{" "}
+                        {r.account_number}
                       </p>
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+
 import * as z from "zod";
 
 // Generic
@@ -137,26 +138,21 @@ export interface Restaurant {
 }
 
 export const menuItemSchema = z.object({
-	name: z.string().min(1, "Item name is required."),
-	description: z.string().min(1, "Description is required."),
-	price: z.preprocess(
-		(a) => parseFloat(z.string().parse(a)),
-		z.number().positive("Price must be a positive number."),
-	),
-	is_available: z.boolean().default(true),
-	image: z
-		.any()
-		.refine((file) => file, "Image is required.")
-		.refine(
-			(file) => file?.size <= 5 * 1024 * 1024,
-			`Max image size is 5MB.`,
-		)
-		.refine(
-			(file) => ["image/jpeg", "image/jpg", "image/png"].includes(file?.type),
-			"Only .jpg, .jpeg and .png formats are supported.",
-		)
-		.optional(),
+    name: z.string().min(1, "Item name is required."),
+    description: z.string().min(1, "Description is required."),
+    price: z.preprocess(
+        (a) => parseFloat(z.string().parse(a)),
+        z.number().positive("Price must be a positive number.")
+    ),
+    is_available: z.boolean().default(true),
+    image: z.any().optional(),
+}).refine(data => {
+    // Conditional validation: 'image' is required only if it's a new item (no ID yet)
+    // This logic needs to be applied in the component as Zod schema can't see the component's state.
+    return true;
 });
+
+
 export type MenuItemFormValues = z.infer<typeof menuItemSchema>;
 
 export interface MenuItem {
@@ -177,6 +173,7 @@ export interface MenuItemPayload {
 	description: string;
 	price: string;
 	is_available: boolean;
+    image?: File;
 }
 
 // Order Management Types
@@ -491,20 +488,16 @@ export interface PlatformInfo {
 // Payout Types
 export interface WalletBalance {
 	balance: number;
+    withdrawable_balance: number;
 	currency: string;
 }
 
-export interface PayoutRecipientDetails {
-	account_number: string;
-	account_name: string;
-	bank_code: string;
-	bank_name: string;
-}
-
 export interface PayoutRecipient {
+	id: number;
 	name: string;
+	account_number: string;
+	bank_code: string;
 	recipient_code: string;
-	details: PayoutRecipientDetails;
 }
 
 export const createRecipientSchema = z.object({

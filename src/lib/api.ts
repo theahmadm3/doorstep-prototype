@@ -414,10 +414,9 @@ export async function getWalletBalance(): Promise<WalletBalance> {
 }
 
 export async function getPayoutRecipients(): Promise<PayoutRecipient[]> {
-	const response = await fetcher<PaginatedResponse<PayoutRecipient>>(
+	return fetcher<PayoutRecipient[]>(
 		"/payout/recipients/",
 	);
-	return response.results;
 }
 
 export async function createPayoutRecipient(
