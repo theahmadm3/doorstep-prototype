@@ -1,4 +1,3 @@
-
 import {
 	PaginatedResponse,
 	Restaurant,
@@ -296,7 +295,7 @@ export async function confirmPickupByCustomer(
 // Vendor Category Management
 export async function getMenuCategories(): Promise<MenuCategory[]> {
 	const response = await fetcher<PaginatedResponse<MenuCategory>>(
-		"/restaurants/me/menu/categories/",
+		"/restaurants/me/menu/categories",
 	);
 	return response.results;
 }
@@ -304,7 +303,7 @@ export async function getMenuCategories(): Promise<MenuCategory[]> {
 export async function createMenuCategory(
 	payload: CategoryPayload,
 ): Promise<MenuCategory> {
-	return fetcher<MenuCategory>("/restaurants/me/menu/categories/", {
+	return fetcher<MenuCategory>("/restaurants/me/menu/categories", {
 		method: "POST",
 		body: JSON.stringify(payload),
 	});
@@ -451,10 +450,10 @@ export async function initiatePayout(
 	});
 }
 
-export async function deletePayoutRecipient(recipientCode: string): Promise<void> {
+export async function deletePayoutRecipient(
+	recipientCode: string,
+): Promise<void> {
 	await fetcher<void>(`/recipients/${recipientCode}/delete/`, {
 		method: "DELETE",
 	});
 }
-
-    
