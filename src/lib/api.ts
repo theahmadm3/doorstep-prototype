@@ -100,11 +100,7 @@ export async function getRestaurantMenu(
 	const data = await fetcher<PaginatedResponse<MenuItem>>(
 		`/restaurants/${restaurantId}/menu/`,
 	);
-	// Mock categories for now as they are not in the API response
-	return data.results.map((item, index) => ({
-		...item,
-		category: index % 2 === 0 ? "Pizzas" : "Sides",
-	}));
+	return data.results;
 }
 
 // Address Management API Calls
@@ -220,7 +216,7 @@ export async function uploadMenuItemImage(
 
 export async function updateVendorMenuItem(
 	itemId: string,
-	itemData: MenuItemPayload,
+	itemData: Partial<MenuItemPayload>,
 ): Promise<MenuItem> {
 	return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/`, {
 		method: "PUT",

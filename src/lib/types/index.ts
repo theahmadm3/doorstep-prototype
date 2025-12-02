@@ -136,24 +136,39 @@ export interface Restaurant {
 	updated_at: string;
 }
 
-export const menuItemSchema = z
-	.object({
-		name: z.string().min(1, "Item name is required."),
-		description: z.string().min(1, "Description is required."),
-		price: z.preprocess(
-			(a) => parseFloat(z.string().parse(a)),
-			z.number().positive("Price must be a positive number."),
-		),
-		is_available: z.boolean().default(true),
-		image: z.any().optional(),
-	})
-	.refine((data) => {
-		// Conditional validation: 'image' is required only if it's a new item (no ID yet)
-		// This logic needs to be applied in the component as Zod schema can't see the component's state.
-		return true;
-	});
-
+export const menuItemSchema = z.object({
+	name: z.string().min(1, "Item name is required."),
+	description: z.string().min(1, "Description is required."),
+	price: z.preprocess(
+		(a) => parseFloat(z.string().parse(a)),
+		z.number().positive("Price must be a positive number."),
+	),
+	is_available: z.boolean().default(true),
+	category: z.string().optional(),
+	image: z
+		.any()
+		.refine((file) => file instanceof File, "Image is required.")
+		.refine(
+			(file) => file?.size <= 5 * 1024 * 1024,
+			`Max image size is 5MB.`,
+		)
+		.refine(
+			(file) =>
+				["image/jpeg", "image/jpg", "image/png"].includes(file?.type),
+			"Only .jpg, .jpeg and .png formats are supported.",
+		)
+		.optional(),
+});
 export type MenuItemFormValues = z.infer<typeof menuItemSchema>;
+
+export interface OptionChoice {
+  id: string;
+  menu_item: string;
+  name: string;
+  type: string;
+  price_adjustment: string;
+  is_available: boolean;
+}
 
 export interface MenuItem {
 	id: string;
@@ -163,7 +178,9 @@ export interface MenuItem {
 	price: string;
 	image_url: string | null;
 	is_available: boolean;
-	category?: string;
+	category: string | null;
+	options: Record<string, OptionChoice[]>;
+	item_type: string;
 	created_at: string;
 	updated_at: string;
 }
@@ -173,6 +190,7 @@ export interface MenuItemPayload {
 	description: string;
 	price: string;
 	is_available: boolean;
+	category?: string;
 	image?: File;
 }
 
@@ -487,9 +505,8 @@ export interface PlatformInfo {
 
 // Payout Types
 export interface WalletBalance {
-	balance: number;
-	withdrawable_balance: number;
-	currency: string;
+	balance: string;
+	withdrawable_balance: string;
 }
 
 export interface PayoutRecipient {
@@ -497,7 +514,6 @@ export interface PayoutRecipient {
 	name: string;
 	account_number: string;
 	bank_code: string;
-	bank_name: string;
 	recipient_code: string;
 }
 
