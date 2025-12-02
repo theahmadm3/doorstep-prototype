@@ -564,7 +564,7 @@ export default function VendorItemManagement() {
 											"https://placehold.co/128x128.png"
 										}
 										alt="Item preview"
-										layout="fill"
+										fill
 										className="rounded-md object-cover"
 									/>
 								</div>
