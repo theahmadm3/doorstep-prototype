@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -56,7 +57,7 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { MenuItem, MenuItemPayload } from "@/lib/types";
+import { MenuItem, MenuItemPayload, MenuCategory } from "@/lib/types";
 import {
 	createVendorMenuItem,
 	getVendorMenuItems,
@@ -64,9 +65,17 @@ import {
 	updateVendorMenuItem,
 	deleteVendorMenuItem,
 	uploadMenuItemImage,
+	getMenuCategories,
 } from "@/lib/api";
 import { Skeleton } from "../ui/skeleton";
 import { format } from "date-fns";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "../ui/select";
 
 type ItemUpdateStatus = "idle" | "updating" | "success" | "error";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -88,6 +97,14 @@ export default function VendorItemManagement() {
 	const [previewImage, setPreviewImage] = useState<string | null>(null);
 	const [imageError, setImageError] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const queryClient = useQueryClient();
+
+	const { data: categories = [], isLoading: isLoadingCategories } = useQuery<
+		MenuCategory[]
+	>({
+		queryKey: ["menuCategories"],
+		queryFn: getMenuCategories,
+	});
 
 	const fetchItems = async () => {
 		setIsLoading(true);
@@ -108,7 +125,7 @@ export default function VendorItemManagement() {
 
 	useEffect(() => {
 		fetchItems();
-	}, [toast]);
+	}, []);
 
 	useEffect(() => {
 		if (!isDialogOpen) {
@@ -136,7 +153,11 @@ export default function VendorItemManagement() {
 		}
 
 		setSelectedImage(file);
-		setPreviewImage(URL.createObjectURL(file));
+		const reader = new FileReader();
+		reader.onloadend = () => {
+			setPreviewImage(reader.result as string);
+		};
+		reader.readAsDataURL(file);
 	};
 
 	const handleSaveItem = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -156,7 +177,19 @@ export default function VendorItemManagement() {
 			description: formData.get("description") as string,
 			price: String(parseFloat(formData.get("price") as string)),
 			is_available: formData.get("is_available") === "on",
+			category_id: formData.get("category_id") as string,
+			item_type: formData.get("item_type") as "single" | "combo",
 		};
+
+		if (!payload.category_id) {
+			toast({
+				title: "Category Required",
+				description: "Please select a category for the item.",
+				variant: "destructive",
+			});
+			setIsSaving(false);
+			return;
+		}
 
 		try {
 			if (editingItem) {
@@ -491,7 +524,7 @@ export default function VendorItemManagement() {
 				</CardContent>
 			</Card>
 
-			<DialogContent>
+			<DialogContent className="sm:max-w-[500px]">
 				<DialogHeader>
 					<DialogTitle>
 						{editingItem ? "Edit Item" : "Add a New Item"}
@@ -502,96 +535,128 @@ export default function VendorItemManagement() {
 				</DialogHeader>
 				<form id="item-form" onSubmit={handleSaveItem}>
 					<div className="grid gap-4 py-4">
-						<div className="grid grid-cols-4 items-start gap-4">
-							<Label htmlFor="image" className="text-right pt-2">
-								Image
-							</Label>
-							<div className="col-span-3">
-								<Input
-									id="image"
-									name="image"
-									type="file"
-									ref={fileInputRef}
-									onChange={handleImageChange}
-									accept={ACCEPTED_IMAGE_TYPES.join(",")}
-									className="hidden"
-								/>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => fileInputRef.current?.click()}
-									className="w-full"
-								>
-									<UploadCloud className="mr-2 h-4 w-4" />
-									{selectedImage ? "Change Image" : "Upload Image"}
-								</Button>
-								{(previewImage || editingItem?.image_url) && (
-									<div className="mt-4 relative w-32 h-32">
-										<Image
-											src={
-												previewImage ||
-												editingItem?.image_url ||
-												"https://placehold.co/128x128.png"
-											}
-											alt="Item preview"
-											layout="fill"
-											className="rounded-md object-cover"
-										/>
-									</div>
-								)}
-								{imageError && (
-									<p className="text-sm text-red-500 mt-2">{imageError}</p>
-								)}
-							</div>
+						<div className="space-y-2">
+							<Label htmlFor="image">Image</Label>
+							<Input
+								id="image"
+								name="image"
+								type="file"
+								ref={fileInputRef}
+								onChange={handleImageChange}
+								accept={ACCEPTED_IMAGE_TYPES.join(",")}
+								className="hidden"
+							/>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => fileInputRef.current?.click()}
+								className="w-full"
+							>
+								<UploadCloud className="mr-2 h-4 w-4" />
+								{selectedImage ? "Change Image" : "Upload Image"}
+							</Button>
+							{(previewImage || editingItem?.image_url) && (
+								<div className="mt-4 relative w-32 h-32">
+									<Image
+										src={
+											previewImage ||
+											editingItem?.image_url ||
+											"https://placehold.co/128x128.png"
+										}
+										alt="Item preview"
+										layout="fill"
+										className="rounded-md object-cover"
+									/>
+								</div>
+							)}
+							{imageError && (
+								<p className="text-sm text-red-500 mt-2">{imageError}</p>
+							)}
 						</div>
 
-						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="name" className="text-right">
-								Name
-							</Label>
+						<div className="space-y-2">
+							<Label htmlFor="name">Name</Label>
 							<Input
 								id="name"
 								name="name"
 								defaultValue={editingItem?.name}
-								className="col-span-3"
 								required
 							/>
 						</div>
-						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="description" className="text-right">
-								Description
-							</Label>
+						<div className="space-y-2">
+							<Label htmlFor="description">Description</Label>
 							<Textarea
 								id="description"
 								name="description"
 								defaultValue={editingItem?.description || ""}
-								className="col-span-3"
 								required
 							/>
 						</div>
-						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="price" className="text-right">
-								Price (₦)
-							</Label>
-							<Input
-								id="price"
-								name="price"
-								type="number"
-								step="0.01"
-								defaultValue={editingItem?.price}
-								className="col-span-3"
-								required
-							/>
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<Label htmlFor="price">Price (₦)</Label>
+								<Input
+									id="price"
+									name="price"
+									type="number"
+									step="0.01"
+									defaultValue={editingItem?.price}
+									required
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="category_id">Category</Label>
+								<Select
+									name="category_id"
+									defaultValue={
+										editingItem?.category || ""
+									}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select a category" />
+									</SelectTrigger>
+									<SelectContent>
+										{isLoadingCategories ? (
+											<SelectItem value="loading" disabled>
+												Loading...
+											</SelectItem>
+										) : (
+											categories.map((cat) => (
+												<SelectItem key={cat.id} value={cat.id}>
+													{cat.name}
+												</SelectItem>
+											))
+										)}
+									</SelectContent>
+								</Select>
+							</div>
 						</div>
-						<div className="grid grid-cols-4 items-center gap-4">
-							<Label htmlFor="is_available" className="text-right">
-								Available
-							</Label>
-							<Switch
-								id="is_available"
-								name="is_available"
-								defaultChecked={editingItem?.is_available ?? true}
-							/>
+						<div className="grid grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<Label htmlFor="item_type">Item Type</Label>
+								<Select
+									name="item_type"
+									defaultValue={editingItem?.item_type || "single"}
+								>
+									<SelectTrigger>
+										<SelectValue placeholder="Select item type" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="single">Single</SelectItem>
+										<SelectItem value="combo">Combo</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="space-y-2 pt-8">
+								<div className="flex items-center space-x-2">
+									<Switch
+										id="is_available"
+										name="is_available"
+										defaultChecked={editingItem?.is_available ?? true}
+									/>
+									<Label htmlFor="is_available">Available for purchase</Label>
+								</div>
+							</div>
 						</div>
 					</div>
 				</form>
