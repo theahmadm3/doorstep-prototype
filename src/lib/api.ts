@@ -310,18 +310,18 @@ export async function createMenuCategory(
 }
 
 export async function getMenuCategory(id: string): Promise<MenuCategory> {
-    return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}/`);
+    return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`);
 }
 
 export async function updateMenuCategory(id: string, payload: CategoryPayload): Promise<MenuCategory> {
-    return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}/`, {
+    return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`, {
         method: "PUT",
         body: JSON.stringify(payload),
     });
 }
 
 export async function deleteMenuCategory(id: string): Promise<void> {
-    await fetcher<void>(`/restaurants/me/menu/categories/${id}/`, {
+    await fetcher<void>(`/restaurants/me/menu/categories/${id}`, {
         method: "DELETE",
     });
 }
