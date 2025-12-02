@@ -1,4 +1,5 @@
 
+
 import * as z from "zod";
 
 // Generic
@@ -137,40 +138,6 @@ export interface Restaurant {
 	updated_at: string;
 }
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
-
-export const menuItemSchema = z.object({
-  name: z.string().min(1, "Item name is required."),
-  description: z.string().min(1, "Description is required."),
-  price: z.preprocess(
-    (a) => parseFloat(z.string().parse(a)),
-    z.number().positive("Price must be a positive number.")
-  ),
-  is_available: z.boolean().default(true),
-  category: z.string().optional(),
-  image: z.any()
-    .refine((files) => files?.[0], "An image is required.")
-    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-    .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-      "Only .jpg, .jpeg, and .png formats are supported."
-    )
-});
-
-export const menuItemUpdateSchema = menuItemSchema.extend({
-    image: z.any()
-        .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
-        .refine(
-            (files) => !files?.[0] || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-            "Only .jpg, .jpeg, and .png formats are supported."
-        )
-        .optional()
-});
-
-
-export type MenuItemFormValues = z.infer<typeof menuItemSchema>;
-
 export interface OptionChoice {
 	id: string;
 	menu_item: string;
@@ -200,7 +167,8 @@ export interface MenuItemPayload {
 	description: string;
 	price: string;
 	is_available: boolean;
-	category?: string;
+	category_id: string;
+	item_type: "single" | "combo";
 }
 
 // Menu Category
@@ -532,11 +500,11 @@ export interface WalletBalance {
 }
 
 export interface PayoutRecipient {
-	id: number;
-	name: string;
-	account_number: string;
-	bank_code: string;
-	recipient_code: string;
+    id: number;
+    name: string;
+    account_number: string;
+    bank_code: string;
+    recipient_code: string;
 }
 
 export const createRecipientSchema = z.object({
