@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -196,15 +197,13 @@ export default function RestaurantMenuPage() {
 	}, [menuItems, debouncedSearchQuery]);
 
 	const categories = useMemo(() => {
-		const uniqueCategories = [
-			...new Set(
-				filteredMenuItems
-					.map((item) => item.category)
-					.filter((c): c is string => c !== null),
-			),
-		];
+		const categoryNames = filteredMenuItems
+			.map((item) => item.category)
+			.filter((c): c is string => c !== null && c !== undefined);
+		const uniqueCategories = [...new Set(categoryNames)];
 		return ["All", ...uniqueCategories];
 	}, [filteredMenuItems]);
+	
 
 	const defaultTab = categories[0] || "All";
 
