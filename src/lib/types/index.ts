@@ -1,3 +1,4 @@
+
 import * as z from "zod";
 
 // Generic
@@ -136,38 +137,47 @@ export interface Restaurant {
 	updated_at: string;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+
 export const menuItemSchema = z.object({
-	name: z.string().min(1, "Item name is required."),
-	description: z.string().min(1, "Description is required."),
-	price: z.preprocess(
-		(a) => parseFloat(z.string().parse(a)),
-		z.number().positive("Price must be a positive number."),
-	),
-	is_available: z.boolean().default(true),
-	category: z.string().optional(),
-	image: z
-		.any()
-		.refine((file) => file instanceof File, "Image is required.")
-		.refine(
-			(file) => file?.size <= 5 * 1024 * 1024,
-			`Max image size is 5MB.`,
-		)
-		.refine(
-			(file) =>
-				["image/jpeg", "image/jpg", "image/png"].includes(file?.type),
-			"Only .jpg, .jpeg and .png formats are supported.",
-		)
-		.optional(),
+  name: z.string().min(1, "Item name is required."),
+  description: z.string().min(1, "Description is required."),
+  price: z.preprocess(
+    (a) => parseFloat(z.string().parse(a)),
+    z.number().positive("Price must be a positive number.")
+  ),
+  is_available: z.boolean().default(true),
+  category: z.string().optional(),
+  image: z.any()
+    .refine((files) => files?.[0], "An image is required.")
+    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+    .refine(
+      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      "Only .jpg, .jpeg, and .png formats are supported."
+    )
 });
+
+export const menuItemUpdateSchema = menuItemSchema.extend({
+    image: z.any()
+        .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max image size is 5MB.`)
+        .refine(
+            (files) => !files?.[0] || ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+            "Only .jpg, .jpeg, and .png formats are supported."
+        )
+        .optional()
+});
+
+
 export type MenuItemFormValues = z.infer<typeof menuItemSchema>;
 
 export interface OptionChoice {
-  id: string;
-  menu_item: string;
-  name: string;
-  type: string;
-  price_adjustment: string;
-  is_available: boolean;
+	id: string;
+	menu_item: string;
+	name: string;
+	type: string;
+	price_adjustment: string;
+	is_available: boolean;
 }
 
 export interface MenuItem {
@@ -191,8 +201,20 @@ export interface MenuItemPayload {
 	price: string;
 	is_available: boolean;
 	category?: string;
-	image?: File;
 }
+
+// Menu Category
+export interface MenuCategory {
+	id: string;
+	name: string;
+}
+
+export const categorySchema = z.object({
+	name: z.string().min(2, "Category name must be at least 2 characters."),
+});
+
+export type CategoryPayload = z.infer<typeof categorySchema>;
+
 
 // Order Management Types
 export type OrderStatus =
@@ -537,3 +559,5 @@ export const requestPayoutSchema = z.object({
 });
 
 export type InitiatePayoutPayload = z.infer<typeof requestPayoutSchema>;
+
+    

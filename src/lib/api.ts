@@ -1,3 +1,4 @@
+
 import {
 	PaginatedResponse,
 	Restaurant,
@@ -27,6 +28,8 @@ import {
 	PayoutRecipient,
 	CreateRecipientPayload,
 	InitiatePayoutPayload,
+	MenuCategory,
+	CategoryPayload,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -219,7 +222,7 @@ export async function updateVendorMenuItem(
 	itemData: Partial<MenuItemPayload>,
 ): Promise<MenuItem> {
 	return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/`, {
-		method: "PUT",
+		method: "PATCH",
 		body: JSON.stringify(itemData),
 	});
 }
@@ -290,6 +293,23 @@ export async function confirmPickupByCustomer(
 	});
 }
 
+// Vendor Category Management
+export async function getMenuCategories(): Promise<MenuCategory[]> {
+	const response = await fetcher<PaginatedResponse<MenuCategory>>(
+		"/restaurants/me/menu/categories/",
+	);
+	return response.results;
+}
+
+export async function createMenuCategory(
+	payload: CategoryPayload,
+): Promise<MenuCategory> {
+	return fetcher<MenuCategory>("/restaurants/me/menu/categories/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
 // Vendor Rider Management API Calls
 export async function getVendorRiders(): Promise<Rider[]> {
 	const response = await fetcher<RiderListResponse>("/restaurants/me/drivers/");
@@ -335,7 +355,7 @@ export async function updateRestaurantProfile(
 	payload: VendorProfileUpdatePayload,
 ): Promise<VendorProfile> {
 	return fetcher<VendorProfile>("/restaurants/me/", {
-		method: "PUT",
+		method: "PATCH",
 		body: JSON.stringify(payload),
 	});
 }
@@ -410,9 +430,7 @@ export async function getWalletBalance(): Promise<WalletBalance> {
 }
 
 export async function getPayoutRecipients(): Promise<PayoutRecipient[]> {
-	return fetcher<PayoutRecipient[]>(
-		"/payout/recipients/",
-	);
+	return fetcher<PayoutRecipient[]>("/payout/recipients/");
 }
 
 export async function createPayoutRecipient(
@@ -434,7 +452,9 @@ export async function initiatePayout(
 }
 
 export async function deletePayoutRecipient(recipientCode: string): Promise<void> {
-  await fetcher<void>(`/recipients/${recipientCode}/delete/`, {
-    method: "DELETE",
-  });
+	await fetcher<void>(`/recipients/${recipientCode}/delete/`, {
+		method: "DELETE",
+	});
 }
+
+    
