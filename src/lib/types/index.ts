@@ -1,5 +1,4 @@
 
-
 import * as z from "zod";
 
 // Generic
@@ -138,15 +137,6 @@ export interface Restaurant {
 	updated_at: string;
 }
 
-export interface OptionChoice {
-	id: string;
-	menu_item: string;
-	name: string;
-	type: string;
-	price_adjustment: string;
-	is_available: boolean;
-}
-
 export interface MenuItem {
 	id: string;
 	restaurant: string;
@@ -183,6 +173,39 @@ export const categorySchema = z.object({
 
 export type CategoryPayload = z.infer<typeof categorySchema>;
 
+// Menu Option
+export const optionTypes = [
+	"protein",
+	"side",
+	"drink",
+	"packaging",
+	"extra",
+	"other",
+] as const;
+export type OptionType = (typeof optionTypes)[number];
+
+export interface OptionChoice {
+	id: string;
+	menu_item: string;
+	name: string;
+	type: OptionType;
+	price_adjustment: string;
+	is_available: boolean;
+}
+
+export const optionSchema = z.object({
+	menu_item: z.string().min(1, "Please select a menu item."),
+	name: z.string().min(1, "Option name is required."),
+	type: z.enum(optionTypes),
+	price_adjustment: z.preprocess(
+		(val) => String(val),
+		z.string().refine((val) => !isNaN(parseFloat(val)), {
+			message: "Price must be a valid number.",
+		}),
+	),
+	is_available: z.boolean().default(true),
+});
+export type OptionPayload = z.infer<typeof optionSchema>;
 
 // Order Management Types
 export type OrderStatus =

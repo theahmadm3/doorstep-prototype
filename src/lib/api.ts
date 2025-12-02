@@ -1,3 +1,4 @@
+
 import {
 	PaginatedResponse,
 	Restaurant,
@@ -29,6 +30,8 @@ import {
 	InitiatePayoutPayload,
 	MenuCategory,
 	CategoryPayload,
+	OptionChoice,
+	OptionPayload,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -310,22 +313,57 @@ export async function createMenuCategory(
 }
 
 export async function getMenuCategory(id: string): Promise<MenuCategory> {
-    return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`);
+	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`);
 }
 
-export async function updateMenuCategory(id: string, payload: CategoryPayload): Promise<MenuCategory> {
-    return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-    });
+export async function updateMenuCategory(
+	id: string,
+	payload: CategoryPayload,
+): Promise<MenuCategory> {
+	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`, {
+		method: "PUT",
+		body: JSON.stringify(payload),
+	});
 }
 
 export async function deleteMenuCategory(id: string): Promise<void> {
-    await fetcher<void>(`/restaurants/me/menu/categories/${id}`, {
-        method: "DELETE",
-    });
+	await fetcher<void>(`/restaurants/me/menu/categories/${id}`, {
+		method: "DELETE",
+	});
 }
 
+// Vendor Menu Option Management
+export async function getMenuOptions(): Promise<OptionChoice[]> {
+	const response = await fetcher<PaginatedResponse<OptionChoice>>(
+		"/restaurants/me/options/",
+	);
+	return response.results;
+}
+
+export async function createMenuOption(
+	payload: OptionPayload,
+): Promise<OptionChoice> {
+	return fetcher<OptionChoice>("/restaurants/me/options/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function updateMenuOption(
+	id: string,
+	payload: Partial<OptionPayload>,
+): Promise<OptionChoice> {
+	return fetcher<OptionChoice>(`/restaurants/me/options/${id}/`, {
+		method: "PATCH",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function deleteMenuOption(id: string): Promise<void> {
+	await fetcher<void>(`/restaurants/me/options/${id}/`, {
+		method: "DELETE",
+	});
+}
 
 // Vendor Rider Management API Calls
 export async function getVendorRiders(): Promise<Rider[]> {
