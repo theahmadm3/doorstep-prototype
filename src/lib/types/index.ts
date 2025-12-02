@@ -155,9 +155,9 @@ export interface MenuItem {
 	price: string;
 	image_url: string | null;
 	is_available: boolean;
-	category: string | null;
+	category: MenuCategory | null;
 	options: Record<string, OptionChoice[]>;
-	item_type: string;
+	item_type: "single" | "combo";
 	created_at: string;
 	updated_at: string;
 }
@@ -500,11 +500,11 @@ export interface WalletBalance {
 }
 
 export interface PayoutRecipient {
-    id: number;
-    name: string;
-    account_number: string;
-    bank_code: string;
-    recipient_code: string;
+	id: number;
+	name: string;
+	account_number: string;
+	bank_code: string;
+	recipient_code: string;
 }
 
 export const createRecipientSchema = z.object({
@@ -527,5 +527,3 @@ export const requestPayoutSchema = z.object({
 });
 
 export type InitiatePayoutPayload = z.infer<typeof requestPayoutSchema>;
-
-    

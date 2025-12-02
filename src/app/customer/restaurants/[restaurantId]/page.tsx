@@ -198,8 +198,8 @@ export default function RestaurantMenuPage() {
 
 	const categories = useMemo(() => {
 		const categoryNames = filteredMenuItems
-			.map((item) => item.category)
-			.filter((c): c is string => c !== null && c !== undefined);
+			.map((item) => item.category?.name)
+			.filter((name): name is string => !!name);
 		const uniqueCategories = [...new Set(categoryNames)];
 		return ["All", ...uniqueCategories];
 	}, [filteredMenuItems]);
@@ -333,7 +333,7 @@ export default function RestaurantMenuPage() {
 							category === "All"
 								? filteredMenuItems
 								: filteredMenuItems.filter(
-										(item) => item.category === category,
+										(item) => item.category?.name === category,
 								  );
 						return (
 							<TabsContent key={category} value={category}>
