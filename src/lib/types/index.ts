@@ -258,17 +258,17 @@ export interface GuestCart {
 export interface OrderItemPayload {
 	menu_item_id: string;
 	quantity: number;
-	options: string[]; // Array of selected option IDs
+	selected_options: string[]; // Array of selected option IDs
 }
 
 export interface OrderPayload {
 	restaurant_id: string;
 	delivery_address_id?: string;
 	items: OrderItemPayload[];
-	payment_reference: string;
-	delivery_fee: string;
+	payment_method: "card" | "cash";
 	order_type: "delivery" | "pickup";
 }
+
 
 export interface CustomerOrder {
 	id: string;

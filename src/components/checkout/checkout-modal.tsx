@@ -131,15 +131,14 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
       const orderItemsPayload: OrderItemPayload[] = order.items.map(item => ({
         menu_item_id: item.menuItem.id,
         quantity: item.quantity,
-        options: item.options.map(opt => opt.id),
+        selected_options: item.options.map(opt => opt.id),
       }));
 
       const orderPayload: OrderPayload = {
         restaurant_id: order.restaurantId,
         delivery_address_id: orderType === 'delivery' ? selectedAddress?.id : undefined,
         items: orderItemsPayload,
-        payment_reference: transaction.reference,
-        delivery_fee: String(orderType === 'delivery' ? deliveryFee : 0),
+        payment_method: 'card', // Assuming card payment via Paystack
         order_type: orderType,
       };
 
@@ -164,7 +163,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     } finally {
       setIsPlacingOrder(false);
     }
-  }, [order, selectedAddress, deliveryFee, updateOrderStatus, toast, onClose, router, orderType]);
+  }, [order, selectedAddress, updateOrderStatus, toast, onClose, router, orderType]);
 
   const onSuccess = useCallback((transaction: PaystackTransaction) => {
     if (transaction.status === 'success') {
