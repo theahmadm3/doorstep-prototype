@@ -165,6 +165,7 @@ export interface MenuItemPayload {
 export interface MenuCategory {
 	id: string;
 	name: string;
+	order_index: number;
 }
 
 export const categorySchema = z.object({
@@ -229,8 +230,12 @@ export type OrderStatus =
 	| "Rejected"
 	| "Driver Assigned";
 
-export interface OrderItem extends MenuItem {
+export interface OrderItem {
+	cartItemId: string; // Unique identifier for this specific configuration in the cart
+	menuItem: MenuItem;
 	quantity: number;
+	options: OptionChoice[];
+	totalPrice: number;
 }
 
 export interface Order {
@@ -253,6 +258,7 @@ export interface GuestCart {
 export interface OrderItemPayload {
 	menu_item_id: string;
 	quantity: number;
+	options: string[]; // Array of selected option IDs
 }
 
 export interface OrderPayload {
@@ -278,6 +284,10 @@ export interface OrderItemDetail {
 	quantity: number;
 	item_name: string;
 	item_price: string;
+	options: {
+		name: string;
+		price: string;
+	}[];
 }
 
 export interface OrderDetailRestaurant {

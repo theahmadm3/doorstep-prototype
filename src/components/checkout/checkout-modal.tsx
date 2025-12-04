@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -109,7 +110,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   }, [order, user]);
 
   const { subtotal, taxes, total, totalInKobo } = useMemo(() => {
-    const sub = checkoutItems.reduce((acc, item) => acc + parseFloat(item.price) * item.quantity, 0);
+    const sub = checkoutItems.reduce((acc, item) => acc + item.totalPrice, 0);
     const tax = Math.min(sub * 0.05, 500);
     const fee = orderType === 'delivery' ? deliveryFee : 0;
     const grandTotal = sub + tax + fee;
@@ -128,8 +129,9 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     setIsPlacingOrder(true);
     try {
       const orderItemsPayload: OrderItemPayload[] = order.items.map(item => ({
-        menu_item_id: item.id,
+        menu_item_id: item.menuItem.id,
         quantity: item.quantity,
+        options: item.options.map(opt => opt.id),
       }));
 
       const orderPayload: OrderPayload = {
@@ -259,21 +261,21 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
       router.push('/customer/dashboard');
   }
 
-  const handleIncrease = (itemId: string) => {
+  const handleIncrease = (cartItemId: string) => {
     if (order) {
-      increaseOrderItemQuantity(order.id, itemId);
+      increaseOrderItemQuantity(order.id, cartItemId);
     }
   };
 
-  const handleDecrease = (itemId: string) => {
+  const handleDecrease = (cartItemId: string) => {
     if (order) {
-      decreaseOrderItemQuantity(order.id, itemId);
+      decreaseOrderItemQuantity(order.id, cartItemId);
     }
   };
 
-  const handleRemoveItem = (itemId: string) => {
+  const handleRemoveItem = (cartItemId: string) => {
     if(order) {
-      removeOrderItem(order.id, itemId);
+      removeOrderItem(order.id, cartItemId);
     }
   }
 
@@ -377,25 +379,30 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                     <ScrollArea className="max-h-60 pr-4">
                     <div className="space-y-4">
                     {checkoutItems.map(item => (
-                        <div key={item.id} className="flex justify-between items-start">
+                        <div key={item.cartItemId} className="flex justify-between items-start">
                             <div className="flex items-center gap-3">
-                                <Image src={(item.image_url && item.image_url.startsWith('http')) ? item.image_url : "https://placehold.co/48x48.png"} alt={item.name} width={48} height={48} className="rounded-md" />
+                                <Image src={(item.menuItem.image_url && item.menuItem.image_url.startsWith('http')) ? item.menuItem.image_url : "https://placehold.co/48x48.png"} alt={item.menuItem.name} width={48} height={48} className="rounded-md" />
                                 <div>
-                                    <p className="font-medium text-sm">{item.name}</p>
+                                    <p className="font-medium text-sm">{item.menuItem.name}</p>
+                                     {item.options.length > 0 && (
+                                        <div className="text-xs text-muted-foreground">
+                                            {item.options.map(opt => opt.name).join(', ')}
+                                        </div>
+                                     )}
                                     <div className="flex items-center gap-2 mt-1">
-                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleDecrease(item.id)}>
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleDecrease(item.cartItemId)}>
                                             <Minus className="h-3 w-3" />
                                         </Button>
                                         <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleIncrease(item.id)}>
+                                        <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleIncrease(item.cartItemId)}>
                                             <Plus className="h-3 w-3" />
                                         </Button>
                                     </div>
                                 </div>
                             </div>
                              <div className="text-right">
-                                <p className="text-sm font-semibold">₦{(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveItem(item.id)}>
+                                <p className="text-sm font-semibold">₦{item.totalPrice.toFixed(2)}</p>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleRemoveItem(item.cartItemId)}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </div>

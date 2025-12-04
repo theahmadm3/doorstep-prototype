@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getRestaurantMenu } from "@/lib/api";
-import type { Restaurant, MenuItem, User, Order } from "@/lib/types";
+import type { MenuItem, User, Order, OptionChoice } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -163,7 +163,7 @@ export default function RestaurantMenuPage() {
         setAddToCartModalOpen(true);
     };
 
-	const handleAddItem = (item: MenuItem, quantity: number) => {
+	const handleAddItem = (menuItem: MenuItem, quantity: number, selectedOptions: OptionChoice[]) => {
 		if (!user) {
 			toast({
 				title: "Authentication Error",
@@ -172,10 +172,10 @@ export default function RestaurantMenuPage() {
 			});
 			return;
 		}
-		addOrUpdateItem(item, quantity);
+		addOrUpdateItem(menuItem, quantity, selectedOptions);
 		toast({
 			title: "Item Added",
-			description: `${quantity} x ${item.name} has been added to your order.`,
+			description: `${quantity} x ${menuItem.name} has been added to your order.`,
 		});
 		setAddToCartModalOpen(false);
         setSelectedItem(null);
