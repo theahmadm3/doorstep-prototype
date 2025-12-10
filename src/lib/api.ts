@@ -1,4 +1,3 @@
-
 import {
 	PaginatedResponse,
 	Restaurant,
@@ -290,7 +289,7 @@ export async function confirmPickupByCustomer(
 		otp: otp,
 	};
 	await fetcher<void>(`/orders/${orderId}/pickup-status/`, {
-		method: "PATCH",
+		method: "PUT",
 		body: JSON.stringify(payload),
 	});
 }
