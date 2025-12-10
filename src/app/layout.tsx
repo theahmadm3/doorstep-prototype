@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/providers";
 import PWAInstallPrompt from "@/components/pwa-install-prompt";
-import AuthGuard from "@/components/auth/auth-guard";
+import PushInitializer from "@/components/pwa/push-initializer";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const poppins = Poppins({
@@ -17,21 +17,15 @@ export const metadata: Metadata = {
 	title: "Doorstep",
 	description: "Your favourite food, delivered to your doorstep.",
 	manifest: "/manifest.json",
-	themeColor: "#005380",
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: "default",
 		title: "Doorstep",
 	},
-	icons: {
-		apple: [
-			{
-				url: "/icons/apple-icon-180.png",
-				sizes: "180x180",
-				type: "image/png",
-			},
-		],
-	},
+};
+
+export const viewport: Viewport = {
+	themeColor: "#005380",
 };
 
 export default function RootLayout({
@@ -43,11 +37,10 @@ export default function RootLayout({
 		<html lang="en" className={`${inter.variable} ${poppins.variable} h-full`}>
 			<body className="antialiased flex flex-col h-full bg-background">
 				<Providers>
-					<AuthGuard>
-						{children}
-					</AuthGuard>
+					{children}
 					<PWAInstallPrompt />
 					<Toaster />
+					<PushInitializer />
 				</Providers>
 			</body>
 		</html>

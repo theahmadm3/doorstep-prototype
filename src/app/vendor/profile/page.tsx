@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Star, MapPin, LocateFixed, Search, Save, PlusCircle } from "lucide-react";
+import { Edit, Star, MapPin, LocateFixed, Search, PlusCircle, Bell } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { getRestaurantProfile, updateRestaurantProfile } from "@/lib/api";
 import { VendorProfile, VendorProfileUpdatePayload } from "@/lib/types";
@@ -20,6 +20,7 @@ import Image from "next/image";
 import { useLoadScript } from "@react-google-maps/api";
 import usePlacesAutocomplete, { getGeocode, getLatLng } from "use-places-autocomplete";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
 
 const libraries: ("places")[] = ['places'];
 
@@ -110,6 +111,10 @@ function VendorProfilePage() {
     const [description, setDescription] = useState("");
     const [isActive, setIsActive] = useState(true);
     const [addressState, setAddressState] = useState<{ street_name: string | null; latitude: number; longitude: number; }>({ street_name: null, latitude: 0, longitude: 0 });
+
+    // Push notification state and handler from central hook
+    const { isSupported, isSubscribed, isSubscribing, platformInfo } = usePushStore();
+    const { handleSubscribe } = usePushManager();
 
     const { toast } = useToast();
 
@@ -312,6 +317,52 @@ function VendorProfilePage() {
                              <div className="space-y-2 text-sm">
                                 <p><strong>Address:</strong> {profile.address?.street_name || 'N/A'}</p>
                              </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Notification Settings Card */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Bell className="h-5 w-5" />
+                                Notification Settings
+                            </CardTitle>
+                            <CardDescription>Manage push notifications for order updates.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {isSupported ? (
+                                <>
+                                    {platformInfo.needsPWAInstall && (
+                                        <div className="bg-yellow-100 dark:bg-yellow-900/20 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-300 p-4" role="alert">
+                                            <p className="font-bold">Enable Notifications on iOS</p>
+                                            <p>To get notifications, you must add this app to your Home Screen. Tap the Share icon and then 'Add to Home Screen'.</p>
+                                        </div>
+                                    )}
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium">
+                                                Push Notifications
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {isSubscribed 
+                                                    ? "You're subscribed to push notifications" 
+                                                    : "Enable notifications to receive order updates"}
+                                            </p>
+                                        </div>
+                                        <Button 
+                                            onClick={handleSubscribe}
+                                            disabled={isSubscribed || isSubscribing || platformInfo.needsPWAInstall}
+                                            variant={isSubscribed ? "outline" : "default"}
+                                        >
+                                            {isSubscribing ? "Enabling..." : isSubscribed ? "Enabled" : "Enable Notifications"}
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    Push notifications are not supported in your browser.
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

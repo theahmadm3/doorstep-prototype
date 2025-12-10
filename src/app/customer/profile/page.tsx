@@ -13,11 +13,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/auth-api";
 import AddressManagement from "@/components/profile/address-management";
+import { Bell } from "lucide-react";
+import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
 
 
 export default function CustomerProfilePage() {
     const [user, setUser] = useState<User | null>(null);
     const { toast } = useToast();
+    
+    // Push notification state and handler from central hook
+    const { isSupported, isSubscribed, isSubscribing, platformInfo } = usePushStore();
+    const { handleSubscribe } = usePushManager();
 
     const profileForm = useForm<ProfileFormData>({
         resolver: zodResolver(profileSchema),
@@ -138,6 +144,52 @@ export default function CustomerProfilePage() {
                     </CardHeader>
                     <CardContent>
                        <AddressManagement />
+                    </CardContent>
+                </Card>
+                <Card className="lg:col-span-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Bell className="h-5 w-5" />
+                            Notification Settings
+                        </CardTitle>
+                        <CardDescription>
+                            Manage push notifications for order updates.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {isSupported ? (
+                            <>
+                                {platformInfo.needsPWAInstall && (
+                                    <div className="bg-yellow-100 dark:bg-yellow-900/20 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-300 p-4" role="alert">
+                                        <p className="font-bold">Enable Notifications on iOS</p>
+                                        <p>To get notifications, you must add this app to your Home Screen. Tap the Share icon and then 'Add to Home Screen'.</p>
+                                    </div>
+                                )}
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium">
+                                            Push Notifications
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {isSubscribed 
+                                                ? "You're subscribed to push notifications" 
+                                                : "Enable notifications to receive order updates"}
+                                        </p>
+                                    </div>
+                                    <Button 
+                                        onClick={handleSubscribe}
+                                        disabled={isSubscribed || isSubscribing || platformInfo.needsPWAInstall}
+                                        variant={isSubscribed ? "outline" : "default"}
+                                    >
+                                        {isSubscribing ? "Enabling..." : isSubscribed ? "Enabled" : "Enable Notifications"}
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                Push notifications are not supported in your browser.
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
                 <Card className="lg:col-span-3">
