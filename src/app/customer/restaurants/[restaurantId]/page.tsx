@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getRestaurantMenu } from "@/lib/api";
-import type { Restaurant, MenuItem, User, Order } from "@/lib/types";
+import type { MenuItem, User, Order, OptionChoice } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -32,9 +33,10 @@ import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { Input } from "@/components/ui/input";
+import AddToCartModal from "@/components/checkout/add-to-cart-modal";
 
 // Custom hook for debouncing
-function useDebounce(value, delay) {
+function useDebounce(value: string, delay: number) {
 	const [debouncedValue, setDebouncedValue] = useState(value);
 	useEffect(() => {
 		const handler = setTimeout(() => {
@@ -102,7 +104,8 @@ const FloatingCartButton = ({
 };
 
 export default function RestaurantMenuPage() {
-	const { addOrUpdateOrder, orders } = useCartStore();
+	const { addOrUpdateItem } = useCartStore();
+	const orders = useCartStore(state => state.orders);
 	const { viewedRestaurant } = useUIStore();
 	const { toast } = useToast();
 	const params = useParams();
@@ -114,7 +117,9 @@ export default function RestaurantMenuPage() {
 	const [user, setUser] = useState<User | null>(null);
 
 	const [isCheckoutOpen, setCheckoutOpen] = useState(false);
-	const [orderForCheckout, setOrderForCheckout] = useState<Order | null>(null);
+
+	const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+    const [isAddToCartModalOpen, setAddToCartModalOpen] = useState(false);
 
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -152,7 +157,13 @@ export default function RestaurantMenuPage() {
 		(o) => o.restaurantId === restaurantId && o.status === "unsubmitted",
 	);
 
-	const handleAddItem = (item: MenuItem) => {
+	const handleOpenAddToCartModal = (item: MenuItem) => {
+        if (!item.is_available) return;
+        setSelectedItem(item);
+        setAddToCartModalOpen(true);
+    };
+
+	const handleAddItem = (menuItem: MenuItem, quantity: number, selectedOptions: OptionChoice[]) => {
 		if (!user) {
 			toast({
 				title: "Authentication Error",
@@ -161,17 +172,17 @@ export default function RestaurantMenuPage() {
 			});
 			return;
 		}
-		const updatedOrder = addOrUpdateOrder(item);
-		setOrderForCheckout(updatedOrder);
+		addOrUpdateItem(menuItem, quantity, selectedOptions);
 		toast({
 			title: "Item Added",
-			description: `${item.name} has been added to your order.`,
+			description: `${quantity} x ${menuItem.name} has been added to your order.`,
 		});
+		setAddToCartModalOpen(false);
+        setSelectedItem(null);
 	};
 
 	const handleCheckout = () => {
 		if (currentOrder) {
-			setOrderForCheckout(currentOrder);
 			setCheckoutOpen(true);
 		}
 	};
@@ -186,17 +197,15 @@ export default function RestaurantMenuPage() {
 	}, [menuItems, debouncedSearchQuery]);
 
 	const categories = useMemo(() => {
-		return filteredMenuItems.reduce((acc, item) => {
-			const category = item.category || "Other";
-			if (!acc[category]) {
-				acc[category] = [];
-			}
-			acc[category].push(item);
-			return acc;
-		}, {} as Record<string, MenuItem[]>);
+		const categoryNames = filteredMenuItems
+			.map((item) => item.category?.name)
+			.filter((name): name is string => !!name);
+		const uniqueCategories = [...new Set(categoryNames)];
+		return ["All", ...uniqueCategories];
 	}, [filteredMenuItems]);
+	
 
-	const defaultTab = Object.keys(categories)[0] || "";
+	const defaultTab = categories[0] || "All";
 
 	useEffect(() => {
 		if (isSearchOpen) {
@@ -226,8 +235,17 @@ export default function RestaurantMenuPage() {
 			<CheckoutModal
 				isOpen={isCheckoutOpen}
 				onClose={() => setCheckoutOpen(false)}
-				order={orderForCheckout}
+				order={currentOrder}
 			/>
+
+			{selectedItem && (
+                <AddToCartModal
+                    isOpen={isAddToCartModalOpen}
+                    onClose={() => setAddToCartModalOpen(false)}
+                    item={selectedItem}
+                    onAddToCart={handleAddItem}
+                />
+            )}
 
 			<div className="mb-4 w-full inline-flex items-center justify-between restaurant-header">
 				<Button asChild variant="ghost" className="px-2">
@@ -301,67 +319,78 @@ export default function RestaurantMenuPage() {
 				</div>
 			</div>
 
-			{Object.keys(categories).length > 0 ? (
+			{categories.length > 0 ? (
 				<Tabs defaultValue={defaultTab} className="w-full">
-					<TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-						{Object.keys(categories).map((category) => (
+					<TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${Math.min(categories.length, 4)}, 1fr)`}}>
+						{categories.map((category) => (
 							<TabsTrigger key={category} value={category}>
 								{category}
 							</TabsTrigger>
 						))}
 					</TabsList>
-					{Object.entries(categories).map(([category, items]) => (
-						<TabsContent key={category} value={category}>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-								{items.map((item) => {
-									const imageUrl =
-										item.image_url && item.image_url.startsWith("http")
-											? item.image_url
-											: "https://placehold.co/200x200.png";
-									return (
-										<Card
-											key={item.id}
-											className={cn(
-												"overflow-hidden transition-all hover:shadow-md w-fit",
-												{ "opacity-60": !item.is_available },
-											)}
-										>
-											<CardContent className="p-4 flex gap-4">
-												<div className="flex-1">
-													<CardTitle className="text-lg font-semibold mb-1">
-														{item.name}
-													</CardTitle>
-													<CardDescription className="text-sm line-clamp-2">
-														{item.description}
-													</CardDescription>
-													<p className="font-bold text-md mt-2">
-														₦{parseFloat(item.price).toFixed(2)}
-													</p>
-												</div>
-												<div className="relative w-24 h-24 flex-shrink-0">
-													<Image
-														src={imageUrl}
-														alt={item.name}
-														fill
-														className="rounded-md object-cover"
-													/>
+					{categories.map((category) => {
+						const itemsForTab =
+							category === "All"
+								? filteredMenuItems
+								: filteredMenuItems.filter(
+										(item) => item.category?.name === category,
+								  );
+						return (
+							<TabsContent key={category} value={category}>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+									{itemsForTab.map((item) => {
+										const imageUrl =
+											item.image_url && item.image_url.startsWith("http")
+												? item.image_url
+												: "https://placehold.co/200x200.png";
+										return (
+											<Card
+												key={item.id}
+												className={cn(
+													"overflow-hidden transition-all hover:shadow-md w-full flex flex-col cursor-pointer",
+													{ "opacity-60 cursor-not-allowed": !item.is_available },
+												)}
+												onClick={() => handleOpenAddToCartModal(item)}
+											>
+												<CardContent className="p-4 flex gap-4 items-start flex-grow">
+													<div className="flex-1">
+														<CardTitle className="text-lg font-semibold mb-1">
+															{item.name}
+														</CardTitle>
+														<CardDescription className="text-sm line-clamp-2">
+															{item.description}
+														</CardDescription>
+														<p className="font-bold text-md mt-2">
+															₦{parseFloat(item.price).toFixed(2)}
+														</p>
+													</div>
+													<div className="relative w-24 h-24 flex-shrink-0">
+														<Image
+															src={imageUrl}
+															alt={item.name}
+															fill
+															className="rounded-md object-cover"
+														/>
+													</div>
+												</CardContent>
+												<CardFooter className="p-4 pt-0 mt-auto">
 													<Button
-														size="icon"
-														className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full shadow-lg"
-														onClick={() => handleAddItem(item)}
+														size="sm"
+														className="w-full"
 														disabled={!item.is_available}
 														aria-label={`Add ${item.name} to cart`}
 													>
-														<PlusCircle className="h-5 w-5" />
+														<PlusCircle className="mr-2 h-4 w-4" />
+														Add to cart
 													</Button>
-												</div>
-											</CardContent>
-										</Card>
-									);
-								})}
-							</div>
-						</TabsContent>
-					))}
+												</CardFooter>
+											</Card>
+										);
+									})}
+								</div>
+							</TabsContent>
+						);
+					})}
 				</Tabs>
 			) : (
 				<div className="text-center py-16">

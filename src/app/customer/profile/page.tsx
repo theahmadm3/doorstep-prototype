@@ -13,28 +13,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/auth-api";
 import AddressManagement from "@/components/profile/address-management";
-import { 
-    registerPushServiceWorker, 
-    subscribeToPushNotifications, 
-    getCurrentSubscription,
-    isPushNotificationSupported,
-    detectPlatform
-} from "@/lib/push-notifications";
-import { subscribeToNotifications } from "@/lib/api";
 import { Bell } from "lucide-react";
+import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
 
 
 export default function CustomerProfilePage() {
     const [user, setUser] = useState<User | null>(null);
     const { toast } = useToast();
-    const [isSubscribed, setIsSubscribed] = useState(false);
-    const [isSubscribing, setIsSubscribing] = useState(false);
-    const [platformInfo, setPlatformInfo] = useState({
-        isIOS: false,
-        isSafari: false,
-        isStandalone: false,
-        needsPWAInstall: false,
-    });
+    
+    // Push notification state and handler from central hook
+    const { isSupported, isSubscribed, isSubscribing, platformInfo } = usePushStore();
+    const { handleSubscribe } = usePushManager();
 
     const profileForm = useForm<ProfileFormData>({
         resolver: zodResolver(profileSchema),
@@ -66,76 +55,7 @@ export default function CustomerProfilePage() {
                 phone_number: parsedUser.phone_number || '',
             });
         }
-
-        // Detect platform
-        if (typeof window !== 'undefined') {
-            setPlatformInfo(detectPlatform());
-        }
-        
-        // Register service worker and check subscription
-        const initPushNotifications = async () => {
-            try {
-                if (isPushNotificationSupported()) {
-                    await registerPushServiceWorker();
-                    const subscription = await getCurrentSubscription();
-                    setIsSubscribed(!!subscription);
-                }
-            } catch (error) {
-                console.error('Failed to initialize push notifications:', error);
-            }
-        };
-
-        initPushNotifications();
     }, [profileForm]);
-
-    const handleEnableNotifications = async () => {
-        if (platformInfo.needsPWAInstall) {
-            toast({
-                title: "Install as PWA",
-                description: "On iOS, please install this app to your home screen to enable notifications. Tap the Share button and select 'Add to Home Screen'.",
-                variant: "destructive",
-            });
-            return;
-        }
-
-        setIsSubscribing(true);
-        try {
-            // Request permission
-            const permission = await Notification.requestPermission();
-            
-            if (permission !== 'granted') {
-                toast({
-                    title: "Permission Denied",
-                    description: "Please enable notifications in your browser settings to receive updates.",
-                    variant: "destructive",
-                });
-                setIsSubscribing(false);
-                return;
-            }
-
-            // Register service worker and subscribe
-            const registration = await registerPushServiceWorker();
-            const subscription = await subscribeToPushNotifications(registration);
-
-            // Send subscription to backend
-            await subscribeToNotifications(subscription);
-
-            setIsSubscribed(true);
-            toast({
-                title: "Success",
-                description: "Push notifications have been enabled successfully!",
-            });
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "Failed to enable notifications";
-            toast({
-                title: "Error",
-                description: message,
-                variant: "destructive",
-            });
-        } finally {
-            setIsSubscribing(false);
-        }
-    };
 
     const onProfileSubmit = async (data: ProfileFormData) => {
         try {
@@ -237,17 +157,14 @@ export default function CustomerProfilePage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {platformInfo.needsPWAInstall && (
-                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                                    <strong>iOS Users:</strong> To enable push notifications, please install this app to your home screen. 
-                                    Tap the Share button <span className="inline-block">📤</span> and select "Add to Home Screen".
-                                </p>
-                            </div>
-                        )}
-                        
-                        {isPushNotificationSupported() ? (
-                            <div className="space-y-4">
+                        {isSupported ? (
+                            <>
+                                {platformInfo.needsPWAInstall && (
+                                    <div className="bg-yellow-100 dark:bg-yellow-900/20 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-300 p-4" role="alert">
+                                        <p className="font-bold">Enable Notifications on iOS</p>
+                                        <p>To get notifications, you must add this app to your Home Screen. Tap the Share icon and then 'Add to Home Screen'.</p>
+                                    </div>
+                                )}
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-medium">
@@ -260,14 +177,14 @@ export default function CustomerProfilePage() {
                                         </p>
                                     </div>
                                     <Button 
-                                        onClick={handleEnableNotifications}
+                                        onClick={handleSubscribe}
                                         disabled={isSubscribed || isSubscribing || platformInfo.needsPWAInstall}
                                         variant={isSubscribed ? "outline" : "default"}
                                     >
                                         {isSubscribing ? "Enabling..." : isSubscribed ? "Enabled" : "Enable Notifications"}
                                     </Button>
                                 </div>
-                            </div>
+                            </>
                         ) : (
                             <p className="text-sm text-muted-foreground">
                                 Push notifications are not supported in your browser.

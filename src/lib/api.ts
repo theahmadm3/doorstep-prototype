@@ -23,6 +23,14 @@ import {
 	RiderOrderResponse,
 	PickupConfirmationPayload,
 	RiderOrder,
+	WalletBalance,
+	PayoutRecipient,
+	CreateRecipientPayload,
+	InitiatePayoutPayload,
+	MenuCategory,
+	CategoryPayload,
+	OptionChoice,
+	OptionPayload,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -39,9 +47,15 @@ if (!BASE_URL) {
 async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 	const token =
 		typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json",
-	};
+
+	const isFormData = options.body instanceof FormData;
+
+	const headers: Record<string, string> = {};
+
+	if (!isFormData) {
+		headers["Content-Type"] = "application/json";
+	}
+
 	if (token) {
 		headers["Authorization"] = `Bearer ${token}`;
 	}
@@ -90,11 +104,7 @@ export async function getRestaurantMenu(
 	const data = await fetcher<PaginatedResponse<MenuItem>>(
 		`/restaurants/${restaurantId}/menu/`,
 	);
-	// Mock categories for now as they are not in the API response
-	return data.results.map((item, index) => ({
-		...item,
-		category: index % 2 === 0 ? "Pizzas" : "Sides",
-	}));
+	return data.results;
 }
 
 // Address Management API Calls
@@ -195,12 +205,25 @@ export async function createVendorMenuItem(
 	});
 }
 
+export async function uploadMenuItemImage(
+	itemId: string,
+	image: File,
+): Promise<MenuItem> {
+	const formData = new FormData();
+	formData.append("image", image);
+
+	return fetcher<MenuItem>(`/menu-items/${itemId}/upload-image/`, {
+		method: "POST",
+		body: formData,
+	});
+}
+
 export async function updateVendorMenuItem(
 	itemId: string,
-	itemData: MenuItemPayload,
+	itemData: Partial<MenuItemPayload>,
 ): Promise<MenuItem> {
 	return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/`, {
-		method: "PUT",
+		method: "PATCH",
 		body: JSON.stringify(itemData),
 	});
 }
@@ -266,8 +289,78 @@ export async function confirmPickupByCustomer(
 		otp: otp,
 	};
 	await fetcher<void>(`/orders/${orderId}/pickup-status/`, {
+		method: "PUT",
+		body: JSON.stringify(payload),
+	});
+}
+
+// Vendor Category Management
+export async function getMenuCategories(): Promise<MenuCategory[]> {
+	const response = await fetcher<PaginatedResponse<MenuCategory>>(
+		"/restaurants/me/menu/categories",
+	);
+	return response.results;
+}
+
+export async function createMenuCategory(
+	payload: CategoryPayload,
+): Promise<MenuCategory> {
+	return fetcher<MenuCategory>("/restaurants/me/menu/categories", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function getMenuCategory(id: string): Promise<MenuCategory> {
+	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`);
+}
+
+export async function updateMenuCategory(
+	id: string,
+	payload: CategoryPayload,
+): Promise<MenuCategory> {
+	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`, {
+		method: "PUT",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function deleteMenuCategory(id: string): Promise<void> {
+	await fetcher<void>(`/restaurants/me/menu/categories/${id}`, {
+		method: "DELETE",
+	});
+}
+
+// Vendor Menu Option Management
+export async function getMenuOptions(): Promise<OptionChoice[]> {
+	const response = await fetcher<PaginatedResponse<OptionChoice>>(
+		"/restaurants/me/options/",
+	);
+	return response.results;
+}
+
+export async function createMenuOption(
+	payload: OptionPayload,
+): Promise<OptionChoice> {
+	return fetcher<OptionChoice>("/restaurants/me/options/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function updateMenuOption(
+	id: string,
+	payload: Partial<OptionPayload>,
+): Promise<OptionChoice> {
+	return fetcher<OptionChoice>(`/restaurants/me/options/${id}/`, {
 		method: "PATCH",
 		body: JSON.stringify(payload),
+	});
+}
+
+export async function deleteMenuOption(id: string): Promise<void> {
+	await fetcher<void>(`/restaurants/me/options/${id}/`, {
+		method: "DELETE",
 	});
 }
 
@@ -316,7 +409,7 @@ export async function updateRestaurantProfile(
 	payload: VendorProfileUpdatePayload,
 ): Promise<VendorProfile> {
 	return fetcher<VendorProfile>("/restaurants/me/", {
-		method: "PUT",
+		method: "PATCH",
 		body: JSON.stringify(payload),
 	});
 }
@@ -382,5 +475,40 @@ export async function subscribeToNotifications(
 	await fetcher<void>("/subscribe/", {
 		method: "POST",
 		body: JSON.stringify(subscription.toJSON()),
+	});
+}
+
+// Payout API
+export async function getWalletBalance(): Promise<WalletBalance> {
+	return fetcher<WalletBalance>("/wallet/");
+}
+
+export async function getPayoutRecipients(): Promise<PayoutRecipient[]> {
+	return fetcher<PayoutRecipient[]>("/payout/recipients/");
+}
+
+export async function createPayoutRecipient(
+	payload: CreateRecipientPayload,
+): Promise<PayoutRecipient> {
+	return fetcher<PayoutRecipient>("/payout/recipient/create/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function initiatePayout(
+	payload: InitiatePayoutPayload,
+): Promise<{ message: string }> {
+	return fetcher<{ message: string }>("/payout/initiate/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function deletePayoutRecipient(
+	recipientCode: string,
+): Promise<void> {
+	await fetcher<void>(`/recipients/${recipientCode}/delete/`, {
+		method: "DELETE",
 	});
 }
