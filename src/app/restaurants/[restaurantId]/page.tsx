@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 
 export default function RestaurantMenuPage() {
   const { toast } = useToast();
@@ -22,8 +23,12 @@ export default function RestaurantMenuPage() {
   const router = useRouter();
   const restaurantId = params.restaurantId as string;
 
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: menuItems = [], isLoading } = useQuery({
+      queryKey: ['restaurantMenu', restaurantId],
+      queryFn: () => getRestaurantMenu(restaurantId),
+      enabled: !!restaurantId,
+  });
+
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -33,26 +38,7 @@ export default function RestaurantMenuPage() {
      }
   }, []);
 
-  useEffect(() => {
-    if (restaurantId) {
-      const fetchData = async () => {
-        setIsLoading(true);
-        try {
-          const menuData = await getRestaurantMenu(restaurantId);
-          setMenuItems(menuData);
-        } catch (error) {
-          console.error("Failed to fetch restaurant data:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchData();
-    }
-  }, [restaurantId]);
-
   const handleAddItem = (item: MenuItem) => {
-    // If the user is logged in, redirect them to the customer-specific page to add the item.
-    // If not, prompt them to log in.
     if (user) {
       router.push(`/customer/restaurants/${restaurantId}`);
     } else {
@@ -98,8 +84,21 @@ export default function RestaurantMenuPage() {
     )
   }
   
-  if (!menuItems || menuItems.length === 0) {
-    notFound();
+  if (!isLoading && menuItems.length === 0) {
+    return (
+        <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-grow flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-lg text-muted-foreground">This restaurant does not have a menu yet.</p>
+                    <Button asChild variant="link">
+                        <Link href="/menu">Browse other restaurants</Link>
+                    </Button>
+                </div>
+            </main>
+            <Footer />
+        </div>
+    );
   }
 
   return (

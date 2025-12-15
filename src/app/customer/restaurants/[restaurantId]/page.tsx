@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { getRestaurantMenu } from "@/lib/api";
 import type { MenuItem, User, Order, OptionChoice } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -34,11 +34,12 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { Input } from "@/components/ui/input";
 import AddToCartModal from "@/components/checkout/add-to-cart-modal";
+import { useQuery } from "@tanstack/react-query";
 
 // Custom hook for debouncing
 function useDebounce(value: string, delay: number) {
 	const [debouncedValue, setDebouncedValue] = useState(value);
-	useEffect(() => {
+	useState(() => {
 		const handler = setTimeout(() => {
 			setDebouncedValue(value);
 		}, delay);
@@ -112,8 +113,12 @@ export default function RestaurantMenuPage() {
 	const router = useRouter();
 	const restaurantId = params.restaurantId as string;
 
-	const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const { data: menuItems = [], isLoading } = useQuery({
+        queryKey: ['restaurantMenu', restaurantId],
+        queryFn: () => getRestaurantMenu(restaurantId),
+        enabled: !!restaurantId,
+    });
+
 	const [user, setUser] = useState<User | null>(null);
 
 	const [isCheckoutOpen, setCheckoutOpen] = useState(false);
@@ -126,7 +131,7 @@ export default function RestaurantMenuPage() {
 	const debouncedSearchQuery = useDebounce(searchQuery, 200);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 
-	useEffect(() => {
+	useState(() => {
 		const storedUser = localStorage.getItem("user");
 		if (storedUser) {
 			setUser(JSON.parse(storedUser));
@@ -135,23 +140,6 @@ export default function RestaurantMenuPage() {
 			router.push(`/login?redirect=/customer/restaurants/${restaurantId}`);
 		}
 	}, [router, restaurantId]);
-
-	useEffect(() => {
-		if (restaurantId) {
-			const fetchData = async () => {
-				setIsLoading(true);
-				try {
-					const menuData = await getRestaurantMenu(restaurantId);
-					setMenuItems(menuData);
-				} catch (error) {
-					console.error("Failed to fetch restaurant data:", error);
-				} finally {
-					setIsLoading(false);
-				}
-			};
-			fetchData();
-		}
-	}, [restaurantId]);
 
 	const currentOrder = orders.find(
 		(o) => o.restaurantId === restaurantId && o.status === "unsubmitted",
@@ -207,7 +195,7 @@ export default function RestaurantMenuPage() {
 
 	const defaultTab = categories[0] || "All";
 
-	useEffect(() => {
+	useState(() => {
 		if (isSearchOpen) {
 			searchInputRef.current?.focus();
 		}
