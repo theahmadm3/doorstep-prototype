@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useMemo, useRef } from "react";
-import { getRestaurantMenu } from "@/lib/api";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { getRestaurantMenu, getRestaurants } from "@/lib/api";
 import type { MenuItem, User, Order, OptionChoice } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,10 +36,18 @@ import { Input } from "@/components/ui/input";
 import AddToCartModal from "@/components/checkout/add-to-cart-modal";
 import { useQuery } from "@tanstack/react-query";
 
+export async function generateStaticParams() {
+  const restaurants = await getRestaurants();
+ 
+  return restaurants.map((restaurant) => ({
+    restaurantId: restaurant.id,
+  }));
+}
+
 // Custom hook for debouncing
 function useDebounce(value: string, delay: number) {
 	const [debouncedValue, setDebouncedValue] = useState(value);
-	useState(() => {
+	useEffect(() => {
 		const handler = setTimeout(() => {
 			setDebouncedValue(value);
 		}, delay);
@@ -131,7 +139,7 @@ export default function RestaurantMenuPage() {
 	const debouncedSearchQuery = useDebounce(searchQuery, 200);
 	const searchInputRef = useRef<HTMLInputElement>(null);
 
-	useState(() => {
+	useEffect(() => {
 		const storedUser = localStorage.getItem("user");
 		if (storedUser) {
 			setUser(JSON.parse(storedUser));
@@ -185,17 +193,17 @@ export default function RestaurantMenuPage() {
 	}, [menuItems, debouncedSearchQuery]);
 
 	const categories = useMemo(() => {
-		const categoryNames = filteredMenuItems
-			.map((item) => item.category?.name)
-			.filter((name): name is string => !!name);
-		const uniqueCategories = [...new Set(categoryNames)];
-		return ["All", ...uniqueCategories];
-	}, [filteredMenuItems]);
+        const categoryNames = filteredMenuItems
+            .map((item) => item.category?.name)
+            .filter((name): name is string => !!name);
+        const uniqueCategories = [...new Set(categoryNames)];
+        return ["All", ...uniqueCategories];
+    }, [filteredMenuItems]);
 	
 
 	const defaultTab = categories[0] || "All";
 
-	useState(() => {
+	useEffect(() => {
 		if (isSearchOpen) {
 			searchInputRef.current?.focus();
 		}

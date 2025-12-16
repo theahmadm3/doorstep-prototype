@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getRestaurantMenu } from "@/lib/api";
+import { getRestaurantMenu, getRestaurants } from "@/lib/api";
 import type { MenuItem, User } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,14 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+
+export async function generateStaticParams() {
+  const restaurants = await getRestaurants();
+ 
+  return restaurants.map((restaurant) => ({
+    restaurantId: restaurant.id,
+  }));
+}
 
 export default function RestaurantMenuPage() {
   const { toast } = useToast();
