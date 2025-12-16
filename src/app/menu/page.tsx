@@ -1,3 +1,6 @@
+
+"use client";
+
 import { getRestaurants } from "@/lib/api";
 import {
 	Card,
@@ -11,72 +14,50 @@ import Link from "next/link";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import { Utensils } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Add this line to make the page dynamic
-export const dynamic = "force-dynamic";
-
-export default async function MenuPage() {
-	try {
-		const restaurants = await getRestaurants();
-
-		return (
-			<div className="flex flex-col min-h-screen">
-				<Header />
-				<main className="flex-grow">
-					<div className="container py-12">
-						<div className="text-center mb-12">
-							<h1 className="text-4xl font-bold font-headline">
-								Explore Restaurants
-							</h1>
-							<p className="text-muted-foreground mt-2 text-lg">
-								Choose a restaurant to see their menu and start your order.
-							</p>
-						</div>
-
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-							{restaurants.map((restaurant) => (
-								<Link
-									key={restaurant.id}
-									href={`/restaurants/${restaurant.id}`}
-									passHref
-								>
-									<Card className="flex flex-col h-full overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1">
-										<CardHeader className="p-0">
-											<Image
-												src={
-													restaurant.image_url &&
-													restaurant.image_url !== "string"
-														? restaurant.image_url
-														: `https://placehold.co/400x250.png`
-												}
-												alt={restaurant.name}
-												width={400}
-												height={250}
-												data-ai-hint="restaurant storefront"
-												className="object-cover w-full aspect-video"
-											/>
-										</CardHeader>
-										<CardContent className="pt-6 flex-grow flex flex-col">
-											<CardTitle className="font-headline text-xl">
-												{restaurant.name}
-											</CardTitle>
-											<CardDescription className="mt-2 flex items-center gap-2">
-												<Utensils className="h-4 w-4" />
-												View Menu
-											</CardDescription>
-										</CardContent>
-									</Card>
-								</Link>
-							))}
-						</div>
+function MenuPageSkeleton() {
+	return (
+		<div className="flex flex-col min-h-screen">
+			<Header />
+			<main className="flex-grow">
+				<div className="container py-12">
+					<div className="text-center mb-12">
+						<Skeleton className="h-10 w-3/4 mx-auto mb-4" />
+						<Skeleton className="h-6 w-1/2 mx-auto" />
 					</div>
-				</main>
-				<Footer />
-			</div>
-		);
-	} catch (error) {
-		console.error("Failed to fetch restaurants:", error);
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+						{[...Array(8)].map((_, i) => (
+							<div key={i} className="space-y-2">
+								<Skeleton className="h-48 w-full" />
+								<Skeleton className="h-6 w-3/4" />
+								<Skeleton className="h-4 w-1/2" />
+							</div>
+						))}
+					</div>
+				</div>
+			</main>
+			<Footer />
+		</div>
+	);
+}
 
+export default function MenuPage() {
+	const {
+		data: restaurants,
+		isLoading,
+		isError,
+	} = useQuery({
+		queryKey: ["restaurants"],
+		queryFn: getRestaurants,
+	});
+
+	if (isLoading) {
+		return <MenuPageSkeleton />;
+	}
+
+	if (isError) {
 		return (
 			<div className="flex flex-col min-h-screen">
 				<Header />
@@ -87,8 +68,7 @@ export default async function MenuPage() {
 								Explore Restaurants
 							</h1>
 							<p className="text-muted-foreground mt-2 text-lg">
-								Unable to load restaurants at the moment. Please try again
-								later.
+								Unable to load restaurants at the moment. Please try again later.
 							</p>
 						</div>
 					</div>
@@ -97,4 +77,60 @@ export default async function MenuPage() {
 			</div>
 		);
 	}
+
+	return (
+		<div className="flex flex-col min-h-screen">
+			<Header />
+			<main className="flex-grow">
+				<div className="container py-12">
+					<div className="text-center mb-12">
+						<h1 className="text-4xl font-bold font-headline">
+							Explore Restaurants
+						</h1>
+						<p className="text-muted-foreground mt-2 text-lg">
+							Choose a restaurant to see their menu and start your order.
+						</p>
+					</div>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+						{restaurants?.map((restaurant) => (
+							<Link
+								key={restaurant.id}
+								href={`/restaurants/${restaurant.id}`}
+								passHref
+							>
+								<Card className="flex flex-col h-full overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1">
+									<CardHeader className="p-0">
+										<Image
+											src={
+												restaurant.image_url &&
+												restaurant.image_url !== "string"
+													? restaurant.image_url
+													: `https://placehold.co/400x250.png`
+											}
+											alt={restaurant.name}
+											width={400}
+											height={250}
+											data-ai-hint="restaurant storefront"
+											className="object-cover w-full aspect-video"
+										/>
+									</CardHeader>
+									<CardContent className="pt-6 flex-grow flex flex-col">
+										<CardTitle className="font-headline text-xl">
+											{restaurant.name}
+										</CardTitle>
+										<CardDescription className="mt-2 flex items-center gap-2">
+											<Utensils className="h-4 w-4" />
+											View Menu
+										</CardDescription>
+									</CardContent>
+								</Card>
+							</Link>
+						))}
+					</div>
+				</div>
+			</main>
+			<Footer />
+		</div>
+	);
 }
