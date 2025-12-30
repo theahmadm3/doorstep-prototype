@@ -1,0 +1,103 @@
+# Enable rewrite engine
+RewriteEngine On
+
+# Force HTTPS (Required for PWAs and Push Notifications)
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Proper MIME types for service workers
+<IfModule mod_mime.c>
+  AddType application/javascript .js
+  AddType application/manifest+json .json
+</IfModule>
+
+# Service Worker caching headers
+<FilesMatch "(sw\.js|push-sw\.js|workbox-.*\.js)$">
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+  Header set Pragma "no-cache"
+  Header set Expires "0"
+  Header set Service-Worker-Allowed "/"
+</FilesMatch>
+
+# Manifest caching
+<FilesMatch "manifest\.json$">
+  Header set Cache-Control "public, max-age=604800"
+  Header set Content-Type "application/manifest+json"
+</FilesMatch>
+
+# Cache static assets
+<FilesMatch "\.(jpg|jpeg|png|gif|svg|ico|webp|woff|woff2|ttf|eot|css)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+# Remove .html extension for clean URLs
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^(.+)$ $1.html [L]
+
+# Handle trailing slashes
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} (.+)/$
+RewriteRule ^ %1 [L,R=301]
+
+# Fallback to index.html for SPA routing
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /index.html [L]
+
+# Security headers
+Header set X-Content-Type-Options "nosniff"
+Header set X-Frame-Options "SAMEORIGIN"
+Header set X-XSS-Protection "1; mode=block"
+```
+
+---
+
+## Step 8: Verify Environment Variables
+
+If you're using any environment variables (like VAPID keys), add them to GitHub Secrets:
+
+**Settings → Secrets and variables → Actions → New secret:**
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` = your VAPID public key
+- Any other `NEXT_PUBLIC_*` variables
+
+Then reference them in the workflow under the build step (already added above).
+
+---
+
+## Step 9: Deploy & Test
+
+1. **Commit and push** to your main branch
+2. **Watch GitHub Actions** - Check the workflow runs successfully
+3. **Test your PWA:**
+   - Visit `https://app.yourdomain.com`
+   - Check PWA installability (Chrome DevTools → Application → Manifest)
+   - Test service worker registration (Application → Service Workers)
+   - Test push notifications (after granting permission)
+
+---
+
+## Step 10: Post-Deployment Checklist
+
+### ✅ PWA Verification
+```
+1. Open Chrome DevTools → Application
+2. Check Manifest - should load without errors
+3. Check Service Workers - should see sw.js and push-sw.js registered
+4. Test "Add to Home Screen" functionality
+5. Test offline functionality (disconnect network)
+```
+
+### ✅ Push Notifications
+```
+1. Grant notification permission
+2. Check if service worker registers properly
+3. Test push notification (if you have backend setup)
+```
+
+### ✅ SSL/HTTPS
+```
+- PWAs REQUIRE HTTPS
+- Verify https://app.doorsteplimited.com loads with valid SSL
+- Check for mixed content warnings in console
