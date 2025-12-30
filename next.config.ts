@@ -1,4 +1,3 @@
-
 import type { NextConfig } from "next";
 import nextPWA from "next-pwa";
 
@@ -9,11 +8,14 @@ const withPWA = nextPWA({
 	disable: process.env.NODE_ENV === "development",
 	scope: "/",
 	maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+	// Important for static export
+	buildExcludes: ["middleware-manifest.json", "app-build-manifest.json"],
 });
 
 const nextConfig: NextConfig = {
-	output: 'export',
-	/* config options here */
+	// ⭐ Add static export
+	output: "export",
+
 	typescript: {
 		ignoreBuildErrors: true,
 	},
@@ -21,7 +23,7 @@ const nextConfig: NextConfig = {
 		ignoreDuringBuilds: true,
 	},
 	images: {
-		unoptimized: true,
+		unoptimized: true, // ⭐ Required for static export
 		remotePatterns: [
 			{
 				protocol: "https",
@@ -37,6 +39,8 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
+	// ⭐ Optional: Add trailing slashes for better cPanel compatibility
+	trailingSlash: true,
 };
 
 export default withPWA(nextConfig);
