@@ -99,7 +99,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
           echo "📍 Deployed to: ${{ secrets.FTP_PATH }}"
-          echo "🌐 Live at: https://app.doorsteplimited.com"
+          echo "🌐 Live at: https://partner.doorsteplimited.com"
           echo "⏰ Completed: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
           echo ""
           echo "✨ Next steps:"
