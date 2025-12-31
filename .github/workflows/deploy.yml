@@ -34,23 +34,77 @@ jobs:
 
       - name: Verify build output
         run: |
-          echo "Checking build output..."
+          echo "✅ Build completed successfully!"
+          echo ""
+          echo "📦 Output directory contents:"
           ls -la out/
-          echo "Service workers:"
-          ls -la out/*.js || echo "No service workers in root"
-          ls -la out/sw.js || echo "No sw.js found"
-          ls -la out/push-sw.js || echo "No push-sw.js found"
+          echo ""
+          echo "📊 Build statistics:"
+          echo "   Total files: $(find out/ -type f | wc -l)"
+          echo "   Total size: $(du -sh out/ | cut -f1)"
+          echo ""
+          echo "🔍 Checking service workers:"
+          if [ -f out/sw.js ]; then
+            echo "   ✅ sw.js found ($(du -h out/sw.js | cut -f1))"
+          else
+            echo "   ⚠️  sw.js not found"
+          fi
+          if [ -f out/push-sw.js ]; then
+            echo "   ✅ push-sw.js found ($(du -h out/push-sw.js | cut -f1))"
+          else
+            echo "   ⚠️  push-sw.js not found"
+          fi
+
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
 
       - name: Deploy to cPanel via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ${{ secrets.FTP_PATH }}/
-          local-dir: ./out/
-          dangerous-clean-slate: true
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
+        run: |
+          echo "🚀 Starting FTP deployment..."
+          echo "   Server: ${{ secrets.FTP_SERVER }}"
+          echo "   Target: ${{ secrets.FTP_PATH }}/"
+          echo ""
+
+          lftp -c "
+            set ssl:verify-certificate no;
+            set ftp:passive-mode on;
+            set net:timeout 30;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
+            open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }};
+            
+            echo 'Connected to FTP server';
+            
+            mirror -R \
+              --delete \
+              --verbose \
+              --parallel=4 \
+              --exclude '.git/' \
+              --exclude '.github/' \
+              --exclude 'node_modules/' \
+              ./out/ ${{ secrets.FTP_PATH }}/;
+            
+            echo 'Upload completed';
+            bye
+          "
+
+          echo ""
+          echo "✅ Deployment completed successfully!"
+
+      - name: Deployment Summary
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 Deployment Successful!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📍 Deployed to: ${{ secrets.FTP_PATH }}"
+          echo "🌐 Live at: https://partner.doorsteplimited.com"
+          echo "⏰ Completed: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+          echo "✨ Next steps:"
+          echo "   1. Visit your site to verify deployment"
+          echo "   2. Test PWA installation"
+          echo "   3. Check service workers in DevTools"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
