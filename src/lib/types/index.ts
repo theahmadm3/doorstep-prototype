@@ -278,6 +278,7 @@ export interface CustomerOrder {
 	created_at: string;
 	delivery_address: OrderDetailAddress;
 	order_type: "delivery" | "pickup";
+	delivery_fee?: string;
 }
 
 export interface OrderItemDetail {
