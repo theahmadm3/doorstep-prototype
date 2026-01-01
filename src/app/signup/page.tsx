@@ -1,11 +1,28 @@
+
+"use client";
+
 import SignupForm from "@/components/auth/signup-form";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Utensils, ArrowLeft } from "lucide-react";
 import Footer from "@/components/layout/footer";
+import { useState } from "react";
+import WhatsappOnboardingModal from "@/components/auth/whatsapp-onboarding-modal";
 
 export default function SignupPage() {
+  const [showForm, setShowForm] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
+
+  const handleGetStarted = () => {
+    setModalOpen(true);
+  };
+  
+  const handleConfirmOnboarding = () => {
+    setShowForm(true);
+    setModalOpen(false);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -26,24 +43,36 @@ export default function SignupPage() {
             <div className="container">
                 <Card className="w-full max-w-lg mx-auto">
                     <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-headline">Create a Customer Account</CardTitle>
-                    <CardDescription>
-                        Sign up to start ordering your favorite meals.
-                    </CardDescription>
+                        <CardTitle className="text-2xl font-headline">Create a Customer Account</CardTitle>
+                        <CardDescription>
+                            Sign up to start ordering your favorite meals.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
-                    <SignupForm />
-                    <div className="mt-4 text-center text-sm">
-                        Already have an account?{" "}
-                        <Link href="/login" className="underline text-primary">
-                        Log in
-                        </Link>
-                    </div>
+                        {showForm ? (
+                            <SignupForm />
+                        ) : (
+                            <div className="text-center p-8">
+                                <Button size="lg" onClick={handleGetStarted}>Get Started</Button>
+                            </div>
+                        )}
+                        <div className="mt-4 text-center text-sm">
+                            Already have an account?{" "}
+                            <Link href="/login" className="underline text-primary">
+                            Log in
+                            </Link>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
         </main>
         <Footer />
+        
+        <WhatsappOnboardingModal
+            isOpen={isModalOpen}
+            onClose={() => setModalOpen(false)}
+            onConfirm={handleConfirmOnboarding}
+        />
     </div>
   );
 }

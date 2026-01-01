@@ -1,12 +1,15 @@
 
+"use client";
+
 import LoginForm from "@/components/auth/login-form";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Utensils, ArrowLeft } from "lucide-react";
 import Footer from "@/components/layout/footer";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import WhatsappOnboardingModal from "@/components/auth/whatsapp-onboarding-modal";
 
 function LoginFormSkeleton() {
   return (
@@ -21,6 +24,14 @@ function LoginFormSkeleton() {
 }
 
 export default function LoginPage() {
+  const [isOnboarded, setIsOnboarded] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(true);
+
+  const handleOnboarded = () => {
+    setIsOnboarded(true);
+    setModalOpen(false);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -47,9 +58,17 @@ export default function LoginPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Suspense fallback={<LoginFormSkeleton />}>
-                <LoginForm />
-              </Suspense>
+              {isOnboarded ? (
+                <Suspense fallback={<LoginFormSkeleton />}>
+                  <LoginForm />
+                </Suspense>
+              ) : (
+                <WhatsappOnboardingModal
+                  isOpen={isModalOpen}
+                  onClose={() => setModalOpen(false)}
+                  onConfirm={handleOnboarded}
+                />
+              )}
               <div className="mt-4 text-center text-sm">
                 Don&apos;t have an account?{" "}
                 <Link href="/signup" className="underline text-primary">
