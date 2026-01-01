@@ -267,6 +267,7 @@ export interface OrderPayload {
 	items: OrderItemPayload[];
 	payment_method: "card" | "cash";
 	order_type: "delivery" | "pickup";
+	delivery_fee?: number;
 }
 
 
