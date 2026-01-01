@@ -8,20 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Utensils, ArrowLeft } from "lucide-react";
 import Footer from "@/components/layout/footer";
 import { useState } from "react";
-import WhatsappOnboardingModal from "@/components/auth/whatsapp-onboarding-modal";
+import WhatsappOnboarding from "@/components/auth/whatsapp-onboarding";
 
 export default function SignupPage() {
-  const [showForm, setShowForm] = useState(false);
-  const [isModalOpen, setModalOpen] = useState(false);
-
-  const handleGetStarted = () => {
-    setModalOpen(true);
-  };
-  
-  const handleConfirmOnboarding = () => {
-    setShowForm(true);
-    setModalOpen(false);
-  };
+  const [hasOnboarded, setHasOnboarded] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
@@ -45,16 +35,16 @@ export default function SignupPage() {
                     <CardHeader className="text-center">
                         <CardTitle className="text-2xl font-headline">Create a Customer Account</CardTitle>
                         <CardDescription>
-                            Sign up to start ordering your favorite meals.
+                            {hasOnboarded 
+                                ? "Sign up to start ordering your favorite meals." 
+                                : "First, join our WhatsApp channel to get started."}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {showForm ? (
+                        {hasOnboarded ? (
                             <SignupForm />
                         ) : (
-                            <div className="text-center p-8">
-                                <Button size="lg" onClick={handleGetStarted}>Get Started</Button>
-                            </div>
+                            <WhatsappOnboarding onConfirm={() => setHasOnboarded(true)} />
                         )}
                         <div className="mt-4 text-center text-sm">
                             Already have an account?{" "}
@@ -67,12 +57,6 @@ export default function SignupPage() {
             </div>
         </main>
         <Footer />
-        
-        <WhatsappOnboardingModal
-            isOpen={isModalOpen}
-            onClose={() => setModalOpen(false)}
-            onConfirm={handleConfirmOnboarding}
-        />
     </div>
   );
 }

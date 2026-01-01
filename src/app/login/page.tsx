@@ -9,7 +9,7 @@ import { Utensils, ArrowLeft } from "lucide-react";
 import Footer from "@/components/layout/footer";
 import { Suspense, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import WhatsappOnboardingModal from "@/components/auth/whatsapp-onboarding-modal";
+import WhatsappOnboarding from "@/components/auth/whatsapp-onboarding";
 
 function LoginFormSkeleton() {
   return (
@@ -24,13 +24,7 @@ function LoginFormSkeleton() {
 }
 
 export default function LoginPage() {
-  const [isOnboarded, setIsOnboarded] = useState(false);
-  const [isModalOpen, setModalOpen] = useState(true);
-
-  const handleOnboarded = () => {
-    setIsOnboarded(true);
-    setModalOpen(false);
-  };
+  const [hasOnboarded, setHasOnboarded] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
@@ -54,20 +48,18 @@ export default function LoginPage() {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl font-headline">Welcome Back!</CardTitle>
               <CardDescription>
-                Enter your phone number to receive a login code.
+                {hasOnboarded 
+                  ? "Enter your phone number to receive a login code." 
+                  : "First, join our WhatsApp channel to receive login codes."}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isOnboarded ? (
+              {hasOnboarded ? (
                 <Suspense fallback={<LoginFormSkeleton />}>
                   <LoginForm />
                 </Suspense>
               ) : (
-                <WhatsappOnboardingModal
-                  isOpen={isModalOpen}
-                  onClose={() => setModalOpen(false)}
-                  onConfirm={handleOnboarded}
-                />
+                <WhatsappOnboarding onConfirm={() => setHasOnboarded(true)} />
               )}
               <div className="mt-4 text-center text-sm">
                 Don&apos;t have an account?{" "}
