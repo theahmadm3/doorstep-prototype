@@ -4,7 +4,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Utensils, ArrowLeft } from "lucide-react";
-import Footer from "@/components/layout/footer";
 
 export default function PartnerLoginPage() {
   return (
@@ -38,7 +37,6 @@ export default function PartnerLoginPage() {
           </Card>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

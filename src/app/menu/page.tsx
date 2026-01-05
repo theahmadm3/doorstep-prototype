@@ -8,8 +8,6 @@ import {
 } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
-import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
 import { Utensils } from "lucide-react";
 
 // Add this line to make the page dynamic
@@ -21,7 +19,6 @@ export default async function MenuPage() {
 
 		return (
 			<div className="flex flex-col min-h-screen">
-				<Header />
 				<main className="flex-grow">
 					<div className="container py-12">
 						<div className="text-center mb-12">
@@ -71,7 +68,6 @@ export default async function MenuPage() {
 						</div>
 					</div>
 				</main>
-				<Footer />
 			</div>
 		);
 	} catch (error) {
@@ -79,7 +75,6 @@ export default async function MenuPage() {
 
 		return (
 			<div className="flex flex-col min-h-screen">
-				<Header />
 				<main className="flex-grow">
 					<div className="container py-12">
 						<div className="text-center mb-12">
@@ -93,7 +88,6 @@ export default async function MenuPage() {
 						</div>
 					</div>
 				</main>
-				<Footer />
 			</div>
 		);
 	}
