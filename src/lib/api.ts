@@ -66,7 +66,7 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 		if (res.status === 401 && typeof window !== "undefined") {
 			// Token is invalid or expired.
 			localStorage.clear();
-			window.location.href = "/login?session_expired=true";
+			window.location.href = "/?session_expired=true";
 			throw new Error("Session expired. Please log in again.");
 		}
 

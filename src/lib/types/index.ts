@@ -267,6 +267,7 @@ export interface OrderPayload {
 	items: OrderItemPayload[];
 	payment_method: "card" | "cash";
 	order_type: "delivery" | "pickup";
+	delivery_fee?: number;
 }
 
 
@@ -278,6 +279,7 @@ export interface CustomerOrder {
 	created_at: string;
 	delivery_address: OrderDetailAddress;
 	order_type: "delivery" | "pickup";
+	delivery_fee?: string;
 }
 
 export interface OrderItemDetail {
@@ -528,8 +530,8 @@ export interface PlatformInfo {
 
 // Payout Types
 export interface WalletBalance {
-	balance: string;
-	withdrawable_balance: string;
+	balance: number;
+	withdrawable_balance: number;
 }
 
 export interface PayoutRecipient {

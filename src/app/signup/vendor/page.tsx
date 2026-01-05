@@ -7,7 +7,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Utensils, ArrowLeft, ArrowDown } from "lucide-react";
-import Footer from "@/components/layout/footer";
 import Image from "next/image";
 
 export default function VendorSignupPage() {
@@ -82,7 +81,6 @@ export default function VendorSignupPage() {
             </div>
         </section>
       </main>
-      <Footer />
     </div>
   );
 }

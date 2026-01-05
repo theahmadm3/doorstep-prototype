@@ -140,6 +140,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
         items: orderItemsPayload,
         payment_method: 'card', // Assuming card payment via Paystack
         order_type: orderType,
+        delivery_fee: orderType === 'delivery' ? deliveryFee : undefined,
       };
 
       await placeOrder(orderPayload);
@@ -163,7 +164,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     } finally {
       setIsPlacingOrder(false);
     }
-  }, [order, selectedAddress, updateOrderStatus, toast, onClose, router, orderType]);
+  }, [order, selectedAddress, updateOrderStatus, toast, onClose, router, orderType, deliveryFee]);
 
   const onSuccess = useCallback((transaction: PaystackTransaction) => {
     if (transaction.status === 'success') {
@@ -223,7 +224,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     if (!user || !order) {
         toast({ title: "Please Log In", description: "You need to be logged in to place an order.", variant: "destructive" });
         onClose();
-        router.push(`/login?redirect=/customer/dashboard`);
+        router.push(`/?redirect=/customer/dashboard`);
         return;
     }
 

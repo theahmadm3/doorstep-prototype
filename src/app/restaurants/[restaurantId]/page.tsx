@@ -12,8 +12,6 @@ import { PlusCircle, ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/layout/header";
-import Footer from "@/components/layout/footer";
 import { cn } from "@/lib/utils";
 
 export default function RestaurantMenuPage() {
@@ -61,14 +59,14 @@ export default function RestaurantMenuPage() {
             description: "Please log in to start ordering.",
             variant: "destructive"
         });
-      router.push(`/login?redirect=/restaurants/${restaurantId}`);
+      router.push(`/?redirect=/restaurants/${restaurantId}`);
     }
   };
 
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header />
+        
         <main className="flex-grow container py-12">
            <Skeleton className="h-10 w-48 mb-8" />
            <div className="mb-12">
@@ -93,7 +91,7 @@ export default function RestaurantMenuPage() {
                 </div>
            </div>
         </main>
-        <Footer />
+        
       </div>
     )
   }
@@ -104,7 +102,7 @@ export default function RestaurantMenuPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      
       <main className="flex-grow">
         <div className="container py-12">
             <div className="mb-8">
@@ -157,7 +155,7 @@ export default function RestaurantMenuPage() {
               </div>
         </div>
       </main>
-      <Footer />
+      
     </div>
   );
 }
