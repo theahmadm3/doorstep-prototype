@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -8,7 +9,6 @@ import { Loader2 } from "lucide-react";
 
 const publicRoutes = [
 	"/",
-	"/login",
 	"/signup",
 	"/signup/vendor",
 	"/signup/rider",
@@ -28,7 +28,7 @@ const getDashboardRoute = (role: User["role"]): string => {
 		case "admin":
 			return "/admin/dashboard";
 		default:
-			return "/login";
+			return "/";
 	}
 };
 
@@ -49,88 +49,64 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const [isLoading, setIsLoading] = useState(true);
-	const [isAuthenticated, setIsAuthenticated] = useState(false);
 
 	const clearAuthData = useCallback(() => {
 		localStorage.removeItem("accessToken");
 		localStorage.removeItem("user");
-		setIsAuthenticated(false);
 	}, []);
 
 	useEffect(() => {
 		const checkAuth = async () => {
 			setIsLoading(true);
-
-			// Allow public routes without auth check
-			if (isPublicRoute(pathname)) {
-				const token = localStorage.getItem("accessToken");
-
-				// If user has token on public route, verify and redirect to dashboard
-				if (token) {
-					try {
-						const user = await getAuthUser();
-						localStorage.setItem("user", JSON.stringify(user));
-						setIsAuthenticated(true);
-						router.replace(getDashboardRoute(user.role));
-						return;
-					} catch (error) {
-						console.error("Auth check failed:", error);
-						clearAuthData();
-					}
-				}
-
-				setIsLoading(false);
-				return;
-			}
-
-			// Protected route - require authentication
 			const token = localStorage.getItem("accessToken");
 
 			if (!token) {
-				clearAuthData();
+				if (!isPublicRoute(pathname)) {
+					router.replace("/");
+					return;
+				}
 				setIsLoading(false);
-				router.replace("/login");
 				return;
 			}
 
 			try {
 				const user = await getAuthUser();
 				localStorage.setItem("user", JSON.stringify(user));
-				setIsAuthenticated(true);
+				const dashboardRoute = getDashboardRoute(user.role);
 
-				// Optional: Add role-based route protection
-				const expectedDashboard = getDashboardRoute(user.role);
-				const userRoutePrefix = expectedDashboard.split("/")[1]; // e.g., 'customer', 'vendor'
-
-				// If user is trying to access another role's routes, redirect them
-				if (
-					pathname.startsWith(`/${userRoutePrefix}`) === false &&
-					!pathname.startsWith("/restaurants/")
-				) {
-					console.warn("User attempting to access unauthorized route");
-					router.replace(expectedDashboard);
-					return;
+				// If user is on a public route, redirect to their dashboard
+				if (isPublicRoute(pathname)) {
+					router.replace(dashboardRoute);
+					return; // Stop further execution
 				}
 
+				// If user is trying to access a route that doesn't match their role, redirect
+				const userRoutePrefix = dashboardRoute.split("/")[1];
+				if (!pathname.startsWith(`/${userRoutePrefix}`)) {
+					console.warn(
+						`User with role ${user.role} attempting to access ${pathname}. Redirecting.`,
+					);
+					router.replace(dashboardRoute);
+					return; // Stop further execution
+				}
+
+				// If all checks pass, stop loading
 				setIsLoading(false);
 			} catch (error) {
 				console.error("Auth check failed:", error);
 				clearAuthData();
-				router.replace("/login");
+				if (!isPublicRoute(pathname)) {
+					router.replace("/");
+				}
+				setIsLoading(false);
 			}
 		};
 
 		checkAuth();
 	}, [pathname, router, clearAuthData]);
 
-	// Show loading screen during auth check
 	if (isLoading) {
 		return <LoadingScreen />;
-	}
-
-	// Only render children if on public route or authenticated
-	if (!isPublicRoute(pathname) && !isAuthenticated) {
-		return null;
 	}
 
 	return <>{children}</>;

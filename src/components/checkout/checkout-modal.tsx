@@ -224,7 +224,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     if (!user || !order) {
         toast({ title: "Please Log In", description: "You need to be logged in to place an order.", variant: "destructive" });
         onClose();
-        router.push(`/login?redirect=/customer/dashboard`);
+        router.push(`/?redirect=/customer/dashboard`);
         return;
     }
 

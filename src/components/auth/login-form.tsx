@@ -34,7 +34,7 @@ export default function LoginForm() {
         variant: "destructive",
       });
       // Clean the URL
-      router.replace('/login');
+      router.replace('/');
     }
   }, [searchParams, toast, router]);
 

@@ -530,8 +530,8 @@ export interface PlatformInfo {
 
 // Payout Types
 export interface WalletBalance {
-	balance: string;
-	withdrawable_balance: string;
+	balance: number;
+	withdrawable_balance: number;
 }
 
 export interface PayoutRecipient {

@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Utensils, ArrowLeft } from "lucide-react";
-import Footer from "@/components/layout/footer";
 import { useState } from "react";
 import WhatsappOnboarding from "@/components/auth/whatsapp-onboarding";
 
@@ -21,12 +20,6 @@ export default function SignupPage() {
                     <Utensils className="h-6 w-6 text-primary" />
                     <span className="font-bold font-headline">Doorstep</span>
                 </Link>
-                <Button asChild variant="outline">
-                    <Link href="/">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Home
-                    </Link>
-                </Button>
             </div>
         </header>
         <main className="flex-1 flex items-center justify-center py-12">
@@ -48,7 +41,7 @@ export default function SignupPage() {
                         )}
                         <div className="mt-4 text-center text-sm">
                             Already have an account?{" "}
-                            <Link href="/login" className="underline text-primary">
+                            <Link href="/" className="underline text-primary">
                             Log in
                             </Link>
                         </div>
@@ -56,7 +49,6 @@ export default function SignupPage() {
                 </Card>
             </div>
         </main>
-        <Footer />
     </div>
   );
 }

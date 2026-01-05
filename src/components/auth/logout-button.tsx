@@ -46,8 +46,9 @@ export default function LogoutButton() {
 			clearUserOrders();
 			clearUIState();
 			queryClient.clear(); // Clears all TanStack Query cache
-			localStorage.clear();
-			router.push("/login");
+			localStorage.removeItem("accessToken");
+			localStorage.removeItem("user");
+			router.push("/");
 		}
 	};
 
