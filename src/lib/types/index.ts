@@ -30,6 +30,7 @@ export type PartnerLoginCredentials = z.infer<typeof partnerLoginSchema>;
 
 export interface LoginResponse {
 	access: string;
+	refresh: string; // The backend sends this, but we will not store it.
 	user: User;
 }
 
@@ -53,11 +54,6 @@ export const otpVerificationSchema = z.object({
 export type OtpVerificationPayload = z.infer<typeof otpVerificationSchema> & {
 	phone_number: string;
 };
-
-export interface VerifyOtpResponse {
-	tokens: { access: string };
-	user_role: "customer";
-}
 
 // Legacy signup - keeping for other roles if needed
 export const signupSchema = z

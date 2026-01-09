@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { loginUser, getAuthUser } from "@/lib/auth-api";
+import { loginUser } from "@/lib/auth-api";
 import { partnerLoginSchema } from "@/lib/types";
 import { useCartStore } from "@/stores/useCartStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -43,19 +43,17 @@ export default function PartnerLoginForm() {
 
 	async function onSubmit(values: z.infer<typeof partnerLoginSchema>) {
 		try {
-			// Step 1: Login user and get tokens
+			// Step 1: Login user and get tokens + user data
 			const loginResponse = await loginUser(values);
 
-			// Step 2: Store access token in memory
+			// Step 2: Store access token in memory (Zustand)
 			setAccessToken(loginResponse.access);
 			
-			// The refresh token is now an HttpOnly cookie and is not handled here.
+			// NOTE: The refresh token from the response is intentionally discarded
+			// to adhere to the security policy of not storing it in the browser.
 
-			// Step 3: Fetch user data
-			// This call will now use the new in-memory token via the API client.
-			const user = await getAuthUser();
-			
-			// Manually set the user data in the query cache after login
+			// Step 3: Manually set the user data in the TanStack Query cache
+			const user = loginResponse.user;
 			queryClient.setQueryData(["authUser"], user);
 
 			// Step 4: Clear any guest cart data

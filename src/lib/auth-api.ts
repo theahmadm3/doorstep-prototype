@@ -8,13 +8,14 @@ import {
 	ProfileUpdatePayload,
 	CustomerSignupPayload,
 	OtpVerificationPayload,
-	VerifyOtpResponse,
 	PartnerLoginCredentials,
 } from "./types";
 
 export async function loginUser(
 	credentials: PartnerLoginCredentials,
 ): Promise<LoginResponse> {
+	// The API returns { access, refresh, user }.
+	// We only use `access` and `user`, and discard `refresh` to avoid persisting it.
 	return apiClient.post<LoginResponse>("/auth/login/", credentials);
 }
 
@@ -37,8 +38,10 @@ export async function signupCustomer(
 
 export async function verifyLoginOTP(
 	payload: OtpVerificationPayload,
-): Promise<VerifyOtpResponse> {
-	return apiClient.post<VerifyOtpResponse>(
+): Promise<LoginResponse> {
+	// The API returns { access, refresh, user }.
+	// We only use `access` and `user`, and discard `refresh` to avoid persisting it.
+	return apiClient.post<LoginResponse>(
 		"/auth/customer/login-otp/",
 		payload,
 	);
@@ -63,9 +66,13 @@ export async function updateUserProfile(
 }
 
 export async function refreshToken(): Promise<{ access: string }> {
+	// This function will likely fail now unless the backend changes to use HttpOnly cookies.
+	// We are keeping it for the single-flight lock mechanism in the API client.
 	return apiClient.post<{ access: string }>("/auth/refresh_token/", {});
 }
 
 export async function logoutUser(): Promise<void> {
+	// We don't have a refresh token to send, but we still call logout
+	// to allow the backend to invalidate the session if it can.
 	await apiClient.post("/auth/logout/", {});
 }

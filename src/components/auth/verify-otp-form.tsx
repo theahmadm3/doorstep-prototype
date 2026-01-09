@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { verifyLoginOTP, resendOTP, getAuthUser } from "@/lib/auth-api";
+import { verifyLoginOTP, resendOTP } from "@/lib/auth-api";
 import {
 	otpVerificationSchema,
 	type OtpVerificationPayload,
@@ -120,19 +120,20 @@ export default function VerifyOtpForm() {
 		}
 
 		try {
-			// Step 1: Verify OTP
+			// Step 1: Verify OTP and get tokens + user data
 			const response = await verifyLoginOTP({
 				phone_number: phoneNumber,
 				otp_code: values.otp_code,
 			});
 
 			// Step 2: Store access token in memory
-			setAccessToken(response.tokens.access);
+			setAccessToken(response.access);
 
-			// Step 3: Fetch user data
-			const user = await getAuthUser();
-			
-			// Manually set user data in query cache
+			// NOTE: The refresh token from the response is intentionally discarded
+			// to adhere to the security policy of not storing it in the browser.
+
+			// Step 3: Manually set user data in query cache
+			const user = response.user;
 			queryClient.setQueryData(['authUser'], user);
 
 			// Step 4: Clear guest cart
