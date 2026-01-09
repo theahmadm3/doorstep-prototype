@@ -63,7 +63,7 @@ export async function updateUserProfile(
 }
 
 export async function refreshToken(): Promise<{ access: string }> {
-	return apiClient.post<{ access: string }>("/auth/token/refresh/", {});
+	return apiClient.post<{ access: string }>("/auth/refresh_token/", {});
 }
 
 export async function logoutUser(): Promise<void> {
