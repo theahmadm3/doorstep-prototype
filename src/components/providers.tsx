@@ -1,9 +1,11 @@
+
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import React from "react";
 import { ErrorBoundary } from "react-error-boundary";
+import AuthProvider from "@/components/auth/auth-provider";
 
 function ErrorFallback({ error }: { error: Error }) {
 	return (
@@ -33,7 +35,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
 	return (
 		<ErrorBoundary FallbackComponent={ErrorFallback}>
 			<QueryClientProvider client={queryClient}>
-				{children}
+				<AuthProvider>
+                    {children}
+                </AuthProvider>
 				<ReactQueryDevtools initialIsOpen={false} />
 			</QueryClientProvider>
 		</ErrorBoundary>

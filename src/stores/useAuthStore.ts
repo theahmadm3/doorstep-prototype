@@ -1,21 +1,14 @@
 
-import create from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { create } from "zustand";
 
 interface AuthState {
-  phoneNumber: string | null;
-  setPhoneNumber: (phone: string | null) => void;
+	accessToken: string | null;
+	setAccessToken: (token: string | null) => void;
+	clearToken: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      phoneNumber: null,
-      setPhoneNumber: (phone) => set({ phoneNumber: phone }),
-    }),
-    {
-      name: 'doorstep-auth-storage',
-      storage: createJSONStorage(() => localStorage),
-    }
-  )
-);
+export const useAuthStore = create<AuthState>((set) => ({
+	accessToken: null,
+	setAccessToken: (token) => set({ accessToken: token }),
+	clearToken: () => set({ accessToken: null }),
+}));

@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -17,38 +16,48 @@ import {
 import { LogOut } from "lucide-react";
 import { Button } from "../ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { useQueryClient } from "@tanstack/react-query";
+import { logoutUser } from "@/lib/auth-api";
+import { useRouter } from "next/navigation";
 
 export default function LogoutButton() {
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const { toast } = useToast();
-	const clearUserOrders = useCartStore(state => state.clearUserOrders);
+	const clearToken = useAuthStore((state) => state.clearToken);
+	const clearUserOrders = useCartStore((state) => state.clearUserOrders);
 	const clearUIState = useUIStore.getState().clearUIState;
 	const queryClient = useQueryClient();
 
 	const handleLogout = async () => {
 		try {
-			// In a real app, you might call an API endpoint to invalidate the token on the server.
-			// await logoutUser();
+			await logoutUser();
 		} catch (error) {
-			console.error("An error occurred during API logout:", error);
-			toast({
-				title: "Logout Error",
-				description:
-					"Could not log you out from the server, but you have been logged out locally.",
-				variant: "destructive",
-			});
+			console.error("Server logout failed, proceeding with client-side cleanup:", error);
 		} finally {
-			// Clear all application state and local storage before redirecting.
+			// This block runs regardless of whether the API call succeeds or fails,
+			// ensuring the user is logged out on the client.
+			
+			// 1. Clear the in-memory access token.
+			clearToken();
+			
+			// 2. Clear all other application state.
 			clearUserOrders();
 			clearUIState();
-			queryClient.clear(); // Clears all TanStack Query cache
-			localStorage.removeItem("accessToken");
-			localStorage.removeItem("user");
+			
+			// 3. Invalidate all TanStack Query caches.
+			queryClient.clear();
+			
+			// 4. Redirect to the login page.
 			router.push("/");
+			
+			toast({
+				title: "Logged Out",
+				description: "You have been successfully logged out.",
+			});
 		}
 	};
 

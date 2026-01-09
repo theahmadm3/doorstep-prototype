@@ -1,3 +1,4 @@
+
 import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
@@ -34,7 +35,11 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className={`${inter.variable} ${poppins.variable} h-full`}>
+		<html
+			lang="en"
+			className={`${inter.variable} ${poppins.variable} h-full`}
+			suppressHydrationWarning
+		>
 			<body className="antialiased flex flex-col h-full bg-background">
 				<Providers>
 					{children}

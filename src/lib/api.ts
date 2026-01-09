@@ -1,13 +1,12 @@
+
+import { apiClient, PaginatedResponse } from "./api-client";
 import {
-	PaginatedResponse,
 	Restaurant,
 	MenuItem,
 	Address,
 	AddressPostData,
-	AddressFormData,
 	OrderPayload,
 	CustomerOrder,
-	OrderItemDetail,
 	OrderDetail,
 	AdminUser,
 	MenuItemPayload,
@@ -38,70 +37,23 @@ import type {
 } from "./types/paystack";
 import { format } from "date-fns";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-
-if (!BASE_URL) {
-	throw new Error("Missing NEXT_PUBLIC_BASE_URL environment variable");
-}
-
-async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
-	const token =
-		typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
-
-	const isFormData = options.body instanceof FormData;
-
-	const headers: Record<string, string> = {};
-
-	if (!isFormData) {
-		headers["Content-Type"] = "application/json";
-	}
-
-	if (token) {
-		headers["Authorization"] = `Bearer ${token}`;
-	}
-
-	const res = await fetch(`${BASE_URL}${url}`, { ...options, headers });
-
-	if (!res.ok) {
-		if (res.status === 401 && typeof window !== "undefined") {
-			// Token is invalid or expired.
-			localStorage.clear();
-			window.location.href = "/?session_expired=true";
-			throw new Error("Session expired. Please log in again.");
-		}
-
-		const errorBody = await res.text();
-		console.error(`API Error: ${res.status} ${res.statusText}`, errorBody);
-		try {
-			const errorJson = JSON.parse(errorBody);
-			throw new Error(errorJson.detail || `API Error: ${res.status}`);
-		} catch {
-			throw new Error(`API Error: ${res.status}. Body: ${errorBody}`);
-		}
-	}
-	// Handle cases where the response might be empty (e.g., 204 No Content)
-	const contentType = res.headers.get("content-type");
-	if (contentType && contentType.indexOf("application/json") !== -1) {
-		return res.json();
-	}
-	return undefined as T;
-}
-
 export async function getRestaurants(): Promise<Restaurant[]> {
-	const data = await fetcher<PaginatedResponse<Restaurant>>("/restaurants/");
+	const data = await apiClient.get<PaginatedResponse<Restaurant>>(
+		"/restaurants/",
+	);
 	return data.results;
 }
 
 export async function getRestaurantDetails(
 	restaurantId: string,
 ): Promise<Restaurant> {
-	return fetcher<Restaurant>(`/restaurants/${restaurantId}/`);
+	return apiClient.get<Restaurant>(`/restaurants/${restaurantId}/`);
 }
 
 export async function getRestaurantMenu(
 	restaurantId: string,
 ): Promise<MenuItem[]> {
-	const data = await fetcher<PaginatedResponse<MenuItem>>(
+	const data = await apiClient.get<PaginatedResponse<MenuItem>>(
 		`/restaurants/${restaurantId}/menu/`,
 	);
 	return data.results;
@@ -109,46 +61,34 @@ export async function getRestaurantMenu(
 
 // Address Management API Calls
 export async function getAddresses(): Promise<Address[]> {
-	const data = await fetcher<PaginatedResponse<Address>>("/addresses/");
+	const data = await apiClient.get<PaginatedResponse<Address>>("/addresses/");
 	return data.results;
 }
 
 export async function addAddress(
 	addressData: Partial<AddressPostData>,
 ): Promise<Address> {
-	return fetcher<Address>("/addresses/", {
-		method: "POST",
-		body: JSON.stringify(addressData),
-	});
+	return apiClient.post<Address>("/addresses/", addressData);
 }
 
 export async function updateAddress(
 	addressId: string,
 	addressData: Partial<AddressPostData>,
 ): Promise<Address> {
-	return fetcher<Address>(`/addresses/${addressId}/`, {
-		method: "PUT",
-		body: JSON.stringify(addressData),
-	});
+	return apiClient.put<Address>(`/addresses/${addressId}/`, addressData);
 }
 
 export async function deleteAddress(addressId: string): Promise<void> {
-	await fetcher<void>(`/addresses/${addressId}/`, {
-		method: "DELETE",
-	});
+	await apiClient.delete<void>(`/addresses/${addressId}/`);
 }
 
 // Order Management API Calls
 export async function placeOrder(orderData: OrderPayload): Promise<any> {
-	// Replace 'any' with a proper Order response type if you have one
-	return fetcher<any>("/orders/", {
-		method: "POST",
-		body: JSON.stringify(orderData),
-	});
+	return apiClient.post<any>("/orders/", orderData);
 }
 
 export async function getCustomerOrders(): Promise<CustomerOrder[]> {
-	const response = await fetcher<PaginatedResponse<CustomerOrder>>(
+	const response = await apiClient.get<PaginatedResponse<CustomerOrder>>(
 		"/get-customer-order",
 	);
 	return response.results.map((order) => ({
@@ -158,13 +98,11 @@ export async function getCustomerOrders(): Promise<CustomerOrder[]> {
 }
 
 export async function confirmOrderDelivery(orderId: string): Promise<void> {
-	await fetcher<void>(`/customer/me/order/${orderId}/delivered/`, {
-		method: "POST",
-	});
+	await apiClient.post<void>(`/customer/me/order/${orderId}/delivered/`);
 }
 
 export async function getOrderDetails(orderId: string): Promise<OrderDetail> {
-	const order = await fetcher<OrderDetail>(`/orders/${orderId}/`);
+	const order = await apiClient.get<OrderDetail>(`/orders/${orderId}/`);
 	return {
 		...order,
 		created_at: format(new Date(order.created_at), "dd MMMM yyyy, h:mm:ss a"),
@@ -175,11 +113,13 @@ export async function getOrderDetails(orderId: string): Promise<OrderDetail> {
 export async function getAdminUsers(
 	page: number = 1,
 ): Promise<PaginatedResponse<AdminUser>> {
-	return fetcher<PaginatedResponse<AdminUser>>(`/admin/users/?page=${page}`);
+	return apiClient.get<PaginatedResponse<AdminUser>>(
+		`/admin/users/?page=${page}`,
+	);
 }
 
 export async function getAdminOrders(): Promise<AdminOrder[]> {
-	const response = await fetcher<PaginatedResponse<AdminOrder>>(
+	const response = await apiClient.get<PaginatedResponse<AdminOrder>>(
 		"/admin/orders/",
 	);
 	return response.results.map((order) => ({
@@ -190,7 +130,7 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
 
 // Vendor API Calls
 export async function getVendorMenuItems(): Promise<MenuItem[]> {
-	const data = await fetcher<PaginatedResponse<MenuItem>>(
+	const data = await apiClient.get<PaginatedResponse<MenuItem>>(
 		"/restaurants/me/menu/",
 	);
 	return data.results;
@@ -199,10 +139,7 @@ export async function getVendorMenuItems(): Promise<MenuItem[]> {
 export async function createVendorMenuItem(
 	itemData: MenuItemPayload,
 ): Promise<MenuItem> {
-	return fetcher<MenuItem>("/restaurants/me/menu/", {
-		method: "POST",
-		body: JSON.stringify(itemData),
-	});
+	return apiClient.post<MenuItem>("/restaurants/me/menu/", itemData);
 }
 
 export async function uploadMenuItemImage(
@@ -212,40 +149,34 @@ export async function uploadMenuItemImage(
 	const formData = new FormData();
 	formData.append("image", image);
 
-	return fetcher<MenuItem>(`/menu-items/${itemId}/upload-image/`, {
-		method: "POST",
-		body: formData,
-	});
+	return apiClient.postFormData<MenuItem>(
+		`/menu-items/${itemId}/upload-image/`,
+		formData,
+	);
 }
 
 export async function updateVendorMenuItem(
 	itemId: string,
 	itemData: Partial<MenuItemPayload>,
 ): Promise<MenuItem> {
-	return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/`, {
-		method: "PATCH",
-		body: JSON.stringify(itemData),
-	});
+	return apiClient.patch<MenuItem>(`/restaurants/me/menu/${itemId}/`, itemData);
 }
 
 export async function deleteVendorMenuItem(itemId: string): Promise<void> {
-	await fetcher<void>(`/restaurants/me/menu/${itemId}/`, {
-		method: "DELETE",
-	});
+	await apiClient.delete<void>(`/restaurants/me/menu/${itemId}/`);
 }
 
 export async function updateMenuItemAvailability(
 	itemId: string,
 	is_available: boolean,
 ): Promise<MenuItem> {
-	return fetcher<MenuItem>(`/restaurants/me/menu/${itemId}/availability/`, {
-		method: "PUT",
-		body: JSON.stringify({ is_available }),
+	return apiClient.put<MenuItem>(`/restaurants/me/menu/${itemId}/availability/`, {
+		is_available,
 	});
 }
 
 export async function getVendorOrders(): Promise<VendorOrder[]> {
-	const data = await fetcher<PaginatedResponse<VendorOrder>>(
+	const data = await apiClient.get<PaginatedResponse<VendorOrder>>(
 		"/restaurants/me/orders/",
 	);
 	return data.results.map((order) => ({
@@ -264,19 +195,18 @@ export async function updateVendorOrderStatus(
 		body = { driver_type: driverType };
 	}
 
-	await fetcher<void>(`/restaurants/me/orders/${orderId}/${action}/`, {
-		method: "POST",
-		body: JSON.stringify(body),
-	});
+	await apiClient.post<void>(
+		`/restaurants/me/orders/${orderId}/${action}/`,
+		body,
+	);
 }
 
 export async function assignRiderToOrder(
 	orderId: string,
 	driverName: string,
 ): Promise<void> {
-	await fetcher<void>(`/restaurants/me/orders/${orderId}/ongoing/`, {
-		method: "POST",
-		body: JSON.stringify({ driver_name: driverName }),
+	await apiClient.post<void>(`/restaurants/me/orders/${orderId}/ongoing/`, {
+		driver_name: driverName,
 	});
 }
 
@@ -288,15 +218,12 @@ export async function confirmPickupByCustomer(
 		status: "Picked Up by Customer",
 		otp: otp,
 	};
-	await fetcher<void>(`/orders/${orderId}/pickup-status/`, {
-		method: "PUT",
-		body: JSON.stringify(payload),
-	});
+	await apiClient.put<void>(`/orders/${orderId}/pickup-status/`, payload);
 }
 
 // Vendor Category Management
 export async function getMenuCategories(): Promise<MenuCategory[]> {
-	const response = await fetcher<PaginatedResponse<MenuCategory>>(
+	const response = await apiClient.get<PaginatedResponse<MenuCategory>>(
 		"/restaurants/me/menu/categories",
 	);
 	return response.results;
@@ -305,35 +232,33 @@ export async function getMenuCategories(): Promise<MenuCategory[]> {
 export async function createMenuCategory(
 	payload: CategoryPayload,
 ): Promise<MenuCategory> {
-	return fetcher<MenuCategory>("/restaurants/me/menu/categories", {
-		method: "POST",
-		body: JSON.stringify(payload),
-	});
+	return apiClient.post<MenuCategory>(
+		"/restaurants/me/menu/categories",
+		payload,
+	);
 }
 
 export async function getMenuCategory(id: string): Promise<MenuCategory> {
-	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`);
+	return apiClient.get<MenuCategory>(`/restaurants/me/menu/categories/${id}`);
 }
 
 export async function updateMenuCategory(
 	id: string,
 	payload: CategoryPayload,
 ): Promise<MenuCategory> {
-	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`, {
-		method: "PUT",
-		body: JSON.stringify(payload),
-	});
+	return apiClient.put<MenuCategory>(
+		`/restaurants/me/menu/categories/${id}`,
+		payload,
+	);
 }
 
 export async function deleteMenuCategory(id: string): Promise<void> {
-	await fetcher<void>(`/restaurants/me/menu/categories/${id}`, {
-		method: "DELETE",
-	});
+	await apiClient.delete<void>(`/restaurants/me/menu/categories/${id}`);
 }
 
 // Vendor Menu Option Management
 export async function getMenuOptions(): Promise<OptionChoice[]> {
-	const response = await fetcher<PaginatedResponse<OptionChoice>>(
+	const response = await apiClient.get<PaginatedResponse<OptionChoice>>(
 		"/restaurants/me/options/",
 	);
 	return response.results;
@@ -342,90 +267,72 @@ export async function getMenuOptions(): Promise<OptionChoice[]> {
 export async function createMenuOption(
 	payload: OptionPayload,
 ): Promise<OptionChoice> {
-	return fetcher<OptionChoice>("/restaurants/me/options/", {
-		method: "POST",
-		body: JSON.stringify(payload),
-	});
+	return apiClient.post<OptionChoice>("/restaurants/me/options/", payload);
 }
 
 export async function updateMenuOption(
 	id: string,
 	payload: Partial<OptionPayload>,
 ): Promise<OptionChoice> {
-	return fetcher<OptionChoice>(`/restaurants/me/options/${id}/`, {
-		method: "PATCH",
-		body: JSON.stringify(payload),
-	});
+	return apiClient.patch<OptionChoice>(`/restaurants/me/options/${id}/`, payload);
 }
 
 export async function deleteMenuOption(id: string): Promise<void> {
-	await fetcher<void>(`/restaurants/me/options/${id}/`, {
-		method: "DELETE",
-	});
+	await apiClient.delete<void>(`/restaurants/me/options/${id}/`);
 }
 
 // Vendor Rider Management API Calls
 export async function getVendorRiders(): Promise<Rider[]> {
-	const response = await fetcher<RiderListResponse>("/restaurants/me/drivers/");
+	const response = await apiClient.get<RiderListResponse>(
+		"/restaurants/me/drivers/",
+	);
 	return response.drivers;
 }
 
 export async function createVendorRider(
 	riderData: RiderPayload,
 ): Promise<Rider> {
-	return fetcher<Rider>("/restaurants/me/drivers/", {
-		method: "POST",
-		body: JSON.stringify(riderData),
-	});
+	return apiClient.post<Rider>("/restaurants/me/drivers/", riderData);
 }
 
 export async function updateVendorRider(
 	riderData: RiderPayload,
 ): Promise<Rider> {
-	return fetcher<Rider>(`/restaurants/me/drivers/`, {
-		method: "PUT",
-		body: JSON.stringify(riderData),
-	});
+	return apiClient.put<Rider>(`/restaurants/me/drivers/`, riderData);
 }
 
 export async function deleteVendorRider(riderName: string): Promise<void> {
-	await fetcher<void>(`/restaurants/me/drivers/`, {
-		method: "DELETE",
-		body: JSON.stringify({ name: riderName }),
+	await apiClient.delete<void>(`/restaurants/me/drivers/`, {
+		name: riderName,
 	});
 }
 
 // Vendor Analytics API
 export async function getVendorAnalytics(): Promise<VendorAnalyticsData> {
-	return fetcher<VendorAnalyticsData>("/restaurant/me/analytics");
+	return apiClient.get<VendorAnalyticsData>("/restaurant/me/analytics");
 }
 
 // Vendor Profile API
 export async function getRestaurantProfile(): Promise<VendorProfile> {
-	return fetcher<VendorProfile>("/restaurants/me/");
+	return apiClient.get<VendorProfile>("/restaurants/me/");
 }
 
 export async function updateRestaurantProfile(
 	payload: VendorProfileUpdatePayload,
 ): Promise<VendorProfile> {
-	return fetcher<VendorProfile>("/restaurants/me/", {
-		method: "PATCH",
-		body: JSON.stringify(payload),
-	});
+	return apiClient.patch<VendorProfile>("/restaurants/me/", payload);
 }
 
 // Rider API
-export async function getAvailableRiderOrders(): Promise<
-	AvailableRiderOrder[]
-> {
-	const response = await fetcher<PaginatedResponse<AvailableRiderOrder>>(
+export async function getAvailableRiderOrders(): Promise<AvailableRiderOrder[]> {
+	const response = await apiClient.get<PaginatedResponse<AvailableRiderOrder>>(
 		"/drivers/orders/available",
 	);
 	return response.results;
 }
 
 export async function getRiderOrders(): Promise<RiderOrder[]> {
-	const response = await fetcher<RiderOrderResponse>("/drivers/orders/");
+	const response = await apiClient.get<RiderOrderResponse>("/drivers/orders/");
 	return response.data;
 }
 
@@ -434,12 +341,9 @@ export async function performRiderAction(
 	action: string,
 	payload?: object,
 ): Promise<RiderOrder> {
-	const response = await fetcher<{ data: RiderOrder }>(
+	const response = await apiClient.post<{ data: RiderOrder }>(
 		`/drivers/orders/${orderId}/${action}`,
-		{
-			method: "POST",
-			body: payload ? JSON.stringify(payload) : undefined,
-		},
+		payload,
 	);
 	return response.data;
 }
@@ -452,63 +356,46 @@ export async function updateRiderLocation(
 		current_latitude: String(latitude.toFixed(6)),
 		current_longitude: String(longitude.toFixed(6)),
 	};
-	await fetcher<void>("/drivers/me/location", {
-		method: "PATCH",
-		body: JSON.stringify(payload),
-	});
+	await apiClient.patch<void>("/drivers/me/location", payload);
 }
 
 // Payment API
 export async function initializePayment(
 	payload: InitializePaymentPayload,
 ): Promise<InitializePaymentResponse> {
-	return fetcher<InitializePaymentResponse>("/initialize/", {
-		method: "POST",
-		body: JSON.stringify(payload),
-	});
+	return apiClient.post<InitializePaymentResponse>("/initialize/", payload);
 }
 
 // Push Notification API
 export async function subscribeToNotifications(
 	subscription: PushSubscription,
 ): Promise<void> {
-	await fetcher<void>("/subscribe/", {
-		method: "POST",
-		body: JSON.stringify(subscription.toJSON()),
-	});
+	await apiClient.post<void>("/subscribe/", subscription.toJSON());
 }
 
 // Payout API
 export async function getWalletBalance(): Promise<WalletBalance> {
-	return fetcher<WalletBalance>("/wallet/");
+	return apiClient.get<WalletBalance>("/wallet/");
 }
 
 export async function getPayoutRecipients(): Promise<PayoutRecipient[]> {
-	return fetcher<PayoutRecipient[]>("/payout/recipients/");
+	return apiClient.get<PayoutRecipient[]>("/payout/recipients/");
 }
 
 export async function createPayoutRecipient(
 	payload: CreateRecipientPayload,
 ): Promise<PayoutRecipient> {
-	return fetcher<PayoutRecipient>("/payout/recipient/create/", {
-		method: "POST",
-		body: JSON.stringify(payload),
-	});
+	return apiClient.post<PayoutRecipient>("/payout/recipient/create/", payload);
 }
 
 export async function initiatePayout(
 	payload: InitiatePayoutPayload,
 ): Promise<{ message: string }> {
-	return fetcher<{ message: string }>("/payout/initiate/", {
-		method: "POST",
-		body: JSON.stringify(payload),
-	});
+	return apiClient.post<{ message: string }>("/payout/initiate/", payload);
 }
 
 export async function deletePayoutRecipient(
 	recipientCode: string,
 ): Promise<void> {
-	await fetcher<void>(`/recipients/${recipientCode}/delete/`, {
-		method: "DELETE",
-	});
+	await apiClient.delete<void>(`/recipients/${recipientCode}/delete/`);
 }

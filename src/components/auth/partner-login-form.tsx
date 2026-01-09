@@ -6,12 +6,12 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -19,108 +19,117 @@ import { useRouter } from "next/navigation";
 import { loginUser, getAuthUser } from "@/lib/auth-api";
 import { partnerLoginSchema } from "@/lib/types";
 import { useCartStore } from "@/stores/useCartStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function PartnerLoginForm() {
-  const { toast } = useToast();
-  const router = useRouter();
-  const { clearUserOrders } = useCartStore();
+	const { toast } = useToast();
+	const router = useRouter();
+	const queryClient = useQueryClient();
+	const setAccessToken = useAuthStore((state) => state.setAccessToken);
+	const { clearUserOrders } = useCartStore();
 
-  const form = useForm<z.infer<typeof partnerLoginSchema>>({
-    resolver: zodResolver(partnerLoginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
+	const form = useForm<z.infer<typeof partnerLoginSchema>>({
+		resolver: zodResolver(partnerLoginSchema),
+		defaultValues: {
+			email: "",
+			password: "",
+		},
+	});
 
-  const { formState: { isSubmitting } } = form;
+	const {
+		formState: { isSubmitting },
+	} = form;
 
-  async function onSubmit(values: z.infer<typeof partnerLoginSchema>) {
-    try {
-      // Step 1: Login user
-      const loginResponse = await loginUser(values);
+	async function onSubmit(values: z.infer<typeof partnerLoginSchema>) {
+		try {
+			// Step 1: Login user and get tokens
+			const loginResponse = await loginUser(values);
 
-      // Step 2: Store tokens
-      if (loginResponse.access) {
-        localStorage.setItem('token', loginResponse.access);
-        localStorage.setItem('accessToken', loginResponse.access);
-      }
+			// Step 2: Store access token in memory
+			setAccessToken(loginResponse.access);
+			
+			// The refresh token is now an HttpOnly cookie and is not handled here.
 
-      // Step 3: Fetch user data
-      const user = await getAuthUser();
-      localStorage.setItem('user', JSON.stringify(user));
+			// Step 3: Fetch user data
+			// This call will now use the new in-memory token via the API client.
+			const user = await getAuthUser();
+			
+			// Manually set the user data in the query cache after login
+			queryClient.setQueryData(["authUser"], user);
 
-      // Step 4: Clear any guest cart data
-      clearUserOrders();
+			// Step 4: Clear any guest cart data
+			clearUserOrders();
 
-      // Step 5: Success toast
-      toast({
-        title: "Login Successful!",
-        description: `Welcome back, ${user.full_name}!`,
-      });
+			// Step 5: Success toast
+			toast({
+				title: "Login Successful!",
+				description: `Welcome back, ${user.full_name}!`,
+			});
 
-      // Step 6: Redirect based on role
-      setTimeout(() => {
-        switch (user.role) {
-          case "restaurant":
-            router.push("/vendor/dashboard");
-            break;
-          case "driver":
-            router.push("/rider/dashboard");
-            break;
-          case "admin":
-            router.push("/admin/dashboard");
-            break;
-          default:
-            // If a customer somehow logs in here, send them to the main login.
-            router.push("/login");
-        }
-      }, 100);
+			// Step 6: Redirect based on role
+			setTimeout(() => {
+				switch (user.role) {
+					case "restaurant":
+						router.push("/vendor/dashboard");
+						break;
+					case "driver":
+						router.push("/rider/dashboard");
+						break;
+					case "admin":
+						router.push("/admin/dashboard");
+						break;
+					default:
+						router.push("/");
+				}
+			}, 100);
+		} catch (error) {
+			const message =
+				error instanceof Error
+					? error.message
+					: "Login failed. Please check your credentials.";
+			toast({
+				title: "Login Failed",
+				description: message,
+				variant: "destructive",
+			});
+			form.reset();
+		}
+	}
 
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Login failed. Please check your credentials.";
-      toast({
-        title: "Login Failed",
-        description: message,
-        variant: "destructive",
-      });
-      form.reset();
-    }
-  }
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="you@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? "Logging in..." : "Login"}
-        </Button>
-      </form>
-    </Form>
-  );
+	return (
+		<Form {...form}>
+			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+				<FormField
+					control={form.control}
+					name="email"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Email</FormLabel>
+							<FormControl>
+								<Input placeholder="you@example.com" {...field} />
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+				<FormField
+					control={form.control}
+					name="password"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Password</FormLabel>
+							<FormControl>
+								<Input type="password" placeholder="••••••••" {...field} />
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+				<Button type="submit" disabled={isSubmitting} className="w-full">
+					{isSubmitting ? "Logging in..." : "Login"}
+				</Button>
+			</form>
+		</Form>
+	);
 }
