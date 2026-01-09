@@ -32,7 +32,7 @@ export default function VerifyOtpForm() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const { clearUserOrders } = useCartStore();
-	const setAccessToken = useAuthStore((state) => state.setAccessToken);
+	const setTokens = useAuthStore((state) => state.setTokens);
 
 	const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
 	const [resendTimer, setResendTimer] = useState(RESEND_TIMEOUT);
@@ -126,11 +126,8 @@ export default function VerifyOtpForm() {
 				otp_code: values.otp_code,
 			});
 
-			// Step 2: Store access token in memory
-			setAccessToken(response.access);
-
-			// NOTE: The refresh token from the response is intentionally discarded
-			// to adhere to the security policy of not storing it in the browser.
+			// Step 2: Store access and refresh tokens in memory
+			setTokens(response.access, response.refresh);
 
 			// Step 3: Manually set user data in query cache
 			const user = response.user;

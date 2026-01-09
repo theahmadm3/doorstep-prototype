@@ -30,7 +30,7 @@ export type PartnerLoginCredentials = z.infer<typeof partnerLoginSchema>;
 
 export interface LoginResponse {
 	access: string;
-	refresh: string; // The backend sends this, but we will not store it.
+	refresh: string;
 	user: User;
 }
 
@@ -99,6 +99,16 @@ export interface AdminUser {
 	role: string;
 	status: string;
 	is_active: boolean;
+}
+
+export interface RefreshTokenPayload {
+  refresh: string;
+}
+
+export interface RefreshTokenResponse {
+  access: string;
+  refresh: string;
+  message: string;
 }
 
 // Restaurant and Menu

@@ -27,7 +27,7 @@ export default function LogoutButton() {
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const { toast } = useToast();
-	const clearToken = useAuthStore((state) => state.clearToken);
+	const clearTokens = useAuthStore((state) => state.clearTokens);
 	const clearUserOrders = useCartStore((state) => state.clearUserOrders);
 	const clearUIState = useUIStore.getState().clearUIState;
 	const queryClient = useQueryClient();
@@ -41,8 +41,8 @@ export default function LogoutButton() {
 			// This block runs regardless of whether the API call succeeds or fails,
 			// ensuring the user is logged out on the client.
 			
-			// 1. Clear the in-memory access token.
-			clearToken();
+			// 1. Clear the in-memory access and refresh tokens.
+			clearTokens();
 			
 			// 2. Clear all other application state.
 			clearUserOrders();

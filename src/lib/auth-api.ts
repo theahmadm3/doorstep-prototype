@@ -9,13 +9,15 @@ import {
 	CustomerSignupPayload,
 	OtpVerificationPayload,
 	PartnerLoginCredentials,
+	RefreshTokenPayload,
+	RefreshTokenResponse,
 } from "./types";
 
 export async function loginUser(
 	credentials: PartnerLoginCredentials,
 ): Promise<LoginResponse> {
 	// The API returns { access, refresh, user }.
-	// We only use `access` and `user`, and discard `refresh` to avoid persisting it.
+	// The response is handled by the calling component to set tokens.
 	return apiClient.post<LoginResponse>("/auth/login/", credentials);
 }
 
@@ -40,7 +42,7 @@ export async function verifyLoginOTP(
 	payload: OtpVerificationPayload,
 ): Promise<LoginResponse> {
 	// The API returns { access, refresh, user }.
-	// We only use `access` and `user`, and discard `refresh` to avoid persisting it.
+	// The response is handled by the calling component to set tokens.
 	return apiClient.post<LoginResponse>(
 		"/auth/customer/login-otp/",
 		payload,
@@ -65,14 +67,17 @@ export async function updateUserProfile(
 	return apiClient.patch<User>("/auth/users/me/update/", data);
 }
 
-export async function refreshToken(): Promise<{ access: string }> {
-	// This function will likely fail now unless the backend changes to use HttpOnly cookies.
-	// We are keeping it for the single-flight lock mechanism in the API client.
-	return apiClient.post<{ access: string }>("/auth/refresh_token/", {});
+export async function refreshToken(
+	payload: RefreshTokenPayload,
+): Promise<RefreshTokenResponse> {
+	// This function is now just a direct API call.
+	// The logic for handling it is centralized in api-client.ts
+	return apiClient.post<RefreshTokenResponse>("/auth/refresh_token/", payload);
 }
 
 export async function logoutUser(): Promise<void> {
-	// We don't have a refresh token to send, but we still call logout
-	// to allow the backend to invalidate the session if it can.
+	// We don't have a refresh token to send here.
+	// The backend should ideally invalidate the session based on the access token.
+	// The client-side state will be cleared regardless.
 	await apiClient.post("/auth/logout/", {});
 }

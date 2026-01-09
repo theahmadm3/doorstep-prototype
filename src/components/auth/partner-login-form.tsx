@@ -26,7 +26,7 @@ export default function PartnerLoginForm() {
 	const { toast } = useToast();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const setAccessToken = useAuthStore((state) => state.setAccessToken);
+	const setTokens = useAuthStore((state) => state.setTokens);
 	const { clearUserOrders } = useCartStore();
 
 	const form = useForm<z.infer<typeof partnerLoginSchema>>({
@@ -46,11 +46,10 @@ export default function PartnerLoginForm() {
 			// Step 1: Login user and get tokens + user data
 			const loginResponse = await loginUser(values);
 
-			// Step 2: Store access token in memory (Zustand)
-			setAccessToken(loginResponse.access);
-			
-			// NOTE: The refresh token from the response is intentionally discarded
-			// to adhere to the security policy of not storing it in the browser.
+			// Step 2: Store access and refresh tokens in memory (Zustand)
+			// SECURITY: The refresh token is discarded here to adhere to the policy
+			// of not storing it in browser-accessible locations.
+			setTokens(loginResponse.access, loginResponse.refresh);
 
 			// Step 3: Manually set the user data in the TanStack Query cache
 			const user = loginResponse.user;

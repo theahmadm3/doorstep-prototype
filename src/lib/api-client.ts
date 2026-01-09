@@ -3,8 +3,7 @@
 // It handles attaching the access token to requests and orchestrates the token refresh flow.
 
 import { useAuthStore } from "@/stores/useAuthStore";
-import { refreshToken } from "./auth-api";
-import { useQueryClient } from "@tanstack/react-query";
+import { refreshToken as performTokenRefresh } from "./auth-api";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -15,7 +14,7 @@ if (!BASE_URL) {
 type FailedRequest = {
 	resolve: (value: unknown) => void;
 	reject: (reason?: any) => void;
-	config: RequestConfig;
+	config: RequestConfig & { endpoint: string };
 };
 
 // State for the token refresh mechanism
@@ -28,7 +27,8 @@ const processQueue = (error: any, token: string | null = null) => {
 		if (error) {
 			prom.reject(error);
 		} else {
-			prom.resolve(request(prom.config, token as string));
+			// When retrying, we pass the new token directly to the request function
+			prom.resolve(request(prom.config.endpoint, prom.config, token as string));
 		}
 	});
 	failedQueue = [];
@@ -38,6 +38,7 @@ const processQueue = (error: any, token: string | null = null) => {
 const handleLogout = () => {
 	// This uses a custom event to signal a logout, which can be listened to elsewhere.
 	// We do this to avoid circular dependencies with React components/hooks.
+	// This ensures a clean, global logout without tight coupling.
 	window.dispatchEvent(new Event("logout"));
 };
 
@@ -64,7 +65,7 @@ async function request<T>(
 		headers["Authorization"] = `Bearer ${token}`;
 	}
 
-	// Do not set Content-Type for FormData, the browser does it.
+	// Do not set Content-Type for FormData, the browser does it automatically.
 	if (!isFormData) {
 		headers["Content-Type"] = "application/json";
 	}
@@ -72,8 +73,6 @@ async function request<T>(
 	const fetchOptions: RequestInit = {
 		method,
 		headers,
-		// Credentials must be included for HttpOnly cookies (like the refresh token) to be sent.
-		credentials: "include",
 	};
 
 	if (body) {
@@ -85,49 +84,74 @@ async function request<T>(
 
 		// The access token has expired.
 		if (response.status === 401) {
-			if (!isRefreshing) {
-				isRefreshing = true;
-				try {
-					const { access } = await refreshToken();
-					useAuthStore.getState().setAccessToken(access);
-					// After successful refresh, retry all the requests that were queued.
-					processQueue(null, access);
-					// Retry the original failed request.
-					return await request(endpoint, config, access);
-				} catch (refreshError) {
-					// The refresh token is invalid or has expired.
-					console.error("Token refresh failed:", refreshError);
-					processQueue(refreshError, null);
-					handleLogout(); // Trigger global logout.
-					throw refreshError;
-				} finally {
-					isRefreshing = false;
-				}
+			// SECURITY: If a refresh is already happening, queue this request to avoid multiple refresh attempts.
+			// This is the "single-flight" pattern.
+			if (isRefreshing) {
+				return new Promise((resolve, reject) => {
+					failedQueue.push({
+						resolve,
+						reject,
+						config: { ...config, endpoint },
+					});
+				}) as Promise<T>;
 			}
 
-			// If a refresh is already in progress, queue this request.
-			return new Promise((resolve, reject) => {
-				failedQueue.push({ resolve, reject, config: { ...config, endpoint } });
-			}) as Promise<T>;
+			isRefreshing = true;
+
+			try {
+				const currentRefreshToken = useAuthStore.getState().refreshToken;
+				
+				// SECURITY: If there's no refresh token in memory, we cannot refresh.
+				// This will happen on page reload. The user must log in again.
+				if (!currentRefreshToken) {
+					throw new Error("No refresh token available.");
+				}
+
+				const { access, refresh } = await performTokenRefresh({
+					refresh: currentRefreshToken,
+				});
+				
+				// Store the new tokens in memory
+				useAuthStore.getState().setTokens(access, refresh);
+
+				// After successful refresh, retry all the requests that were queued.
+				processQueue(null, access);
+				
+				// Retry the original failed request with the new token.
+				return await request(endpoint, config, access);
+
+			} catch (refreshError) {
+				// The refresh token is invalid or expired. The session is terminated.
+				console.error("Token refresh failed, logging out:", refreshError);
+				processQueue(refreshError, null);
+				handleLogout(); // Trigger global logout.
+				throw refreshError;
+
+			} finally {
+				isRefreshing = false;
+			}
 		}
 
 		if (!response.ok) {
 			const errorData = await response.json().catch(() => ({
-				detail: "An unknown error occurred.",
+				detail: "An unknown error occurred with the network request.",
 			}));
 			throw new Error(errorData.detail || `API Error: ${response.status}`);
 		}
-		
+
+		// Handle cases with no content in response body
 		const contentType = response.headers.get("content-type");
-		if (contentType && contentType.includes("application/json")) {
-			return response.json();
+		if (response.status === 204 || !contentType || !contentType.includes("application/json")) {
+			return undefined as T;
 		}
-		return undefined as T;
+
+		return response.json();
 	} catch (error) {
 		console.error("API client error:", error);
 		throw error;
 	}
 }
+
 
 // Exported API client methods for convenience.
 export const apiClient = {

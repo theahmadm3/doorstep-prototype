@@ -2,7 +2,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getAuthUser, refreshToken } from "@/lib/auth-api";
+import { getAuthUser } from "@/lib/auth-api";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -10,33 +10,15 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 
 export const useAuth = () => {
-	const { accessToken, setAccessToken, clearToken } = useAuthStore();
+	const { accessToken, clearTokens } = useAuthStore();
 	const router = useRouter();
 	const queryClient = useQueryClient();
 	const clearUserOrders = useCartStore((state) => state.clearUserOrders);
 	const clearUIState = useUIStore.getState().clearUIState;
 
-	// This is the core logic for session restoration.
-	// On initial load, if there's no access token in memory,
-	// we immediately try to get a new one using the refresh token cookie.
-	useEffect(() => {
-		const restoreSession = async () => {
-			if (!accessToken) {
-				try {
-					console.log("No access token found, attempting to refresh session...");
-					const { access } = await refreshToken();
-					setAccessToken(access);
-					console.log("Session restored successfully.");
-				} catch (error) {
-					console.log("No valid session found or refresh failed.");
-					// If refresh fails, it's okay, the user is simply not logged in.
-					// The useQuery below will not run.
-				}
-			}
-		};
-
-		restoreSession();
-	}, []); // This runs only once on component mount
+	// The `useAuth` hook no longer attempts to refresh the token on its own.
+	// That logic is now entirely centralized within the `api-client`.
+	// This hook's only job is to fetch the user if a token exists.
 
 	const {
 		data: user,
@@ -46,15 +28,15 @@ export const useAuth = () => {
 	} = useQuery({
 		queryKey: ["authUser"],
 		queryFn: getAuthUser,
-		enabled: !!accessToken, // Only run the query if an access token is present
-		retry: 1, // Only retry once on failure
-		staleTime: Infinity,
-		gcTime: Infinity,
+		enabled: !!accessToken, // Only run the query if an access token is present in memory
+		retry: 1, // Don't aggressively retry if the user is not authenticated.
+		staleTime: 5 * 60 * 1000, // User data is considered fresh for 5 minutes
+		gcTime: 15 * 60 * 1000, // Keep user data in cache for 15 minutes
 	});
 
 	const handleLogout = () => {
 		// Clear all client-side state and caches
-		clearToken();
+		clearTokens();
 		clearUserOrders();
 		clearUIState();
 		queryClient.clear();
@@ -63,6 +45,7 @@ export const useAuth = () => {
 	};
 
 	// Listen for the custom 'logout' event dispatched by the API client on 401 errors
+	// or refresh failures.
 	useEffect(() => {
 		const logoutHandler = () => {
 			console.log("Logout event received. Clearing session.");
@@ -73,7 +56,7 @@ export const useAuth = () => {
 		return () => {
 			window.removeEventListener("logout", logoutHandler);
 		};
-	}, []);
+	}, []); // Empty dependency array ensures this runs only once
 	
 	return {
 		user,
