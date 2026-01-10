@@ -17,61 +17,74 @@ export const useRiderLocation = (): LocationStatus => {
     const { toast } = useToast();
     const locationIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const [status, setStatus] = useState<LocationStatus['status']>('connecting');
+    const isSendingRef = useRef(false);
 
-    const sendLocationUpdate = useCallback(async () => {
+    const sendLocationUpdate = useCallback(async (isInitial = false) => {
+        if (isSendingRef.current) {
+            console.log("Location update already in progress.");
+            return;
+        }
+
         const userStr = localStorage.getItem('user');
         if (!userStr) {
-            console.log("No user found, stopping location updates.");
             if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
             setStatus('disconnected');
             return;
         }
-        
+
         const user = JSON.parse(userStr);
         if (user.role !== 'driver') {
+            if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
             return;
         }
+        
+        isSendingRef.current = true;
 
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                try {
-                    await updateRiderLocation(latitude, longitude);
-                    console.log(`Location updated: ${latitude}, ${longitude}`);
-                    setStatus('connected');
-                } catch (error) {
-                    console.error('Failed to update location:', error);
-                    setStatus('error');
-                    toast({
-                        title: "Location Update Failed",
-                        description: "Could not send location to server.",
-                        variant: "destructive"
-                    });
-                }
-            },
-            (error) => {
-                console.error('Geolocation error:', error);
-                setStatus('error');
-                if (error.code === error.PERMISSION_DENIED) {
-                    toast({
-                        title: "Location Permission Denied",
-                        description: "Grant permission to enable live tracking.",
-                        variant: "destructive",
-                    });
-                    if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
-                    setStatus('disconnected');
-                }
-            },
-            { enableHighAccuracy: true }
-        );
+        if (isInitial) {
+            setStatus('connecting');
+        }
+
+        try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+            });
+
+            const { latitude, longitude } = position.coords;
+            await updateRiderLocation(latitude, longitude);
+            console.log(`Location updated: ${latitude}, ${longitude}`);
+            setStatus('connected');
+        } catch (error: any) {
+            setStatus('error');
+            if (error.code === error.PERMISSION_DENIED) {
+                toast({
+                    title: "Location Permission Denied",
+                    description: "Grant permission to enable live tracking.",
+                    variant: "destructive",
+                });
+                if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
+            } else {
+                 console.error('Failed to update location:', error);
+                 toast({
+                     title: "Location Update Failed",
+                     description: "Could not send location to server.",
+                     variant: "destructive"
+                 });
+            }
+        } finally {
+            isSendingRef.current = false;
+        }
     }, [toast]);
 
     useEffect(() => {
         // Initial update
-        sendLocationUpdate();
+        sendLocationUpdate(true);
 
         // Set up periodic updates
-        locationIntervalRef.current = setInterval(sendLocationUpdate, UPDATE_INTERVAL);
+        locationIntervalRef.current = setInterval(() => sendLocationUpdate(false), UPDATE_INTERVAL);
 
         // Cleanup on unmount
         return () => {
@@ -82,9 +95,9 @@ export const useRiderLocation = (): LocationStatus => {
     }, [sendLocationUpdate]);
 
     const statusMap: Record<LocationStatus['status'], { message: string; color: string }> = {
-        connecting: { message: 'Updating...', color: 'text-yellow-500' },
+        connecting: { message: 'Connecting...', color: 'text-yellow-500' },
         connected: { message: 'Live', color: 'text-green-500' },
-        disconnected: { message: 'Offline', color: 'text-red-500' },
+        disconnected: { message: 'Offline', color: 'text-gray-500' },
         error: { message: 'Error', color: 'text-red-500' },
     };
 

@@ -4,7 +4,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CheckCircle, Package, DollarSign, Check, X, Phone, Satellite, MapPin, Building, PackageCheck, RefreshCw } from "lucide-react";
+import { CheckCircle, Package, DollarSign, Check, X, Phone, Satellite, MapPin, Building, PackageCheck, RefreshCw, AlertTriangle } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAvailableRiderOrders, performRiderAction } from "@/lib/api";
 import { RiderOrderBatch, PaginatedResponse } from "@/lib/types";
@@ -30,15 +30,38 @@ const AvailableDeliveriesSkeleton = () => (
     </Card>
 );
 
+const LocationErrorCard = () => (
+    <Card className="border-destructive">
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle />
+                Location Access Required
+            </CardTitle>
+            <CardDescription>
+                We can't fetch available orders without access to your location.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            <p className="text-sm text-muted-foreground">
+                Please enable location services for this app in your browser or device settings to start receiving delivery opportunities.
+            </p>
+        </CardContent>
+    </Card>
+);
+
 export default function RiderDashboardPage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const locationStatus = useRiderLocation();
 
+    // Only enable the query if location is connected
+    const isLocationReady = locationStatus.status === 'connected';
+
     const { data: availableBatches, isLoading, isError, refetch } = useQuery<PaginatedResponse<RiderOrderBatch>, Error>({
         queryKey: ['availableRiderOrders'],
         queryFn: () => getAvailableRiderOrders(),
-        refetchOnWindowFocus: false, // Disabling automatic refetch on window focus
+        enabled: isLocationReady, // This is the critical change
+        refetchOnWindowFocus: false,
         onError: () => {
             toast({
                 title: "Error fetching orders",
@@ -81,7 +104,7 @@ export default function RiderDashboardPage() {
         <div className="space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold font-headline">Rider Dashboard</h1>
-                <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
+                <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading || !isLocationReady}>
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Refresh
                 </Button>
@@ -129,7 +152,9 @@ export default function RiderDashboardPage() {
                 </Card>
             </div>
 
-            {isLoading ? (
+            {!isLocationReady ? (
+                <LocationErrorCard />
+            ) : isLoading ? (
                 <AvailableDeliveriesSkeleton />
             ) : isError ? (
                 <Card>
