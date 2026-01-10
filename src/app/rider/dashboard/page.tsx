@@ -4,13 +4,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CheckCircle, Package, DollarSign, Check, X, Phone, Satellite, MapPin } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { CheckCircle, Package, DollarSign, Check, X, Phone, Satellite, MapPin, Building, PackageCheck } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAvailableRiderOrders, performRiderAction } from "@/lib/api";
+import { RiderOrderBatch, PaginatedResponse } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useRiderLocation } from "@/app/rider/layout";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 const AvailableDeliveriesSkeleton = () => (
     <Card>
@@ -18,30 +21,13 @@ const AvailableDeliveriesSkeleton = () => (
             <CardTitle>Available Deliveries</CardTitle>
             <CardDescription>Accept a new delivery to get started.</CardDescription>
         </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Restaurant</TableHead>
-                        <TableHead>Distance</TableHead>
-                        <TableHead>Order Type</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {[...Array(3)].map((_, i) => (
-                        <TableRow key={i}>
-                            <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                            <TableCell className="text-right space-x-2">
-                                <Skeleton className="h-8 w-8 inline-block" />
-                                <Skeleton className="h-8 w-8 inline-block" />
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+        <CardContent className="space-y-3">
+            {[...Array(2)].map((_, i) => (
+                <div key={i} className="space-y-2 rounded-md border p-4">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                </div>
+            ))}
         </CardContent>
     </Card>
 );
@@ -51,10 +37,10 @@ export default function RiderDashboardPage() {
     const queryClient = useQueryClient();
     const locationStatus = useRiderLocation();
 
-    const { data: availableOrders, isLoading, isError } = useQuery({
+    const { data: availableBatches, isLoading, isError } = useQuery<PaginatedResponse<RiderOrderBatch>, Error>({
         queryKey: ['availableRiderOrders'],
-        queryFn: getAvailableRiderOrders,
-        refetchInterval: 30000, // Poll for new orders every 30 seconds
+        queryFn: () => getAvailableRiderOrders(),
+        refetchInterval: 30000,
         onError: () => {
             toast({
                 title: "Error fetching orders",
@@ -63,6 +49,8 @@ export default function RiderDashboardPage() {
             });
         }
     });
+    
+    const totalAvailableOrders = availableBatches?.results.reduce((acc, batch) => acc + batch.batch_count, 0) || 0;
 
     const actionMutation = useMutation({
         mutationFn: ({ orderId, action }: { orderId: string, action: 'accept' | 'reject' }) => performRiderAction(orderId, action),
@@ -101,7 +89,7 @@ export default function RiderDashboardPage() {
                         <Package className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {isLoading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{availableOrders?.length || 0}</div>}
+                        {isLoading ? <Skeleton className="h-8 w-10" /> : <div className="text-2xl font-bold">{totalAvailableOrders}</div>}
                         <p className="text-xs text-muted-foreground">New opportunities nearby</p>
                     </CardContent>
                 </Card>
@@ -149,50 +137,53 @@ export default function RiderDashboardPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Available Deliveries</CardTitle>
-                        <CardDescription>Accept a new delivery to get started.</CardDescription>
+                        <CardDescription>Accept a new delivery to get started. Batches are grouped by restaurant.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {availableOrders && availableOrders.length > 0 ? (
-                             <div className="relative overflow-x-auto">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Restaurant</TableHead>
-                                            <TableHead>Distance</TableHead>
-                                            <TableHead>Order Type</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {availableOrders.map((order) => (
-                                            <TableRow key={order.id}>
-                                                <TableCell>
-                                                    <div className="font-medium">{order.restaurant_name}</div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-1">
-                                                        <MapPin className="h-3 w-3 text-muted-foreground"/> 
-                                                        {order.distance_to_order.toFixed(2)} km
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="capitalize">
-                                                    {order.order_type}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button variant="outline" size="icon" className="mr-2 border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600" onClick={() => handleAccept(order.id)} disabled={actionMutation.isPending}>
-                                                        <Check className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="outline" size="icon" className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => handleReject(order.id)} disabled={actionMutation.isPending}>
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                        {availableBatches && availableBatches.results.length > 0 ? (
+                             <Accordion type="single" collapsible className="w-full">
+                                {availableBatches.results.map((batch) => (
+                                    <AccordionItem value={batch.restaurant_id} key={batch.restaurant_id}>
+                                        <AccordionTrigger className="hover:no-underline">
+                                            <div className='flex items-center gap-4'>
+                                                <div className='p-3 bg-muted rounded-full'>
+                                                    <Building className='h-5 w-5 text-primary' />
+                                                </div>
+                                                <div>
+                                                    <h3 className='font-bold text-lg'>{batch.restaurant_name}</h3>
+                                                    <p className='text-sm text-muted-foreground'>{batch.batch_count} {batch.batch_count > 1 ? "orders" : "order"} available</p>
+                                                </div>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className='space-y-4 p-4 bg-muted/50 rounded-lg'>
+                                                {batch.orders.map(order => (
+                                                    <Card key={order.id}>
+                                                        <CardContent className='p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+                                                            <div className='space-y-1'>
+                                                                <p className='font-semibold'>To: {order.customer_name}</p>
+                                                                <p className='text-sm text-muted-foreground flex items-center gap-1'><MapPin className='h-3 w-3'/> {order.distance_to_order.toFixed(1)} km away</p>
+                                                                <p className='text-sm text-muted-foreground flex items-center gap-1'><Phone className='h-3 w-3'/> {order.customer_phone}</p>
+                                                            </div>
+                                                            <div className="flex-shrink-0 flex gap-2 self-end sm:self-center">
+                                                                <Button variant="outline" size="icon" className="border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600" onClick={() => handleAccept(order.id)} disabled={actionMutation.isPending}>
+                                                                    <Check className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button variant="outline" size="icon" className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600" onClick={() => handleReject(order.id)} disabled={actionMutation.isPending}>
+                                                                    <X className="h-4 w-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                ))}
+                            </Accordion>
                         ) : (
                             <div className="text-center py-12 text-muted-foreground">
+                                <PackageCheck className='mx-auto h-12 w-12 text-gray-400 mb-4' />
                                 <p>There are no available deliveries right now.</p>
                                 <p className="text-xs">Check back soon for new opportunities.</p>
                             </div>

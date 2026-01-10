@@ -18,7 +18,7 @@ import {
 	VendorAnalyticsData,
 	VendorProfile,
 	VendorProfileUpdatePayload,
-	AvailableRiderOrder,
+	RiderOrderBatch,
 	RiderOrderResponse,
 	PickupConfirmationPayload,
 	RiderOrder,
@@ -324,12 +324,12 @@ export async function updateRestaurantProfile(
 }
 
 // Rider API
-export async function getAvailableRiderOrders(): Promise<AvailableRiderOrder[]> {
-	const response = await apiClient.get<PaginatedResponse<AvailableRiderOrder>>(
-		"/drivers/orders/available",
+export async function getAvailableRiderOrders(page: number = 1): Promise<PaginatedResponse<RiderOrderBatch>> {
+	return apiClient.get<PaginatedResponse<RiderOrderBatch>>(
+		`/drivers/orders/available/?page=${page}`,
 	);
-	return response.results;
 }
+
 
 export async function getRiderOrders(): Promise<RiderOrder[]> {
 	const response = await apiClient.get<RiderOrderResponse>("/drivers/orders/");
