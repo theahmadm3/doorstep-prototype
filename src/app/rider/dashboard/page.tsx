@@ -3,9 +3,8 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CheckCircle, Package, DollarSign, Check, X, Phone, Satellite, MapPin, Building, PackageCheck } from "lucide-react";
+import { CheckCircle, Package, DollarSign, Check, X, Phone, Satellite, MapPin, Building, PackageCheck, RefreshCw } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAvailableRiderOrders, performRiderAction } from "@/lib/api";
 import { RiderOrderBatch, PaginatedResponse } from "@/lib/types";
@@ -13,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useRiderLocation } from "@/app/rider/layout";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 
 const AvailableDeliveriesSkeleton = () => (
     <Card>
@@ -37,9 +35,10 @@ export default function RiderDashboardPage() {
     const queryClient = useQueryClient();
     const locationStatus = useRiderLocation();
 
-    const { data: availableBatches, isLoading, isError } = useQuery<PaginatedResponse<RiderOrderBatch>, Error>({
+    const { data: availableBatches, isLoading, isError, refetch } = useQuery<PaginatedResponse<RiderOrderBatch>, Error>({
         queryKey: ['availableRiderOrders'],
         queryFn: () => getAvailableRiderOrders(),
+        refetchOnWindowFocus: false, // Disabling automatic refetch on window focus
         onError: () => {
             toast({
                 title: "Error fetching orders",
@@ -80,7 +79,13 @@ export default function RiderDashboardPage() {
 
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold font-headline">Rider Dashboard</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold font-headline">Rider Dashboard</h1>
+                <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh
+                </Button>
+            </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
