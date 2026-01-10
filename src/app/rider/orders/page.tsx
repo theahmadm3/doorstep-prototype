@@ -105,7 +105,6 @@ export default function RiderOrdersPage() {
     const { data: orders = [], isLoading, isError, refetch } = useQuery({
         queryKey: ['riderOrders'],
         queryFn: getRiderOrders,
-        refetchInterval: 30000, // Poll every 30 seconds
         onError: () => {
             toast({
                 title: "Error fetching orders",

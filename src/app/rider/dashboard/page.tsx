@@ -40,7 +40,6 @@ export default function RiderDashboardPage() {
     const { data: availableBatches, isLoading, isError } = useQuery<PaginatedResponse<RiderOrderBatch>, Error>({
         queryKey: ['availableRiderOrders'],
         queryFn: () => getAvailableRiderOrders(),
-        refetchInterval: 30000,
         onError: () => {
             toast({
                 title: "Error fetching orders",
