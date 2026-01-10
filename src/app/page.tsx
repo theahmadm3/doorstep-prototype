@@ -103,6 +103,11 @@ export default function LoginPage() {
 									Sign up
 								</Link>
 							</div>
+							<div className="mt-2 text-center text-xs">
+								<Link href="/secret/non-accessible/to/customers/login" className="underline text-muted-foreground">
+									Partner Login
+								</Link>
+							</div>
 						</CardContent>
 					</Card>
 				</div>
