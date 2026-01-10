@@ -326,7 +326,7 @@ export async function updateRestaurantProfile(
 // Rider API
 export async function getAvailableRiderOrders(page: number = 1): Promise<PaginatedResponse<RiderOrderBatch>> {
 	return apiClient.get<PaginatedResponse<RiderOrderBatch>>(
-		`/drivers/orders/available/?page=${page}`,
+		`/drivers/orders/available?page=${page}`,
 	);
 }
 
