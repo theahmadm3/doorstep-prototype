@@ -50,7 +50,7 @@ export default function RiderDashboardPage() {
         }
     });
     
-    const totalAvailableOrders = availableBatches?.results.reduce((acc, batch) => acc + batch.batch_count, 0) || 0;
+    const totalAvailableOrders = availableBatches?.result.reduce((acc, batch) => acc + batch.batch_count, 0) || 0;
 
     const actionMutation = useMutation({
         mutationFn: ({ orderId, action }: { orderId: string, action: 'accept' | 'reject' }) => performRiderAction(orderId, action),
@@ -140,9 +140,9 @@ export default function RiderDashboardPage() {
                         <CardDescription>Accept a new delivery to get started. Batches are grouped by restaurant.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {availableBatches && availableBatches.results.length > 0 ? (
+                        {availableBatches && availableBatches.result.length > 0 ? (
                              <Accordion type="single" collapsible className="w-full">
-                                {availableBatches.results.map((batch) => (
+                                {availableBatches.result.map((batch) => (
                                     <AccordionItem value={batch.restaurant_id} key={batch.restaurant_id}>
                                         <AccordionTrigger className="hover:no-underline">
                                             <div className='flex items-center gap-4'>
