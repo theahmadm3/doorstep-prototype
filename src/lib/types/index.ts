@@ -6,7 +6,7 @@ export interface PaginatedResponse<T> {
 	count: number;
 	next: string | null;
 	previous: string | null;
-	results: T[];
+	result: T[];
 }
 
 const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
@@ -504,12 +504,23 @@ export interface RiderOrderResponse {
 	data: RiderOrder[];
 }
 
-export interface AvailableRiderOrder {
+export interface BatchedRiderOrder {
 	id: string;
 	status: OrderStatus;
 	order_type: "delivery" | "pickup";
 	restaurant_name: string;
 	distance_to_order: number;
+	customer_name: string;
+	customer_phone: string;
+	delivery_latitude: string;
+	delivery_longitude: string;
+}
+
+export interface RiderOrderBatch {
+	restaurant_name: string;
+	restaurant_id: string;
+	orders: BatchedRiderOrder[];
+	batch_count: number;
 }
 
 export const OTPSchema = z.object({
