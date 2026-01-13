@@ -51,17 +51,24 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 
 	const isFormData = options.body instanceof FormData;
 
-	const headers: Record<string, string> = {};
+	const defaultHeaders: Record<string, string> = {};
 
 	if (!isFormData) {
-		headers["Content-Type"] = "application/json";
+		defaultHeaders["Content-Type"] = "application/json";
 	}
 
 	if (token) {
-		headers["Authorization"] = `Bearer ${token}`;
+		defaultHeaders["Authorization"] = `Bearer ${token}`;
 	}
 
-	const res = await fetch(`${BASE_URL}${url}`, { ...options, headers });
+	const res = await fetch(`${BASE_URL}${url}`, {
+		...options,
+		headers: {
+			...defaultHeaders,
+			...options.headers,
+		},
+	});
+
 
 	if (!res.ok) {
 		if (res.status === 401 && typeof window !== "undefined") {
@@ -433,7 +440,7 @@ export async function performRiderAction(
 	payload?: object,
 ): Promise<RiderOrder> {
 	const response = await fetcher<{ data: RiderOrder }>(
-		`/drivers/orders/${orderId}/${action}`,
+		`/drivers/orders/${orderId}/${action}/`,
 		{
 			method: "POST",
 			body: payload ? JSON.stringify(payload) : undefined,
