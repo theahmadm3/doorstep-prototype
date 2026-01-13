@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
-import { Phone, MapPin, DollarSign } from "lucide-react";
+import { Phone, MapPin, DollarSign, RefreshCw } from "lucide-react";
 import RiderOrderActions from "@/components/rider/rider-order-actions";
 
 const OngoingOrderCard = ({ order, onActionSuccess }: { order: RiderOrder, onActionSuccess: () => void }) => {
@@ -105,7 +105,6 @@ export default function RiderOrdersPage() {
     const { data: orders = [], isLoading, isError, refetch } = useQuery({
         queryKey: ['riderOrders'],
         queryFn: getRiderOrders,
-        refetchInterval: 30000, // Poll every 30 seconds
         onError: () => {
             toast({
                 title: "Error fetching orders",
@@ -126,7 +125,17 @@ export default function RiderOrdersPage() {
 
     return (
         <div className="space-y-8">
-            <h1 className="text-3xl font-bold font-headline">Your Deliveries</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+				<h1 className="text-3xl font-bold font-headline">Your Deliveries</h1>
+                <Button
+					onClick={() => refetch()}
+					disabled={isLoading}
+					variant="outline"
+				>
+					<RefreshCw className="mr-2 h-4 w-4" />
+					Refresh Orders
+				</Button>
+			</div>
             
             <div className="space-y-6">
                 <h2 className="text-2xl font-semibold">Ongoing Deliveries</h2>
