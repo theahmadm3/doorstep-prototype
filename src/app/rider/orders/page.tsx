@@ -10,10 +10,48 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
-import { Phone, MapPin, DollarSign, RefreshCw } from "lucide-react";
+import { Phone, MapPin, DollarSign, RefreshCw, Navigation } from "lucide-react";
 import RiderOrderActions from "@/components/rider/rider-order-actions";
 
 const OngoingOrderCard = ({ order, onActionSuccess }: { order: RiderOrder, onActionSuccess: () => void }) => {
+    const { toast } = useToast();
+
+    const handleGetDirections = () => {
+        if (!navigator.geolocation) {
+            toast({
+                title: "Geolocation Not Supported",
+                description: "Your browser does not support location services.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        toast({
+            title: "Fetching your location...",
+            description: "Please wait a moment.",
+        });
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const riderCoords = `${position.coords.latitude},${position.coords.longitude}`;
+                const restaurantCoords = `${order.restaurant_latitude},${order.restaurant_longitude}`;
+                const customerDeliveryCoords = `${order.delivery_latitude},${order.delivery_longitude}`;
+                
+                const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${riderCoords}&destination=${customerDeliveryCoords}&waypoints=${restaurantCoords}`;
+
+                window.open(googleMapsUrl, '_blank');
+            },
+            () => {
+                toast({
+                    title: "Unable to retrieve your location",
+                    description: "Please ensure location services are enabled in your browser and try again.",
+                    variant: "destructive"
+                });
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -26,6 +64,10 @@ const OngoingOrderCard = ({ order, onActionSuccess }: { order: RiderOrder, onAct
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
+                 <Button className="w-full" variant="outline" onClick={handleGetDirections}>
+                    <Navigation className="mr-2 h-4 w-4" />
+                    Get Directions in Maps
+                </Button>
                 <div className="space-y-2">
                     <h4 className="font-semibold text-sm">Customer</h4>
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -105,6 +147,7 @@ export default function RiderOrdersPage() {
     const { data: orders = [], isLoading, isError, refetch } = useQuery({
         queryKey: ['riderOrders'],
         queryFn: getRiderOrders,
+        refetchOnWindowFocus: false,
         onError: () => {
             toast({
                 title: "Error fetching orders",
