@@ -37,7 +37,15 @@ const OngoingOrderCard = ({ order, onActionSuccess }: { order: RiderOrder, onAct
                 const restaurantCoords = `${order.restaurant_latitude},${order.restaurant_longitude}`;
                 const customerDeliveryCoords = `${order.delivery_latitude},${order.delivery_longitude}`;
                 
-                const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${riderCoords}&destination=${customerDeliveryCoords}&waypoints=${restaurantCoords}`;
+                let googleMapsUrl = '';
+
+                // If the rider hasn't arrived at the restaurant yet, include it as a waypoint.
+                if (order.status === 'Driver Assigned') {
+                    googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${riderCoords}&destination=${customerDeliveryCoords}&waypoints=${restaurantCoords}`;
+                } else {
+                    // If the rider has already arrived or picked up, route directly to the customer.
+                    googleMapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${riderCoords}&destination=${customerDeliveryCoords}`;
+                }
 
                 window.open(googleMapsUrl, '_blank');
             },
