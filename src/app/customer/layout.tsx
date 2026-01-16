@@ -12,7 +12,7 @@ import {
 	SidebarFooter,
 	SidebarContent,
 } from "@/components/ui/sidebar";
-import { Home, Package, User, Utensils } from "lucide-react";
+import { Home, Package, User, Utensils, Search } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ClientHeader from "@/components/layout/client-header";
@@ -27,8 +27,9 @@ import { usePathname } from "next/navigation";
 
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
-	{ href: "/customer/orders", label: "Orders", icon: Package },
 	{ href: "/customer/profile", label: "Profile", icon: User },
+	{ href: "/customer/orders", label: "Orders", icon: Package },
+	{ href: "/customer/dashboard", label: "Search", icon: Search },
 ];
 
 export default function CustomerLayout({
