@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/auth-api";
 import AddressManagement from "@/components/profile/address-management";
 import { Bell, ChevronRight, CreditCard, HelpCircle } from "lucide-react";
+import LogoutButton from "@/components/auth/logout-button";
 
 export default function CustomerProfilePage() {
     const [user, setUser] = useState<User | null>(null);
@@ -156,6 +156,12 @@ export default function CustomerProfilePage() {
                                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent className="p-4">
+                        <LogoutButton />
                     </CardContent>
                 </Card>
             </div>
