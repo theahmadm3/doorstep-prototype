@@ -134,7 +134,7 @@ export default function CustomerLayout({
 										</span>
 									</div>
 								</div>
-								<LogoutButton />
+								{/* <LogoutButton /> */}
 							</div>
 						)}
 					</SidebarFooter>
