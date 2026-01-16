@@ -174,7 +174,7 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 								</Link>
 							);
 						})}
-						<TempLogoutButton />
+						{/* <TempLogoutButton /> */}
 					</div>
 				</div>
 			</nav>
