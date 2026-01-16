@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -139,7 +140,7 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 							const isActive = pathname.startsWith(href);
 							return (
 								<Link
-									key={href}
+									key={label}
 									href={href}
 									className={cn(
 										"group relative inline-flex flex-col items-center justify-center px-3 py-1 rounded-2xl transition-all duration-300",

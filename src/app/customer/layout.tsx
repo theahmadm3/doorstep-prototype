@@ -92,7 +92,7 @@ export default function CustomerLayout({
 					<SidebarContent className="flex-1 overflow-y-auto py-4">
 						<SidebarMenu>
 							{customerNavLinks.map((link) => (
-								<SidebarMenuItem key={link.href}>
+								<SidebarMenuItem key={link.label}>
 									<SidebarMenuButton asChild>
 										<Link href={link.href}>
 											<link.icon />
