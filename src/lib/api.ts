@@ -51,24 +51,22 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 
 	const isFormData = options.body instanceof FormData;
 
-	const defaultHeaders: Record<string, string> = {};
+	const headers = new Headers(options.headers);
 
 	if (!isFormData) {
-		defaultHeaders["Content-Type"] = "application/json";
+		headers.set("Content-Type", "application/json");
 	}
 
 	if (token) {
-		defaultHeaders["Authorization"] = `Bearer ${token}`;
+		headers.set("Authorization", `Bearer ${token}`);
 	}
 
-	const res = await fetch(`${BASE_URL}${url}`, {
+	const finalOptions = {
 		...options,
-		headers: {
-			...defaultHeaders,
-			...options.headers,
-		},
-	});
+		headers,
+	};
 
+	const res = await fetch(`${BASE_URL}${url}`, finalOptions);
 
 	if (!res.ok) {
 		if (res.status === 401 && typeof window !== "undefined") {
@@ -305,7 +303,7 @@ export async function confirmPickupByCustomer(
 // Vendor Category Management
 export async function getMenuCategories(): Promise<MenuCategory[]> {
 	const response = await fetcher<PaginatedResponse<MenuCategory>>(
-		"/restaurants/me/menu/categories",
+		"/restaurants/me/menu/categories/",
 	);
 	return response.results;
 }
@@ -313,28 +311,28 @@ export async function getMenuCategories(): Promise<MenuCategory[]> {
 export async function createMenuCategory(
 	payload: CategoryPayload,
 ): Promise<MenuCategory> {
-	return fetcher<MenuCategory>("/restaurants/me/menu/categories", {
+	return fetcher<MenuCategory>("/restaurants/me/menu/categories/", {
 		method: "POST",
 		body: JSON.stringify(payload),
 	});
 }
 
 export async function getMenuCategory(id: string): Promise<MenuCategory> {
-	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`);
+	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}/`);
 }
 
 export async function updateMenuCategory(
 	id: string,
 	payload: CategoryPayload,
 ): Promise<MenuCategory> {
-	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`, {
+	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}/`, {
 		method: "PUT",
 		body: JSON.stringify(payload),
 	});
 }
 
 export async function deleteMenuCategory(id: string): Promise<void> {
-	await fetcher<void>(`/restaurants/me/menu/categories/${id}`, {
+	await fetcher<void>(`/restaurants/me/menu/categories/${id}/`, {
 		method: "DELETE",
 	});
 }
