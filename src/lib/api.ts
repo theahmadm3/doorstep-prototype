@@ -61,12 +61,9 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 		headers.set("Authorization", `Bearer ${token}`);
 	}
 
-	const finalOptions = {
-		...options,
-		headers,
-	};
+	options.headers = headers;
 
-	const res = await fetch(`${BASE_URL}${url}`, finalOptions);
+	const res = await fetch(`${BASE_URL}${url}`, options);
 
 	if (!res.ok) {
 		if (res.status === 401 && typeof window !== "undefined") {
@@ -525,3 +522,5 @@ export async function deletePayoutRecipient(
 		method: "DELETE",
 	});
 }
+
+    
