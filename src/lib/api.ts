@@ -426,7 +426,7 @@ export async function uploadRestaurantProfileImage(image: File): Promise<VendorP
     const formData = new FormData();
     formData.append("image", image);
 
-    return fetcher<VendorProfile>("/restaurants/me/upload_restaurant_profile_pic/", {
+    return fetcher<VendorProfile>("/upload_restaurant_profile_pic/", {
         method: "POST",
         body: formData,
     });
