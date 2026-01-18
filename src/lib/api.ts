@@ -422,6 +422,16 @@ export async function updateRestaurantProfile(
 	});
 }
 
+export async function uploadRestaurantProfileImage(image: File): Promise<VendorProfile> {
+    const formData = new FormData();
+    formData.append("image", image);
+
+    return fetcher<VendorProfile>("/restaurants/me/upload_restaurant_profile_pic/", {
+        method: "POST",
+        body: formData,
+    });
+}
+
 // Rider API
 export async function getAvailableRiderOrders(): Promise<PaginatedResponse<RiderOrderBatch>> {
 	return fetcher<PaginatedResponse<RiderOrderBatch>>(
