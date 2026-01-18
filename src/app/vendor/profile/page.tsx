@@ -272,7 +272,7 @@ function VendorProfilePage() {
         setIsUploading(true);
         try {
             const updatedProfile = await uploadRestaurantProfileImage(selectedProfileImage);
-            setProfile(updatedProfile);
+            setProfile(prevProfile => ({ ...prevProfile!, ...updatedProfile }));
             toast({
                 title: "Success",
                 description: "Profile image updated successfully.",
@@ -576,3 +576,5 @@ export default function VendorProfilePageWrapper() {
 
     return <VendorProfilePage />;
 }
+
+    
