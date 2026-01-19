@@ -1,14 +1,16 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
-import { searchItemsAndRestaurants } from "@/lib/api";
+import { searchItemsAndRestaurants, getRestaurantMenu } from "@/lib/api";
 import {
 	SearchResult,
 	SearchResultMenuItem,
 	SearchResultRestaurant,
+	MenuItem,
+	OptionChoice,
 } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +18,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search as SearchIcon, Star, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AddToCartModal from "@/components/checkout/add-to-cart-modal";
+import { useCartStore } from "@/stores/useCartStore";
+import { useToast } from "@/hooks/use-toast";
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay?: number): T {
@@ -33,43 +38,55 @@ function useDebounce<T>(value: T, delay?: number): T {
 }
 
 // Component for displaying a menu item search result
-const MenuItemCard = ({ item }: { item: SearchResultMenuItem }) => {
+const MenuItemCard = ({
+	item,
+	onClick,
+	isFetchingDetails,
+}: {
+	item: SearchResultMenuItem;
+	onClick: (item: SearchResultMenuItem) => void;
+	isFetchingDetails: boolean;
+}) => {
 	return (
-		<Link href={`/customer/restaurants/${item.restaurant_id}`}>
-			<Card
-				className={cn(
-					"hover:shadow-md transition-shadow",
-					!item.is_available && "opacity-60 bg-muted/50 cursor-not-allowed",
-				)}
-			>
-				<CardContent className="flex gap-4 p-4">
-					<Image
-						src={item.image_url || "https://placehold.co/100x100.png"}
-						alt={item.name}
-						width={80}
-						height={80}
-						className="rounded-md object-cover"
-					/>
-					<div className="flex-1">
-						<p className="font-bold">{item.name}</p>
-						<p className="text-sm text-muted-foreground line-clamp-2">
-							{item.description}
-						</p>
-						<p className="text-sm font-semibold mt-1">
-							₦{parseFloat(item.price).toFixed(2)}
-						</p>
-						<p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-							<Utensils className="h-3 w-3" /> {item.restaurant_name}
-						</p>
-					</div>
-				</CardContent>
-			</Card>
-		</Link>
+		<Card
+			className={cn(
+				"hover:shadow-md transition-shadow cursor-pointer",
+				!item.is_available && "opacity-60 bg-muted/50 cursor-not-allowed",
+				isFetchingDetails && "cursor-wait opacity-70",
+			)}
+			onClick={() => onClick(item)}
+		>
+			<CardContent className="flex gap-4 p-4">
+				<Image
+					src={item.image_url || "https://placehold.co/100x100.png"}
+					alt={item.name}
+					width={80}
+					height={80}
+					className="rounded-md object-cover"
+				/>
+				<div className="flex-1">
+					<p className="font-bold">{item.name}</p>
+					<p className="text-sm text-muted-foreground line-clamp-2">
+						{item.description}
+					</p>
+					<p className="text-sm font-semibold mt-1">
+						₦{parseFloat(item.price).toFixed(2)}
+					</p>
+					<p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+						<Utensils className="h-3 w-3" /> {item.restaurant_name}
+					</p>
+				</div>
+			</CardContent>
+		</Card>
 	);
 };
 
 // Component for displaying a restaurant search result
-const RestaurantCard = ({ restaurant }: { restaurant: SearchResultRestaurant }) => {
+const RestaurantCard = ({
+	restaurant,
+}: {
+	restaurant: SearchResultRestaurant;
+}) => {
 	return (
 		<Link href={`/customer/restaurants/${restaurant.id}`}>
 			<Card
@@ -148,6 +165,12 @@ const SearchSkeleton = () => (
 export default function SearchPage() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const debouncedSearchTerm = useDebounce(searchTerm, 300);
+	const { toast } = useToast();
+	const { addOrUpdateItem } = useCartStore();
+
+	const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+	const [isAddToCartModalOpen, setAddToCartModalOpen] = useState(false);
+	const [isFetchingItemDetails, setIsFetchingItemDetails] = useState(false);
 
 	const { data: searchResults, isLoading } = useQuery({
 		queryKey: ["search", debouncedSearchTerm],
@@ -168,12 +191,67 @@ export default function SearchPage() {
 		return { menuItems: items, restaurants: rests };
 	}, [searchResults]);
 
+	const handleOpenAddToCartModal = useCallback(
+		async (item: SearchResultMenuItem) => {
+			if (!item.is_available || isFetchingItemDetails) return;
+			setIsFetchingItemDetails(true);
+			toast({ title: "Getting item details..." });
+
+			try {
+				const menu = await getRestaurantMenu(item.restaurant_id);
+				const fullMenuItem = menu.find((mi) => mi.id === item.id);
+
+				if (fullMenuItem) {
+					setSelectedItem(fullMenuItem);
+					setAddToCartModalOpen(true);
+				} else {
+					toast({
+						title: "Error",
+						description: "Could not retrieve item details.",
+						variant: "destructive",
+					});
+				}
+			} catch (error) {
+				toast({
+					title: "Error",
+					description: "Failed to fetch menu.",
+					variant: "destructive",
+				});
+			} finally {
+				setIsFetchingItemDetails(false);
+			}
+		},
+		[isFetchingItemDetails, toast],
+	);
+
+	const handleAddItem = (
+		menuItem: MenuItem,
+		quantity: number,
+		selectedOptions: OptionChoice[],
+	) => {
+		addOrUpdateItem(menuItem, quantity, selectedOptions);
+		toast({
+			title: "Item Added",
+			description: `${quantity} x ${menuItem.name} has been added to your order.`,
+		});
+		setAddToCartModalOpen(false);
+		setSelectedItem(null);
+	};
+
 	const hasResults = menuItems.length > 0 || restaurants.length > 0;
 	const showNoResults = !isLoading && debouncedSearchTerm && !hasResults;
 	const showInitialState = !debouncedSearchTerm && !isLoading;
 
 	return (
 		<div className="space-y-6">
+			{selectedItem && (
+				<AddToCartModal
+					isOpen={isAddToCartModalOpen}
+					onClose={() => setAddToCartModalOpen(false)}
+					item={selectedItem}
+					onAddToCart={handleAddItem}
+				/>
+			)}
 			<h1 className="text-3xl font-bold font-headline">Search</h1>
 			<div className="sticky top-[73px] bg-background py-4 z-10 -mt-6 -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 border-b">
 				<div className="relative">
@@ -219,7 +297,12 @@ export default function SearchPage() {
 								</h2>
 								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 									{menuItems.map((item) => (
-										<MenuItemCard key={item.id} item={item} />
+										<MenuItemCard
+											key={item.id}
+											item={item}
+											onClick={handleOpenAddToCartModal}
+											isFetchingDetails={isFetchingItemDetails}
+										/>
 									))}
 								</div>
 							</div>
