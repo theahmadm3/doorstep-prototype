@@ -28,7 +28,7 @@ import { usePathname } from "next/navigation";
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
 	{ href: "/customer/orders", label: "Orders", icon: Package },
-	{ href: "/customer/dashboard", label: "Search", icon: Search },
+	{ href: "/customer/search", label: "Search", icon: Search },
 	{ href: "/customer/profile", label: "Profile", icon: User },
 ];
 

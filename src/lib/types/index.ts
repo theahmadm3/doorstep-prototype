@@ -573,3 +573,43 @@ export const requestPayoutSchema = z.object({
 });
 
 export type InitiatePayoutPayload = z.infer<typeof requestPayoutSchema>;
+
+// Search
+export interface SearchResultMenuItem {
+	id: string;
+	name: string;
+	description: string;
+	price: string;
+	item_type: string;
+	image_url: string | null;
+	is_available: boolean;
+	restaurant_name: string;
+	restaurant_id: string;
+}
+
+export interface SearchResultRestaurant {
+	id: string;
+	name: string;
+	description: string;
+	address: {
+		id: string;
+		street_name: string;
+		latitude: string;
+		longitude: string;
+	} | null;
+	image_url: string | null;
+	rating: string;
+	is_active: boolean;
+	created_at: string;
+	updated_at: string;
+}
+
+export type SearchResult =
+	| {
+			result_type: "menu_item";
+			data: SearchResultMenuItem;
+	  }
+	| {
+			result_type: "restaurant";
+			data: SearchResultRestaurant;
+	  };

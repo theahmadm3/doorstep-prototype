@@ -32,6 +32,7 @@ import {
 	CategoryPayload,
 	OptionChoice,
 	OptionPayload,
+	SearchResult,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -523,4 +524,14 @@ export async function deletePayoutRecipient(
 	});
 }
 
-    
+// Search API
+export async function searchItemsAndRestaurants(
+	query: string,
+): Promise<PaginatedResponse<SearchResult>> {
+	if (!query) {
+		return { count: 0, next: null, previous: null, result: [] };
+	}
+	return fetcher<PaginatedResponse<SearchResult>>(
+		`/search/?query=${encodeURIComponent(query)}`,
+	);
+}
