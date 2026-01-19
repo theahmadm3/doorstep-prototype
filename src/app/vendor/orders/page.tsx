@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getVendorOrders, updateVendorOrderStatus, getVendorRiders, assignRiderToOrder } from "@/lib/api";
-import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown, Send, UserCheck } from "lucide-react";
+import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown, Send, UserCheck, RefreshCw } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import type { VendorOrder, Rider } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -183,7 +183,7 @@ export default function VendorOrdersPage() {
 
 
     const fetchOrders = useCallback(async () => {
-        if (orders.length === 0) setIsLoading(true);
+        setIsLoading(true);
         try {
             const data = await getVendorOrders();
             setOrders(data);
@@ -194,15 +194,12 @@ export default function VendorOrdersPage() {
                 variant: "destructive"
             });
         } finally {
-            if (isLoading) setIsLoading(false);
+            setIsLoading(false);
         }
-    }, [toast, isLoading, orders.length]);
+    }, [toast]);
 
     useEffect(() => {
         fetchOrders();
-        const interval = setInterval(fetchOrders, 60000);
-
-        return () => clearInterval(interval);
     }, [fetchOrders]);
     
     const handleUpdateStatus = async (orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready') => {
@@ -428,7 +425,13 @@ export default function VendorOrdersPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
+                <Button onClick={fetchOrders} variant="outline" disabled={isLoading}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                    {isLoading ? "Refreshing..." : "Refresh Orders"}
+                </Button>
+            </div>
 
             <Tabs defaultValue="incoming" className="w-full">
                 <TabsList style={{flexWrap: 'nowrap'}} className="w-full inline-flex gap-x-1 md:gap-x-4 justify-start items-center overflow-x-auto">
@@ -547,4 +550,3 @@ export default function VendorOrdersPage() {
         </div>
     );
 }
-
