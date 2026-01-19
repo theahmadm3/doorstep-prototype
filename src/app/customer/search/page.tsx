@@ -11,16 +11,19 @@ import {
 	SearchResultRestaurant,
 	MenuItem,
 	OptionChoice,
+	Order,
 } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
-import { Search as SearchIcon, Star, Utensils } from "lucide-react";
+import { Search as SearchIcon, Star, Utensils, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AddToCartModal from "@/components/checkout/add-to-cart-modal";
+import CheckoutModal from "@/components/checkout/checkout-modal";
 import { useCartStore } from "@/stores/useCartStore";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay?: number): T {
@@ -36,6 +39,37 @@ function useDebounce<T>(value: T, delay?: number): T {
 
 	return debouncedValue;
 }
+
+const FloatingCartButton = ({
+	order,
+	onCheckout,
+}: {
+	order: Order | undefined;
+	onCheckout: () => void;
+}) => {
+	if (!order || order.items.length === 0) return null;
+
+	const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+
+	return (
+		<div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20">
+			<Button
+				onClick={onCheckout}
+				size="lg"
+				className="w-full h-14 rounded-full shadow-2xl flex justify-between items-center text-lg"
+			>
+				<div className="flex items-center gap-2">
+					<ShoppingCart />
+					<span>
+						{itemCount} item{itemCount > 1 ? "s" : ""}
+					</span>
+				</div>
+				<span>View Order</span>
+				<span>₦{order.total.toFixed(2)}</span>
+			</Button>
+		</div>
+	);
+};
 
 // Component for displaying a menu item search result
 const MenuItemCard = ({
@@ -166,11 +200,16 @@ export default function SearchPage() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const debouncedSearchTerm = useDebounce(searchTerm, 300);
 	const { toast } = useToast();
-	const { addOrUpdateItem } = useCartStore();
+	const { orders, addOrUpdateItem } = useCartStore();
 
 	const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 	const [isAddToCartModalOpen, setAddToCartModalOpen] = useState(false);
 	const [isFetchingItemDetails, setIsFetchingItemDetails] = useState(false);
+	const [isCheckoutOpen, setCheckoutOpen] = useState(false);
+
+	const unsubmittedOrder = useMemo(() => {
+		return orders.find((o) => o.status === "unsubmitted");
+	}, [orders]);
 
 	const { data: searchResults, isLoading } = useQuery({
 		queryKey: ["search", debouncedSearchTerm],
@@ -243,7 +282,7 @@ export default function SearchPage() {
 	const showInitialState = !debouncedSearchTerm && !isLoading;
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 pb-24">
 			{selectedItem && (
 				<AddToCartModal
 					isOpen={isAddToCartModalOpen}
@@ -252,6 +291,12 @@ export default function SearchPage() {
 					onAddToCart={handleAddItem}
 				/>
 			)}
+			<CheckoutModal
+				isOpen={isCheckoutOpen}
+				onClose={() => setCheckoutOpen(false)}
+				order={unsubmittedOrder}
+			/>
+
 			<h1 className="text-3xl font-bold font-headline">Search</h1>
 			<div className="sticky top-[73px] bg-background py-4 z-10 -mt-6 -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 border-b">
 				<div className="relative">
@@ -322,6 +367,12 @@ export default function SearchPage() {
 					</div>
 				)}
 			</div>
+			<FloatingCartButton
+				order={unsubmittedOrder}
+				onCheckout={() => setCheckoutOpen(true)}
+			/>
 		</div>
 	);
 }
+
+    
