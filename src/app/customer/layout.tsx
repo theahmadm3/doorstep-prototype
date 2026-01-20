@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { usePathname } from "next/navigation";
+import { useNotificationListener } from "@/hooks/use-notification-listener";
 
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
@@ -42,6 +43,9 @@ export default function CustomerLayout({
 	const [isAddressModalRequired, setAddressModalRequired] = useState(false);
 	const [isClient, setIsClient] = useState(false);
 	const pathname = usePathname();
+
+	// Listen for push notification messages and refetch orders
+	useNotificationListener();
 
 	const showHeader = pathname === "/customer/dashboard";
 

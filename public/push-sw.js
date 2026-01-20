@@ -19,6 +19,24 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     self.registration.showNotification(title, options)
+      .then(() => {
+        console.log('[SW] Notification shown, sending ORDER_UPDATE to all clients');
+        // Send message to all clients about the order update
+        return self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      })
+      .then((clients) => {
+        console.log(`[SW] Found ${clients.length} clients to notify`);
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'ORDER_UPDATE',
+            notification: {
+              title: title,
+              body: options.body,
+              data: options.data
+            }
+          });
+        });
+      })
   );
 });
 
