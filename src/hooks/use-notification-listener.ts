@@ -10,16 +10,25 @@ export const useNotificationListener = () => {
 	const { toast } = useToast();
 
 	useEffect(() => {
-		const handleMessage = (event: MessageEvent) => {
+		const handleMessage = async (event: MessageEvent) => {
 			console.log("Service Worker message received:", event.data);
 
 			if (event.data && event.data.type === "ORDER_UPDATE") {
-				console.log("Received ORDER_UPDATE, invalidating queries...");
+				console.log("Received ORDER_UPDATE, refetching queries...");
+				console.log("QueryClient instance:", queryClient);
+				console.log("About to refetch queries with keys:", [
+					"customerOrders",
+					"riderOrders",
+					"vendorOrders",
+				]);
 
-				// Invalidate queries to refetch data
-				queryClient.invalidateQueries({ queryKey: ["customerOrders"] });
-				queryClient.invalidateQueries({ queryKey: ["riderOrders"] });
-				queryClient.invalidateQueries({ queryKey: ["vendorOrders"] });
+				// Use refetchQueries to force an immediate background fetch
+				await queryClient.refetchQueries({ queryKey: ["customerOrders"] });
+				await queryClient.refetchQueries({ queryKey: ["riderOrders"] });
+				await queryClient.refetchQueries({ queryKey: ["vendorOrders"] });
+
+				console.log("Refetch calls executed.");
+
 
 				// Optionally show a toast if the tab is active
 				if (document.visibilityState === "visible") {
