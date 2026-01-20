@@ -48,16 +48,32 @@ export const usePushManager = () => {
         usePushStore.setState({ platformInfo: detectPlatform() });
         
         if (!supported) {
-            console.log("Push notifications not supported.");
+            console.log("[Push] Push notifications not supported.");
             return;
         }
 
         try {
-            await registerPushServiceWorker();
+            console.log("[Push] Registering service worker...");
+            const registration = await registerPushServiceWorker();
+            
+            // Wait for service worker to be active
+            if (registration.installing) {
+                console.log("[Push] Service worker installing...");
+                await new Promise<void>((resolve) => {
+                    registration.installing!.addEventListener('statechange', (e) => {
+                        if ((e.target as ServiceWorker).state === 'activated') {
+                            resolve();
+                        }
+                    });
+                });
+            }
+            
+            console.log("[Push] Service worker ready, checking subscription...");
             const subscription = await getCurrentSubscription();
             setIsSubscribed(!!subscription);
+            console.log("[Push] Subscription status:", !!subscription);
         } catch (error) {
-            console.error("Failed to initialize push manager:", error);
+            console.error("[Push] Failed to initialize push manager:", error);
         }
     }, [setIsSubscribed]);
 
