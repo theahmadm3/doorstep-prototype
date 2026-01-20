@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,9 +11,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/auth-api";
 import AddressManagement from "@/components/profile/address-management";
-import { Bell, ChevronRight, CreditCard, HelpCircle } from "lucide-react";
+import { Bell, ChevronRight, CreditCard, HelpCircle, TestTube2 } from "lucide-react";
 import LogoutButton from "@/components/auth/logout-button";
 import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
+import Link from "next/link";
 
 export default function CustomerProfilePage() {
     const [user, setUser] = useState<User | null>(null);
@@ -196,6 +196,15 @@ export default function CustomerProfilePage() {
                                 </div>
                                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
                             </div>
+                            <Link href="/test-push" className="flex items-center justify-between p-3 rounded-lg hover:bg-muted cursor-pointer">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-2 bg-primary/10 rounded-full">
+                                        <TestTube2 className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <span className="font-medium">Push Diagnostics</span>
+                                </div>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            </Link>
                         </div>
                     </CardContent>
                 </Card>

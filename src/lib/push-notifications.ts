@@ -27,13 +27,22 @@ export function urlBase64ToUint8Array(
  * Register the push service worker
  */
 export async function registerPushServiceWorker(): Promise<ServiceWorkerRegistration> {
+	console.log('[PushLib] registerPushServiceWorker called');
 	if (!("serviceWorker" in navigator)) {
+		console.error("[PushLib] Service workers are not supported in this browser");
 		throw new Error("Service workers are not supported in this browser");
 	}
 
-	const registration = await navigator.serviceWorker.register("/push-sw.js");
-	await registration.update();
-	return registration;
+	try {
+		const registration = await navigator.serviceWorker.register("/push-sw.js");
+		console.log("[PushLib] Service worker registered successfully:", registration);
+		await registration.update();
+		console.log("[PushLib] Service worker updated.");
+		return registration;
+	} catch (error) {
+		console.error("[PushLib] Service worker registration failed:", error);
+		throw error;
+	}
 }
 
 /**
@@ -42,53 +51,81 @@ export async function registerPushServiceWorker(): Promise<ServiceWorkerRegistra
 export async function subscribeToPushNotifications(
 	registration: ServiceWorkerRegistration,
 ): Promise<PushSubscription> {
+	console.log('[PushLib] subscribeToPushNotifications called');
 	if (!VAPID_PUBLIC_KEY) {
+		console.error("[PushLib] VAPID public key is not configured");
 		throw new Error("VAPID public key is not configured");
 	}
+	console.log("[PushLib] VAPID public key found.");
 
-	const subscription = await registration.pushManager.subscribe({
-		userVisibleOnly: true,
-		applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-	});
-
-	return subscription;
+	try {
+		const subscription = await registration.pushManager.subscribe({
+			userVisibleOnly: true,
+			applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+		});
+		console.log("[PushLib] Push subscription successful:", subscription);
+		return subscription;
+	} catch (error) {
+		console.error("[PushLib] Push subscription failed:", error);
+		throw error;
+	}
 }
 
 /**
  * Get the current push subscription
  */
 export async function getCurrentSubscription(): Promise<PushSubscription | null> {
-	if (!("serviceWorker" in navigator)) {
+	console.log('[PushLib] getCurrentSubscription called');
+	if (!isPushNotificationSupported()) {
+		console.log("[PushLib] Push not supported, returning null subscription.");
 		return null;
 	}
-
-	const registration = await navigator.serviceWorker.getRegistration(
-		"/push-sw.js",
-	);
-	if (!registration) {
+	
+	try {
+		const registration = await navigator.serviceWorker.getRegistration("/push-sw.js");
+		if (!registration) {
+			console.log("[PushLib] No service worker registration found.");
+			return null;
+		}
+		console.log("[PushLib] Found service worker registration.");
+		const subscription = await registration.pushManager.getSubscription();
+		console.log("[PushLib] Found subscription:", subscription);
+		return subscription;
+	} catch (error) {
+		console.error("[PushLib] Error getting current subscription:", error);
 		return null;
 	}
-
-	return registration.pushManager.getSubscription();
 }
+
 
 /**
  * Unsubscribe from push notifications
  */
 export async function unsubscribeFromPushNotifications(): Promise<boolean> {
+	console.log('[PushLib] unsubscribeFromPushNotifications called');
 	const subscription = await getCurrentSubscription();
 	if (!subscription) {
+		console.log("[PushLib] No subscription to unsubscribe from.");
 		return false;
 	}
 
-	return subscription.unsubscribe();
+	try {
+		const result = await subscription.unsubscribe();
+		console.log("[PushLib] Unsubscription successful:", result);
+		return result;
+	} catch (error) {
+		console.error("[PushLib] Unsubscription failed:", error);
+		throw error;
+	}
 }
 
 /**
  * Check if push notifications are supported
  */
 export function isPushNotificationSupported(): boolean {
-	return "serviceWorker" in navigator && "PushManager" in window;
+	const supported = "serviceWorker" in navigator && "PushManager" in window;
+	console.log(`[PushLib] isPushNotificationSupported check: ${supported}`);
+	return supported;
 }
 
 /**
@@ -110,10 +147,12 @@ export function detectPlatform(): PlatformInfo {
 	// iOS users need to install as PWA to get push notifications
 	const needsPWAInstall = isIOS && !isStandalone;
 
-	return {
+	const platformInfo = {
 		isIOS,
 		isSafari,
 		isStandalone,
 		needsPWAInstall,
 	};
+	console.log('[PushLib] Platform detected:', platformInfo);
+	return platformInfo;
 }
