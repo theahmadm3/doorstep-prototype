@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { updateUserProfile } from "@/lib/auth-api";
 import AddressManagement from "@/components/profile/address-management";
 import { Bell, ChevronRight, CreditCard, HelpCircle } from "lucide-react";
 import LogoutButton from "@/components/auth/logout-button";
+import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
 
 export default function CustomerProfilePage() {
     const [user, setUser] = useState<User | null>(null);
@@ -26,6 +28,9 @@ export default function CustomerProfilePage() {
             phone_number: "",
         },
     });
+
+    const { isSupported, isSubscribed, isSubscribing, platformInfo } = usePushStore();
+    const { handleSubscribe } = usePushManager();
     
     const { formState: { isDirty: isProfileDirty, isValid: isProfileValid, isSubmitting: isProfileSubmitting } } = profileForm;
 
@@ -126,17 +131,53 @@ export default function CustomerProfilePage() {
                 </Card>
 
                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Bell className="h-5 w-5" />
+                            Notification Settings
+                        </CardTitle>
+                        <CardDescription>Manage push notifications for order updates.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {isSupported ? (
+                            <>
+                                {platformInfo.needsPWAInstall && (
+                                    <div className="bg-yellow-100 dark:bg-yellow-900/20 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-300 p-4" role="alert">
+                                        <p className="font-bold">Enable Notifications on iOS</p>
+                                        <p>To get notifications, you must add this app to your Home Screen. Tap the Share icon and then 'Add to Home Screen'.</p>
+                                    </div>
+                                )}
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium">
+                                            Push Notifications
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {isSubscribed 
+                                                ? "You're subscribed to push notifications" 
+                                                : "Enable notifications to receive order updates"}
+                                        </p>
+                                    </div>
+                                    <Button 
+                                        onClick={handleSubscribe}
+                                        disabled={isSubscribed || isSubscribing || platformInfo.needsPWAInstall}
+                                        variant={isSubscribed ? "outline" : "default"}
+                                    >
+                                        {isSubscribing ? "Enabling..." : isSubscribed ? "Enabled" : "Enable Notifications"}
+                                    </Button>
+                                </div>
+                            </>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                Push notifications are not supported in your browser.
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
+                
+                <Card>
                     <CardContent className="p-2">
                         <div className="space-y-1">
-                            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted cursor-pointer">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2 bg-primary/10 rounded-full">
-                                        <Bell className="h-5 w-5 text-primary" />
-                                    </div>
-                                    <span className="font-medium">Notifications</span>
-                                </div>
-                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                            </div>
                             <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted cursor-pointer">
                                 <div className="flex items-center gap-4">
                                     <div className="p-2 bg-primary/10 rounded-full">
