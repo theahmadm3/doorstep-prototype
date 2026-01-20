@@ -26,15 +26,15 @@ export function useNotificationListener() {
 				console.log("[NotificationListener] Invalidated customerOrders query");
 
 				// Show toast only if the page is visible (user is actively viewing it)
-				if (document.visibilityState === "visible") {
-					const notification = event.data.notification;
+				if (typeof document !== "undefined" && document.visibilityState === "visible") {
+					const notification = event.data.notification || {};
 					console.log(
 						"[NotificationListener] Page is visible, showing toast",
 					);
 
 					toast({
-						title: notification?.title || "Order Update",
-						description: notification?.body || "You have a new order update",
+						title: notification.title || "Order Update",
+						description: notification.body || "You have a new order update",
 					});
 				} else {
 					console.log(
