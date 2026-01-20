@@ -39,7 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatePresence, motion } from "framer-motion";
-import { ShoppingCart, Truck, History } from "lucide-react";
+import { ShoppingCart, Truck, History, RefreshCw } from "lucide-react";
 
 const OrderList = ({
 	title,
@@ -160,10 +160,13 @@ export default function CustomerOrdersPage() {
 		localStorage.setItem("customerOrdersTab", activeTab);
 	}, [activeTab]);
 
-	const { data: fetchedOrders = [], isLoading: isLoadingOrders } = useQuery({
+	const {
+		data: fetchedOrders = [],
+		isLoading: isLoadingOrders,
+		refetch,
+	} = useQuery({
 		queryKey: ["customerOrders"],
 		queryFn: getCustomerOrders,
-		refetchInterval: 30000,
 	});
 
 	const { mutate: confirmDeliveryMutation, isPending: isConfirmingMutation } =
@@ -353,7 +356,19 @@ export default function CustomerOrdersPage() {
 				onClose={() => setCheckoutOpen(false)}
 				order={orderForCheckout}
 			/>
-			<h1 className="text-3xl font-bold font-headline mb-8">Your Orders</h1>
+			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+				<h1 className="text-3xl font-bold font-headline">Your Orders</h1>
+				<Button
+					onClick={() => refetch()}
+					variant="outline"
+					disabled={isLoadingOrders}
+				>
+					<RefreshCw
+						className={`mr-2 h-4 w-4 ${isLoadingOrders ? "animate-spin" : ""}`}
+					/>
+					{isLoadingOrders ? "Refreshing..." : "Refresh Orders"}
+				</Button>
+			</div>
 
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 				<TabsList className="sticky top-0 z-40 bg-background border-b rounded-none px-0 w-full grid grid-cols-3">
