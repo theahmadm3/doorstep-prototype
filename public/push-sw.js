@@ -1,91 +1,63 @@
-// Push notification service worker
-self.addEventListener('push', (event) => {
-  let data = {};
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      // Malformed JSON, fallback to empty object
-      data = {};
-    }
-  }
-  const title = data.title || 'Doorstep Notification';
-  const options = {
-    body: data.body || 'You have a new notification',
-    icon: data.icon || '/eren.png',
-    badge: '/eren.png',
-    data: data.data || {},
-  };
+self.addEventListener("push", function (event) {
+	const data = event.data.json();
+	const { title, body, ...rest } = data;
 
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
+	const options = {
+		body: body,
+		icon: "/icon-192x192.png", // Default icon
+		badge: "/badge-72x72.png", // Default badge
+		data: rest, // Pass along any other data
+	};
+
+	const notificationPromise = self.registration.showNotification(title, options);
+	event.waitUntil(notificationPromise);
+
+	// After showing notification, broadcast a message to all clients
+	const messagePromise = self.clients
+		.matchAll({
+			type: "window",
+			includeUncontrolled: true,
+		})
+		.then((clients) => {
+			if (clients && clients.length) {
+				clients.forEach((client) => {
+					client.postMessage({
+						type: "ORDER_UPDATE",
+						notification: {
+							title,
+							body,
+							data: rest,
+						},
+					});
+				});
+			}
+		});
+
+	event.waitUntil(Promise.all([notificationPromise, messagePromise]));
 });
 
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
+self.addEventListener("notificationclick", function (event) {
+	event.notification.close();
 
-  event.waitUntil(
-    clients.openWindow(event.notification.data.url || '/')
-  );
+	const urlToOpen = event.notification.data?.url || "/customer/orders";
+
+	event.waitUntil(
+		self.clients
+			.matchAll({
+				type: "window",
+				includeUncontrolled: true,
+			})
+			.then((clients) => {
+				// Check if there's already a window open with the target URL
+				for (const client of clients) {
+					if (client.url.includes(urlToOpen.split("?")[0]) && "focus" in client) {
+						return client.focus();
+					}
+				}
+				// If not, open a new window
+				if (self.clients.openWindow) {
+					return self.clients.openWindow(urlToOpen);
+				}
+			}),
+	);
 });
-
-// // Push notification service worker
-// self.addEventListener('push', (event) => {
-//   let data = {};
-//   if (event.data) {
-//     try {
-//       data = event.data.json();
-//     } catch (e) {
-//       // Malformed JSON, fallback to empty object
-//       data = {};
-//     }
-//   }
-//   const title = data.title || 'Doorstep Notification';
-//   const options = {
-//     body: data.body || 'You have a new notification',
-//     icon: data.icon || '/eren.png',
-//     badge: '/eren.png',
-//     data: data.data || {},
-//   };
-
-//   event.waitUntil(
-//     self.registration.showNotification(title, options)
-//   );
-// });
-
-// self.addEventListener('notificationclick', (event) => {
-//   event.notification.close();
-
-//   // Get user type and construct appropriate order page URL
-//   const userType = event.notification.data.userType || 'customer'; // customer, rider, or vendor
-//   const orderId = event.notification.data.orderId || '';
-
-//   let urlToOpen = '/';
-
-//   // Route to different order pages based on user type
-//   if (userType === 'rider') {
-//     urlToOpen = `/rider/orders/`;
-//   } else if (userType === 'vendor') {
-//     urlToOpen = `/vendor/orders/`;
-//   } else if (userType === 'customer') {
-//     urlToOpen = `/customer/orders/`;
-//   }
-
-//   // If a custom URL is provided, use it instead
-//   if (event.notification.data.url) {
-//     urlToOpen = event.notification.data.url;
-//   }
-
-//   event.waitUntil(
-//     clients.matchAll({ type: 'window' })
-//       .then((windowClients) => {
-//         // If any window is open, focus it and navigate
-//         if (windowClients.length > 0) {
-//           return windowClients[0].focus().then(() => windowClients[0].navigate(urlToOpen));
-//         }
-//         // Otherwise open a new window
-//         return clients.openWindow(urlToOpen);
-//       })
-//   );
-// });

@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { usePathname } from "next/navigation";
+import { useNotificationListener } from "@/hooks/use-notification-listener";
 
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
@@ -37,6 +38,7 @@ export default function CustomerLayout({
 }: {
 	children: React.ReactNode;
 }) {
+	useNotificationListener();
 	const [user, setUser] = useState<UserType | null>(null);
 	const { addresses, isAddressesLoading } = useAddresses();
 	const [isAddressModalRequired, setAddressModalRequired] = useState(false);
@@ -118,7 +120,7 @@ export default function CustomerLayout({
 								<div className="flex items-center gap-3">
 									<Avatar className="h-10 w-10">
 										<AvatarImage
-											src={user.avatar_url || "https://github.com/shadcn.png"}
+											src={`https://robohash.org/${user.full_name}`}
 											alt={user.full_name || "Customer"}
 										/>
 										<AvatarFallback>
