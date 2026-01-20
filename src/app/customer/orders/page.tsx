@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -257,27 +258,27 @@ export default function CustomerOrdersPage() {
 								<div className="space-y-3">
 									{order.items.map((item) => (
 										<div
-											key={item.id}
+											key={item.cartItemId}
 											className="flex justify-between items-center text-sm"
 										>
 											<div className="flex items-center gap-3">
 												<Image
 													src={
-														item.image_url && item.image_url.startsWith("http")
-															? item.image_url
+														item.menuItem.image_url && item.menuItem.image_url.startsWith("http")
+															? item.menuItem.image_url
 															: "https://placehold.co/48x48.png"
 													}
-													alt={item.name}
+													alt={item.menuItem.name}
 													width={40}
 													height={40}
 													className="rounded-md"
 												/>
 												<span>
-													{item.quantity} x {item.name}
+													{item.quantity} x {item.menuItem.name}
 												</span>
 											</div>
 											<span className="font-medium">
-												₦{(item.quantity * parseFloat(item.price)).toFixed(2)}
+												₦{item.totalPrice.toFixed(2)}
 											</span>
 										</div>
 									))}
