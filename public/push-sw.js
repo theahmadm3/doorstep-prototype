@@ -1,105 +1,99 @@
-// /public/push-sw.js
-
-console.log('[push-sw.js] Service worker script loaded!');
+console.log('[push-sw.js] Service worker loaded!');
 
 self.addEventListener('install', (e) => {
-  console.log('[push-sw.js] Service worker installing...');
-  self.skipWaiting(); // Force the waiting service worker to become the active service worker
+  console.log('[push-sw.js] Installing...');
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
-  console.log('[push-sw.js] Service worker activated!');
-  e.waitUntil(self.clients.claim()); // Become the service worker for all open tabs
+  console.log('[push-sw.js] Activated!');
+  e.waitUntil(self.clients.claim());
 });
 
-
 self.addEventListener("push", (event) => {
-	console.log("[SW] Push notification received!", event.data?.text());
-	if (!event.data) {
-		console.error("[SW] Push event but no data");
-		return;
-	}
+  console.log("[SW] Push notification received", event.data.text());
 
-	const data = event.data.json();
-	const title = data.title || "Doorstep";
-	const options = {
-		body: data.body,
-		icon: "/icon-192x192.png",
-		badge: "/badge-72x72.png",
-		data: {
-			url: data.url || "/",
-		},
-	};
+  let data;
+  try {
+    data = event.data.json();
+  } catch (e) {
+    console.error("[SW] Failed to parse push data", e);
+    data = {
+      title: "Doorstep",
+      body: "You have a new notification",
+      url: "/",
+    };
+  }
 
-	const notificationPromise = self.registration.showNotification(
-		title,
-		options,
-	);
+  const { title, body, url } = data;
+  const options = {
+    body: body,
+    icon: "/icon-192x192.png", // Make sure this icon exists
+    badge: "/badge-72x72.png", // And this one
+    data: {
+      url: url,
+    },
+  };
 
-	const clientsPromise = self.clients
-		.matchAll({
-			type: "window",
-			includeUncontrolled: true,
-		})
-		.then((clients) => {
-			console.log("[SW] Found clients:", clients.length);
+  const notificationPromise = self.registration.showNotification(title, options);
 
-			if (clients.length === 0) {
-				console.log("[SW] No clients found to send message to");
-				return;
-			}
+  const clientsPromise = self.clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true
+  }).then(clients => {
+    console.log('[SW] Found clients:', clients.length);
 
-			const message = {
-				type: "ORDER_UPDATE",
-				notification: {
-					title: title,
-					body: options.body,
-					data: data,
-				},
-			};
+    if (clients.length === 0) {
+      console.log('[SW] No clients found to send message to');
+      return;
+    }
 
-			console.log("[SW] Sending message:", message);
+    const message = {
+      type: 'ORDER_UPDATE',
+      notification: {
+        title: title,
+        body: options.body,
+        data: data
+      }
+    };
 
-			clients.forEach((client, index) => {
-				console.log(`[SW] Sending to client ${index}:`, client.url);
-				client.postMessage(message);
-			});
-		})
-		.catch((err) => {
-			console.error("[SW] Error sending messages to clients:", err);
-		});
+    console.log('[SW] Sending message:', message);
 
-	event.waitUntil(Promise.all([notificationPromise, clientsPromise]));
+    clients.forEach((client, index) => {
+      console.log(`[SW] Sending to client ${index}:`, client.url);
+      client.postMessage(message);
+    });
+  }).catch(err => {
+    console.error('[SW] Error sending messages to clients:', err);
+  });
+
+  event.waitUntil(Promise.all([notificationPromise, clientsPromise]));
 });
 
 self.addEventListener("notificationclick", (event) => {
-	console.log("[SW] Notification clicked");
-	event.notification.close();
-	const urlToOpen =
-		event.notification.data.url || new URL("/", self.location.origin).href;
+  console.log("[SW] Notification clicked");
 
-	const promiseChain = self.clients
-		.matchAll({
-			type: "window",
-			includeUncontrolled: true,
-		})
-		.then((windowClients) => {
-			let matchingClient = null;
+  event.notification.close();
 
-			for (let i = 0; i < windowClients.length; i++) {
-				const client = windowClients[i];
-				if (client.url === urlToOpen) {
-					matchingClient = client;
-					break;
-				}
-			}
+  const urlToOpen = event.notification.data.url || "/";
 
-			if (matchingClient) {
-				return matchingClient.focus();
-			} else {
-				return self.clients.openWindow(urlToOpen);
-			}
-		});
-
-	event.waitUntil(promiseChain);
+  event.waitUntil(
+    self.clients
+      .matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      })
+      .then((clients) => {
+        // Check if there's already a window open with the same URL.
+        for (const client of clients) {
+          if (client.url === urlToOpen && "focus" in client) {
+            return client.focus();
+          }
+        }
+        // If not, open a new window.
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
+        }
+      }),
+  );
 });

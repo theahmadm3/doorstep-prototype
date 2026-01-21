@@ -41,15 +41,23 @@ export const usePushManager = () => {
     const { setIsSubscribed } = usePushStore();
 
     const initialize = useCallback(async () => {
-        console.log('[PushManager] Initializing...');
-        if (typeof window === 'undefined') return;
+        console.log("[Push Init] Starting initialization...");
+        
+        if (typeof window === 'undefined') {
+          console.log("[Push Init] Window undefined, exiting");
+          return;
+        }
 
         const supported = isPushNotificationSupported();
-        usePushStore.setState({ isSupported: supported });
-        usePushStore.setState({ platformInfo: detectPlatform() });
+        console.log("[Push Init] Push supported:", supported);
+        
+        const platform = detectPlatform();
+        console.log("[Push Init] Platform:", platform);
+        
+        usePushStore.setState({ isSupported: supported, platformInfo: platform });
         
         if (!supported) {
-            console.log("[PushManager] Push notifications not supported.");
+            console.log("[Push Init] Not supported, exiting");
             return;
         }
 

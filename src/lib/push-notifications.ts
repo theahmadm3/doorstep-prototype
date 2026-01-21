@@ -1,3 +1,4 @@
+
 // Push notification utility library
 
 import type { PlatformInfo } from "./types";
@@ -123,36 +124,45 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
  * Check if push notifications are supported
  */
 export function isPushNotificationSupported(): boolean {
-	const supported = "serviceWorker" in navigator && "PushManager" in window;
-	console.log(`[PushLib] isPushNotificationSupported check: ${supported}`);
-	return supported;
+  const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  console.log("[Push] Support check:", {
+    serviceWorker: "serviceWorker" in navigator,
+    PushManager: "PushManager" in window,
+    Notification: "Notification" in window,
+    result: supported
+  });
+  return supported;
 }
 
 /**
  * Detect platform information (iOS, PWA status, etc.)
  */
 export function detectPlatform(): PlatformInfo {
-	const userAgent = window.navigator.userAgent.toLowerCase();
-	const isIOS = /iphone|ipad|ipod/.test(userAgent);
-	const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(userAgent);
+  const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
 
-	// Type-safe check for standalone mode
-	interface NavigatorStandalone {
-		standalone?: boolean;
-	}
-	const isStandalone =
-		window.matchMedia("(display-mode: standalone)").matches ||
-		(window.navigator as NavigatorStandalone).standalone === true;
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone === true;
 
-	// iOS users need to install as PWA to get push notifications
-	const needsPWAInstall = isIOS && !isStandalone;
+  // iOS 16.4+ supports push in installed PWAs
+  const needsPWAInstall = isIOS && !isStandalone;
 
-	const platformInfo = {
-		isIOS,
-		isSafari,
-		isStandalone,
-		needsPWAInstall,
-	};
-	console.log('[PushLib] Platform detected:', platformInfo);
-	return platformInfo;
+  console.log("[Platform] Detection:", {
+    userAgent,
+    isIOS,
+    isSafari,
+    isStandalone,
+    needsPWAInstall,
+    displayMode: window.matchMedia("(display-mode: standalone)").matches,
+    navigatorStandalone: (window.navigator as any).standalone
+  });
+
+  return {
+    isIOS,
+    isSafari,
+    isStandalone,
+    needsPWAInstall,
+  };
 }
