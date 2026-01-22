@@ -423,7 +423,7 @@ export default function VendorOrdersPage() {
                 <Button onClick={handleRefresh} variant="outline" disabled={isFetching || isCooldownActive}>
                     <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
                     {isCooldownActive
-						? `Wait ${remainingSeconds}s`
+						? `Refresh in ${remainingSeconds}s`
 						: isFetching
 						? "Refreshing..."
 						: "Refresh Orders"}

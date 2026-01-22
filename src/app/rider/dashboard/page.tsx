@@ -135,7 +135,7 @@ export default function RiderDashboardPage() {
 						className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
 					/>
 					{isCooldownActive
-						? `Wait ${remainingSeconds}s`
+						? `Refresh in ${remainingSeconds}s`
 						: isFetching
 						? "Refreshing..."
 						: "Refresh Orders"}
