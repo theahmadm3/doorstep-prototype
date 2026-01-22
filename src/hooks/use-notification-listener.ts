@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -28,6 +29,17 @@ export const useNotificationListener = () => {
 
     console.log('[Listener] Initializing...');
 
+    const refetchAllOrders = () => {
+        const refetchPromises = [
+            queryClient.refetchQueries({ queryKey: ["customerOrders"], type: 'active' }),
+            queryClient.refetchQueries({ queryKey: ["vendorOrders"], type: 'active' }),
+            queryClient.refetchQueries({ queryKey: ["riderOrders"], type: 'active' }),
+            queryClient.refetchQueries({ queryKey: ["availableRiderOrders"], type: 'active' }),
+        ];
+
+        return Promise.all(refetchPromises);
+    }
+
     const handleMessage = (event: MessageEvent<NotificationMessage>) => {
       console.log('[Listener] Message received:', event.data);
 
@@ -38,7 +50,7 @@ export const useNotificationListener = () => {
 
         if (document.visibilityState === 'visible') {
             console.log('[Listener] Page is visible, attempting immediate refetch.');
-            queryClient.refetchQueries({ queryKey: ["customerOrders"] })
+            refetchAllOrders()
                 .then(() => {
                     console.log('[Listener] Immediate refetch successful.');
                     needsRefetchOnVisible = false;
@@ -61,7 +73,7 @@ export const useNotificationListener = () => {
         
         // Using a small delay to ensure the app is responsive.
         setTimeout(() => {
-          queryClient.refetchQueries({ queryKey: ["customerOrders"] })
+          refetchAllOrders()
             .then(() => {
               console.log(`[Listener] Refetch after "${eventName}" successful.`);
               needsRefetchOnVisible = false;
@@ -73,7 +85,10 @@ export const useNotificationListener = () => {
 
     const handleVisibilityChange = () => refetchIfNeeded('visibilitychange');
     const handleFocus = () => refetchIfNeeded('focus');
-    const handlePageShow = () => refetchIfNeeded('pageshow');
+    const handlePageShow = (event: PageTransitionEvent) => {
+      console.log('[Listener] Page show event, persisted:', event.persisted);
+      refetchIfNeeded('pageshow');
+    }
 
     navigator.serviceWorker.addEventListener('message', handleMessage);
     document.addEventListener('visibilitychange', handleVisibilityChange);
