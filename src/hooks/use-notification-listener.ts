@@ -13,53 +13,39 @@ interface NotificationMessage {
   };
 }
 
+// Global flag to track if refetch is needed. This is a workaround for iOS PWA lifecycle issues.
+let needsRefetchOnVisible = false;
+
 export const useNotificationListener = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   useEffect(() => {
     if (typeof window === 'undefined' || !navigator.serviceWorker) {
-        console.log('[Listener] Service Worker not supported, skipping listener setup.');
+        console.log('[Listener] Environment not supported, skipping listener setup.');
         return;
     }
-    
+
     console.log('[Listener] Initializing...');
 
-    // Add iOS-specific debugging
-    console.log('[Listener] Platform info:', {
-      userAgent: navigator.userAgent,
-      isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
-      standalone: (window.navigator as any).standalone,
-      displayMode: window.matchMedia('(display-mode: standalone)').matches
-    });
-
-    // Add temporary window message listener for debugging
-    const windowListener = (e: MessageEvent) => {
-      console.log('[Window] Message event:', e.data);
-    };
-    window.addEventListener('message', windowListener);
-
-    let isActive = true;
-
     const handleMessage = (event: MessageEvent<NotificationMessage>) => {
-      if (!isActive) return;
-      
       console.log('[Listener] Message received:', event.data);
 
       if (event.data?.type === 'ORDER_UPDATE') {
-        console.log('[Listener] Processing ORDER_UPDATE');
+        console.log('[Listener] ORDER_UPDATE received. Visibility:', document.visibilityState);
         
-        // Force refetch instead of just invalidate - works better on iOS
-        queryClient.refetchQueries({ 
-          queryKey: ["customerOrders"],
-          type: 'active'
-        }).then(() => {
-          console.log('[Listener] Orders refetched successfully');
-        }).catch(err => {
-          console.error('[Listener] Refetch error:', err);
-        });
+        needsRefetchOnVisible = true;
 
-        // Show toast only if page is visible
+        if (document.visibilityState === 'visible') {
+            console.log('[Listener] Page is visible, attempting immediate refetch.');
+            queryClient.refetchQueries({ queryKey: ["customerOrders"] })
+                .then(() => {
+                    console.log('[Listener] Immediate refetch successful.');
+                    needsRefetchOnVisible = false;
+                })
+                .catch(err => console.error('[Listener] Immediate refetch failed:', err));
+        }
+        
         if (document.visibilityState === 'visible' && event.data.notification) {
           toast({
             title: event.data.notification.title || "Order Update",
@@ -68,21 +54,43 @@ export const useNotificationListener = () => {
         }
       }
     };
-    
-    navigator.serviceWorker.addEventListener('message', handleMessage);
-    console.log('[Listener] Message listener attached.');
 
-    const handleControllerChange = () => {
-      console.log('[Listener] Controller changed.');
+    const refetchIfNeeded = (eventName: string) => {
+      if (document.visibilityState === 'visible' && needsRefetchOnVisible) {
+        console.log(`[Listener] Refetch triggered by "${eventName}" event.`);
+        
+        // Using a small delay to ensure the app is responsive.
+        setTimeout(() => {
+          queryClient.refetchQueries({ queryKey: ["customerOrders"] })
+            .then(() => {
+              console.log(`[Listener] Refetch after "${eventName}" successful.`);
+              needsRefetchOnVisible = false;
+            })
+            .catch(err => console.error(`[Listener] Refetch after "${eventName}" failed:`, err));
+        }, 300);
+      }
     };
-    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+    const handleVisibilityChange = () => refetchIfNeeded('visibilitychange');
+    const handleFocus = () => refetchIfNeeded('focus');
+    const handlePageShow = () => refetchIfNeeded('pageshow');
+
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('pageshow', handlePageShow);
+    
+    console.log('[Listener] Listeners for message, visibilitychange, focus, and pageshow attached.');
+
+    // Initial check in case the page loaded while hidden and a notification arrived.
+    refetchIfNeeded('initial mount');
 
     return () => {
-      isActive = false;
       navigator.serviceWorker.removeEventListener('message', handleMessage);
-      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
-      window.removeEventListener('message', windowListener);
-      console.log('[Listener] Cleaned up.');
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('pageshow', handlePageShow);
+      console.log('[Listener] Cleaned up all listeners.');
     };
   }, [queryClient, toast]);
 };
