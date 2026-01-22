@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import PickupConfirmationModal from "@/components/vendor/pickup-confirmation-modal";
+import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -161,8 +162,9 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
 
 export default function VendorOrdersPage() {
     const { toast } = useToast();
+    const { isCooldownActive, remainingSeconds, triggerRefresh } = useRefreshCooldown();
 
-    const { data: orders = [], isLoading, refetch } = useQuery<VendorOrder[], Error>({
+    const { data: orders = [], isLoading, isFetching, refetch } = useQuery<VendorOrder[], Error>({
         queryKey: ['vendorOrders'],
         queryFn: getVendorOrders,
         refetchOnWindowFocus: false,
@@ -191,6 +193,10 @@ export default function VendorOrdersPage() {
     // State for pickup confirmation modal
     const [isPickupModalOpen, setPickupModalOpen] = useState(false);
     const [orderForPickup, setOrderForPickup] = useState<VendorOrder | null>(null);
+
+    const handleRefresh = () => {
+        triggerRefresh(() => refetch());
+    };
 
     const handleUpdateStatus = async (orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready') => {
         const orderToUpdate = orders.find(o => o.id === orderId);
@@ -414,9 +420,13 @@ export default function VendorOrdersPage() {
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
-                <Button onClick={() => refetch()} variant="outline" disabled={isLoading}>
-                    <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                    {isLoading ? "Refreshing..." : "Refresh Orders"}
+                <Button onClick={handleRefresh} variant="outline" disabled={isFetching || isCooldownActive}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+                    {isCooldownActive
+						? `Wait ${remainingSeconds}s`
+						: isFetching
+						? "Refreshing..."
+						: "Refresh Orders"}
                 </Button>
             </div>
 

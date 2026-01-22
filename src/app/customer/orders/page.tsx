@@ -40,6 +40,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatePresence, motion } from "framer-motion";
 import { ShoppingCart, Truck, History, RefreshCw } from "lucide-react";
+import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 
 const OrderList = ({
 	title,
@@ -149,6 +150,9 @@ export default function CustomerOrdersPage() {
 
 	const [activeTab, setActiveTab] = useState("active");
 
+	const { isCooldownActive, remainingSeconds, triggerRefresh } =
+		useRefreshCooldown();
+
 	useEffect(() => {
 		const savedTab = localStorage.getItem("customerOrdersTab");
 		if (savedTab) {
@@ -163,10 +167,12 @@ export default function CustomerOrdersPage() {
 	const {
 		data: fetchedOrders = [],
 		isLoading: isLoadingOrders,
+		isFetching,
 		refetch,
 	} = useQuery({
 		queryKey: ["customerOrders"],
 		queryFn: getCustomerOrders,
+		refetchOnWindowFocus: false,
 	});
 
 	const { mutate: confirmDeliveryMutation, isPending: isConfirmingMutation } =
@@ -222,6 +228,10 @@ export default function CustomerOrdersPage() {
 			title: "Order Removed",
 			description: "The unplaced order has been removed.",
 		});
+	};
+
+	const handleRefresh = () => {
+		triggerRefresh(() => refetch());
 	};
 
 	const pastOrderStatuses: OrderStatus[] = [
@@ -359,14 +369,18 @@ export default function CustomerOrdersPage() {
 			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
 				<h1 className="text-3xl font-bold font-headline">Your Orders</h1>
 				<Button
-					onClick={() => refetch()}
+					onClick={handleRefresh}
 					variant="outline"
-					disabled={isLoadingOrders}
+					disabled={isFetching || isCooldownActive}
 				>
 					<RefreshCw
-						className={`mr-2 h-4 w-4 ${isLoadingOrders ? "animate-spin" : ""}`}
+						className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
 					/>
-					{isLoadingOrders ? "Refreshing..." : "Refresh Orders"}
+					{isCooldownActive
+						? `Wait ${remainingSeconds}s`
+						: isFetching
+						? "Refreshing..."
+						: "Refresh Orders"}
 				</Button>
 			</div>
 

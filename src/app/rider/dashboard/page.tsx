@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import type { PaginatedResponse, RiderOrderBatch } from "@/lib/types";
+import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 
 const AvailableDeliveriesSkeleton = () => (
 	<Card>
@@ -60,10 +61,13 @@ export default function RiderDashboardPage() {
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
 	const locationStatus = useRiderLocation();
+	const { isCooldownActive, remainingSeconds, triggerRefresh } =
+		useRefreshCooldown();
 
 	const {
 		data: availableBatches,
 		isLoading,
+		isFetching,
 		isError,
 		refetch,
 	} = useQuery<PaginatedResponse<RiderOrderBatch>>({
@@ -72,6 +76,10 @@ export default function RiderDashboardPage() {
 		refetchOnWindowFocus: false,
 		enabled: locationStatus.status === "connected",
 	});
+
+	const handleRefresh = () => {
+		triggerRefresh(() => refetch());
+	};
 
 	const actionMutation = useMutation({
 		mutationFn: ({
@@ -115,12 +123,22 @@ export default function RiderDashboardPage() {
 			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 				<h1 className="text-3xl font-bold font-headline">Rider Dashboard</h1>
 				<Button
-					onClick={() => refetch()}
-					disabled={isLoading || locationStatus.status !== "connected"}
+					onClick={handleRefresh}
+					disabled={
+						isFetching ||
+						isCooldownActive ||
+						locationStatus.status !== "connected"
+					}
 					variant="outline"
 				>
-					<RefreshCw className="mr-2 h-4 w-4" />
-					Refresh Orders
+					<RefreshCw
+						className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+					/>
+					{isCooldownActive
+						? `Wait ${remainingSeconds}s`
+						: isFetching
+						? "Refreshing..."
+						: "Refresh Orders"}
 				</Button>
 			</div>
 

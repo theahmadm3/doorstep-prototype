@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, formatDistanceToNow } from "date-fns";
 import { Phone, MapPin, DollarSign, RefreshCw, Navigation } from "lucide-react";
 import RiderOrderActions from "@/components/rider/rider-order-actions";
+import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 
 const OngoingOrderCard = ({ order, onActionSuccess }: { order: RiderOrder, onActionSuccess: () => void }) => {
     const { toast } = useToast();
@@ -152,7 +153,9 @@ const OrdersSkeleton = () => (
 
 export default function RiderOrdersPage() {
     const { toast } = useToast();
-    const { data: orders = [], isLoading, isError, refetch } = useQuery({
+    const { isCooldownActive, remainingSeconds, triggerRefresh } = useRefreshCooldown();
+
+    const { data: orders = [], isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: ['riderOrders'],
         queryFn: getRiderOrders,
         refetchOnWindowFocus: false,
@@ -164,6 +167,10 @@ export default function RiderOrdersPage() {
             });
         }
     });
+
+    const handleRefresh = () => {
+        triggerRefresh(() => refetch());
+    };
 
     const pastStatuses: OrderStatus[] = ["Delivered", "Cancelled", "Rejected"];
     const ongoingOrders = orders.filter(o => !pastStatuses.includes(o.status));
@@ -179,12 +186,16 @@ export default function RiderOrdersPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 				<h1 className="text-3xl font-bold font-headline">Your Deliveries</h1>
                 <Button
-					onClick={() => refetch()}
-					disabled={isLoading}
+					onClick={handleRefresh}
+					disabled={isFetching || isCooldownActive}
 					variant="outline"
 				>
-					<RefreshCw className="mr-2 h-4 w-4" />
-					Refresh Orders
+					<RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+					{isCooldownActive
+                        ? `Wait ${remainingSeconds}s`
+                        : isFetching
+                        ? "Refreshing..."
+                        : "Refresh Orders"}
 				</Button>
 			</div>
             
