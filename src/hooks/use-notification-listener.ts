@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from './use-toast';
 
@@ -16,15 +16,16 @@ interface NotificationMessage {
 export const useNotificationListener = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const isListenerActive = useRef(false);
 
   useEffect(() => {
-    // Only run in browser
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-      console.log('[Listener] Service worker not available');
-      return;
+    if (typeof window === 'undefined' || !navigator.serviceWorker) {
+        console.log('[Listener] Service Worker not supported, skipping listener setup.');
+        return;
     }
     
+    console.log('[Listener] Initializing...');
+
+    // Add iOS-specific debugging
     console.log('[Listener] Platform info:', {
       userAgent: navigator.userAgent,
       isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
@@ -32,51 +33,33 @@ export const useNotificationListener = () => {
       displayMode: window.matchMedia('(display-mode: standalone)').matches
     });
 
+    // Add temporary window message listener for debugging
+    const windowListener = (e: MessageEvent) => {
+      console.log('[Window] Message event:', e.data);
+    };
+    window.addEventListener('message', windowListener);
 
-    // Prevent duplicate listeners
-    if (isListenerActive.current) {
-      console.log('[Listener] Already active, skipping');
-      return;
-    }
+    let isActive = true;
 
     const handleMessage = (event: MessageEvent<NotificationMessage>) => {
-      console.log('[Listener] Received message from service worker:', event.data);
+      if (!isActive) return;
+      
+      console.log('[Listener] Message received:', event.data);
 
-      // Check if this is an order update message
-      if (event.data && event.data.type === 'ORDER_UPDATE') {
-        console.log('[Listener] ORDER_UPDATE detected');
+      if (event.data?.type === 'ORDER_UPDATE') {
+        console.log('[Listener] Processing ORDER_UPDATE');
         
-        // Verify queryClient is available
-        if (!queryClient) {
-          console.error('[Listener] QueryClient not available!');
-          return;
-        }
+        // Force refetch instead of just invalidate - works better on iOS
+        queryClient.refetchQueries({ 
+          queryKey: ["customerOrders"],
+          type: 'active'
+        }).then(() => {
+          console.log('[Listener] Orders refetched successfully');
+        }).catch(err => {
+          console.error('[Listener] Refetch error:', err);
+        });
 
-        console.log('[Listener] QueryClient available, invalidating queries');
-        
-        const queryKeysToInvalidate = [
-          ["customerOrders"], 
-          ["vendorOrders"],
-          ["riderOrders"]
-        ];
-
-        // Use setTimeout to ensure this runs after any pending React updates
-        setTimeout(() => {
-          try {
-            console.log('[Listener] Invalidating queries...');
-            queryKeysToInvalidate.forEach(key => {
-                queryClient.invalidateQueries({ 
-                    queryKey: key,
-                    refetchType: 'active'
-                });
-            });
-            console.log('[Listener] Queries invalidated successfully');
-          } catch (error) {
-            console.error('[Listener] Error invalidating queries:', error);
-          }
-        }, 100);
-
-        // Show toast only if app is in focus
+        // Show toast only if page is visible
         if (document.visibilityState === 'visible' && event.data.notification) {
           toast({
             title: event.data.notification.title || "Order Update",
@@ -85,18 +68,21 @@ export const useNotificationListener = () => {
         }
       }
     };
-
-    // Listen for messages from service worker
-    navigator.serviceWorker.addEventListener('message', handleMessage);
-    isListenerActive.current = true;
     
-    console.log('[Listener] Notification listener initialized');
+    navigator.serviceWorker.addEventListener('message', handleMessage);
+    console.log('[Listener] Message listener attached.');
 
-    // Cleanup
+    const handleControllerChange = () => {
+      console.log('[Listener] Controller changed.');
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
     return () => {
+      isActive = false;
       navigator.serviceWorker.removeEventListener('message', handleMessage);
-      isListenerActive.current = false;
-      console.log('[Listener] Notification listener cleaned up');
+      navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      window.removeEventListener('message', windowListener);
+      console.log('[Listener] Cleaned up.');
     };
   }, [queryClient, toast]);
 };
