@@ -1,9 +1,10 @@
+
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { Clock, Star, Zap } from "lucide-react";
-import type { DashboardRestaurant, ComboDeal, Restaurant } from "@/lib/types";
+import type { DashboardRestaurant, ComboDeal, Restaurant, MenuItem, OptionChoice } from "@/lib/types";
 import { useUIStore } from "@/stores/useUIStore";
 import {
 	Carousel,
@@ -15,6 +16,12 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useState, useCallback } from "react";
+import { useCartStore } from "@/stores/useCartStore";
+import { useToast } from "@/hooks/use-toast";
+import { getRestaurantMenu } from "@/lib/api";
+import AddToCartModal from "@/components/checkout/add-to-cart-modal";
+
 
 interface CustomerDashboardClientProps {
 	popularNearYou: DashboardRestaurant[];
@@ -101,9 +108,9 @@ const RestaurantCard = ({
 	);
 };
 
-const ComboDealCard = ({ deal }: { deal: ComboDeal }) => {
+const ComboDealCard = ({ deal, onClick }: { deal: ComboDeal; onClick: (deal: ComboDeal) => void }) => {
 	return (
-		<Link href={`/customer/restaurants/${deal.restaurantId}`}>
+		<div onClick={() => onClick(deal)} className="cursor-pointer">
 			<div className="overflow-hidden border-0 rounded-2xl group max-lg:max-w-[200px]">
 				<div className="relative h-44">
 					<Image
@@ -129,7 +136,7 @@ const ComboDealCard = ({ deal }: { deal: ComboDeal }) => {
 					</div>
 				</div>
 			</div>
-		</Link>
+		</div>
 	);
 };
 
@@ -163,7 +170,7 @@ const RestaurantCarousel = ({
 	);
 };
 
-const ComboDealsCarousel = ({ deals }: { deals: ComboDeal[] }) => {
+const ComboDealsCarousel = ({ deals, onComboClick }: { deals: ComboDeal[], onComboClick: (deal: ComboDeal) => void }) => {
 	if (deals.length === 0) return null;
 
 	return (
@@ -179,7 +186,7 @@ const ComboDealsCarousel = ({ deals }: { deals: ComboDeal[] }) => {
 							key={index}
 							className="basis-2/4 md:basis-1/3 lg:basis-1/4 pl-4"
 						>
-							<ComboDealCard deal={deal} />
+							<ComboDealCard deal={deal} onClick={onComboClick}/>
 						</CarouselItem>
 					))}
 				</CarouselContent>
@@ -199,35 +206,92 @@ export default function CustomerDashboardClient({
 	canLoadMore,
 	isLoadingMore,
 }: CustomerDashboardClientProps) {
+	const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+    const [isAddToCartModalOpen, setAddToCartModalOpen] = useState(false);
+    const [isFetchingItemDetails, setIsFetchingItemDetails] = useState(false);
+	const { addOrUpdateItem } = useCartStore();
+    const { toast } = useToast();
+
+	const handleComboClick = useCallback(async (deal: ComboDeal) => {
+        if (isFetchingItemDetails) return;
+        setIsFetchingItemDetails(true);
+        toast({ title: "Getting item details..." });
+
+        try {
+            const menu = await getRestaurantMenu(deal.restaurantId);
+            const fullMenuItem = menu.find((mi) => mi.id === deal.id);
+
+            if (fullMenuItem) {
+                setSelectedItem(fullMenuItem);
+                setAddToCartModalOpen(true);
+            } else {
+                toast({
+                    title: "Error",
+                    description: "Could not retrieve item details.",
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to fetch restaurant menu.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsFetchingItemDetails(false);
+        }
+    }, [isFetchingItemDetails, toast]);
+
+	const handleAddItemToCart = (
+		menuItem: MenuItem,
+		quantity: number,
+		selectedOptions: OptionChoice[],
+	) => {
+		addOrUpdateItem(menuItem, quantity, selectedOptions);
+		toast({
+			title: "Item Added",
+			description: `${quantity} x ${menuItem.name} has been added to your cart.`,
+		});
+		setAddToCartModalOpen(false);
+		setSelectedItem(null);
+	};
+
 	return (
-		<div className="space-y-12 p-4">
-			{/* <h1 className="text-lg font-semibold text-primary">
-				Browse your favourite food vendors
-			</h1> */}
-			<RestaurantCarousel
-				title="Popular Near You"
-				restaurants={popularNearYou}
-			/>
-			<ComboDealsCarousel deals={comboDeals} />
-			<RestaurantCarousel
-				title="Featured Selections"
-				restaurants={featuredSelections}
-			/>
-			<div className="space-y-6">
-				<h2 className="text-2xl font-bold font-headline">All Restaurants</h2>
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-					{allRestaurants.map((restaurant) => (
-						<RestaurantCard key={restaurant.id} restaurant={restaurant} />
-					))}
-				</div>
-				{canLoadMore && (
-					<div className="flex justify-center">
-						<Button onClick={onLoadMore} disabled={isLoadingMore}>
-							{isLoadingMore ? "Loading..." : "Load More"}
-						</Button>
+		<>
+			{selectedItem && (
+				<AddToCartModal
+					isOpen={isAddToCartModalOpen}
+					onClose={() => setAddToCartModalOpen(false)}
+					item={selectedItem}
+					onAddToCart={handleAddItemToCart}
+				/>
+			)}
+			<div className="space-y-12 p-4">
+				<RestaurantCarousel
+					title="Popular Near You"
+					restaurants={popularNearYou}
+				/>
+				<ComboDealsCarousel deals={comboDeals} onComboClick={handleComboClick} />
+				<RestaurantCarousel
+					title="Featured Selections"
+					restaurants={featuredSelections}
+				/>
+				<div className="space-y-6">
+					<h2 className="text-2xl font-bold font-headline">All Restaurants</h2>
+					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+						{allRestaurants.map((restaurant) => (
+							<RestaurantCard key={restaurant.id} restaurant={restaurant} />
+						))}
 					</div>
-				)}
+					{canLoadMore && (
+						<div className="flex justify-center">
+							<Button onClick={onLoadMore} disabled={isLoadingMore}>
+								{isLoadingMore ? "Loading..." : "Load More"}
+							</Button>
+						</div>
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }
