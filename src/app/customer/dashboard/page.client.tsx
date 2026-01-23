@@ -23,7 +23,7 @@ export default function CustomerDashboardClient({
 	const { setViewedRestaurant } = useUIStore();
 
 	return (
-		<div className="space-y-12">
+		<div className="p-4 space-y-12">
 			<div className="text-left">
 				<h1 className="text-2xl md:text-4xl font-bold font-headline">
 					Explore & Order
