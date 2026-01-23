@@ -282,7 +282,7 @@ export default function SearchPage() {
 	const showInitialState = !debouncedSearchTerm && !isLoading;
 
 	return (
-		<div className="space-y-6 pb-24">
+		<div className="p-4 space-y-6 pb-24">
 			{selectedItem && (
 				<AddToCartModal
 					isOpen={isAddToCartModalOpen}
