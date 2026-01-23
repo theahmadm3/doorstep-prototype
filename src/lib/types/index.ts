@@ -613,3 +613,54 @@ export type SearchResult =
 			result_type: "restaurant";
 			data: SearchResultRestaurant;
 	  };
+
+// Customer Dashboard
+export interface DashboardRestaurantBadge {
+  text: string;
+  type: string;
+}
+
+export interface DashboardRestaurant {
+  id: string;
+  name: string;
+  image: string | null;
+  rating: string;
+  description: string | null;
+  preparationTime: string;
+  address: string;
+  badge: DashboardRestaurantBadge | null;
+  latitude: string;
+  longitude: string;
+}
+
+export interface ComboDeal {
+  id: string;
+  name: string;
+  image: string | null;
+  price: string;
+  originalPrice: number;
+  discount: string;
+  badge: string;
+  restaurantId: string;
+}
+
+export interface DashboardPagination {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    hasMore: boolean;
+}
+
+export interface CustomerDashboardData {
+  popularNearYou: DashboardRestaurant[];
+  featuredSelections: DashboardRestaurant[];
+  comboDeals: ComboDeal[];
+  allRestaurants: DashboardRestaurant[];
+  pagination: DashboardPagination;
+}
+
+export interface CustomerDashboardApiResponse {
+  success: boolean;
+  data: CustomerDashboardData;
+}

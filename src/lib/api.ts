@@ -33,6 +33,8 @@ import {
 	OptionChoice,
 	OptionPayload,
 	SearchResult,
+	CustomerDashboardData,
+	CustomerDashboardApiResponse,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -94,6 +96,17 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 export async function getRestaurants(): Promise<Restaurant[]> {
 	const data = await fetcher<PaginatedResponse<Restaurant>>("/restaurants/");
 	return data.results;
+}
+
+export async function getCustomerDashboard(
+	latitude: number,
+	longitude: number,
+	page: number = 1,
+): Promise<CustomerDashboardData> {
+	const response = await fetcher<CustomerDashboardApiResponse>(
+		`/dashboard/?lat=${latitude}&lon=${longitude}&page=${page}`,
+	);
+	return response.data;
 }
 
 export async function getRestaurantDetails(
