@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -85,9 +84,7 @@ export default function CustomerLayout({
 					<SidebarHeader className="p-4 border-b">
 						<div className="flex items-center gap-2">
 							<Utensils className="w-8 h-8 text-primary" />
-							<span className="text-xl font-bold font-headline">
-								Doorstep
-							</span>
+							<span className="text-xl font-bold font-headline">Doorstep</span>
 						</div>
 					</SidebarHeader>
 
@@ -144,8 +141,8 @@ export default function CustomerLayout({
 
 				<div className="flex-1 flex flex-col min-w-0">
 					{showHeader && <ClientHeader />}
-					<main className="flex-1 overflow-y-auto">
-						<div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">{children}</div>
+					<main className="flex-1 overflow-y-auto hide-scrollbar">
+						<div className="md:p-6 lg:p-8 pb-20 md:pb-8">{children}</div>
 					</main>
 					<BottomNavigation links={customerNavLinks} />
 				</div>
