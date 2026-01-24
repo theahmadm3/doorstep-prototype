@@ -5,10 +5,15 @@ self.addEventListener('install', (e) => console.log('[push-sw.js] Installing...'
 self.addEventListener('activate', (e) => {
   console.log('[push-sw.js] Activated!');
   // This ensures the new service worker takes control immediately.
-  return self.clients.claim();
+  e.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('push', (event) => {
+    if (!event.data) {
+        console.warn('[SW] Push event received without data');
+        return;
+    }
+    
     console.log('[SW] Push notification received:', event.data.text());
 
     let data;
@@ -22,8 +27,8 @@ self.addEventListener('push', (event) => {
     const title = data.title || 'Doorstep';
     const options = {
         body: data.body,
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge-72x72.png',
+        icon: '/doorstep-logo.png',
+        badge: '/eren.png',
         data: {
             url: data.url || '/',
         },
