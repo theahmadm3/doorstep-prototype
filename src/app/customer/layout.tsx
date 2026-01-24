@@ -91,7 +91,7 @@ export default function CustomerLayout({
 					<SidebarContent className="flex-1 overflow-y-auto py-4">
 						<SidebarMenu>
 							{customerNavLinks.map((link) => (
-								<SidebarMenuItem key={link.label}>
+								<SidebarMenuItem key={link.href}>
 									<SidebarMenuButton asChild>
 										<Link href={link.href}>
 											<link.icon />
@@ -117,8 +117,8 @@ export default function CustomerLayout({
 								<div className="flex items-center gap-3">
 									<Avatar className="h-10 w-10">
 										<AvatarImage
-											src={`https://robohash.org/${user.full_name}`}
-											alt={user.full_name || "Customer"}
+											src={user.avatar_url || undefined}
+											alt={user.full_name || user.email || "Customer"}
 										/>
 										<AvatarFallback>
 											{user.full_name?.[0]?.toUpperCase() || "C"}
