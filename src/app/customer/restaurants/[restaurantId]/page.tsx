@@ -236,7 +236,10 @@ export default function RestaurantMenuPage() {
 								/>
 								<button
 									className="absolute -bottom-2 -right-2 rounded-full bg-primary text-white h-6 w-6"
-									onClick={() => setSelectedItem(item)}
+									onClick={() => {
+										setSelectedItem(item);
+										setIsAddToCartModalOpen(true);
+									}}
 								>
 									+
 								</button>

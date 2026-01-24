@@ -129,7 +129,7 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 
 							return (
 								<Link
-									key={label}
+									key={href}
 									href={href}
 									aria-current={isActive ? "page" : undefined}
 									className={cn(

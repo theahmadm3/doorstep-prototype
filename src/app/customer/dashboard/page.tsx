@@ -48,7 +48,6 @@ export default function CustomerDashboardPage() {
 		error,
 		fetchNextPage,
 		hasNextPage,
-		isFetching,
 		isFetchingNextPage,
 		status,
 	} = useInfiniteQuery({
@@ -84,7 +83,7 @@ export default function CustomerDashboardPage() {
                     </Alert>
                 </div>
             </>
-        )
+        );
     }
 
 	if (status === 'pending') {

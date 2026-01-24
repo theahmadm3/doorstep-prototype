@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { searchItemsAndRestaurants, getRestaurantMenu } from "@/lib/api";
 import {
-	SearchResult,
 	SearchResultMenuItem,
 	SearchResultRestaurant,
 	MenuItem,
