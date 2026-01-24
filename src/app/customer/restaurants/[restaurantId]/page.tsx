@@ -238,7 +238,7 @@ export default function RestaurantMenuPage() {
 									className="absolute -bottom-2 -right-2 rounded-full bg-primary text-white h-6 w-6"
 									onClick={() => {
 										setSelectedItem(item);
-										setIsAddToCartModalOpen(true);
+										setAddToCartModalOpen(true);
 									}}
 								>
 									+
