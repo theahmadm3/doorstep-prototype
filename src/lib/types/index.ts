@@ -1,4 +1,3 @@
-
 import * as z from "zod";
 
 // Generic
@@ -273,6 +272,7 @@ export interface OrderPayload {
 
 export interface CustomerOrder {
 	id: string;
+	restaurant_id: string;
 	restaurant_name: string;
 	total_amount: string;
 	status: OrderStatus;
