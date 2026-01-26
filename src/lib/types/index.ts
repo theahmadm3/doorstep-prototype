@@ -6,7 +6,7 @@ export interface PaginatedResponse<T> {
 	count: number;
 	next: string | null;
 	previous: string | null;
-	result: T[];
+	results: T[];
 }
 
 const nigerianPhoneRegex = /^(070|080|081|090|091)\d{8}$/;
