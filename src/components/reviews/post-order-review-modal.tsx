@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { submitRestaurantReview } from "@/lib/api";
+import { User, ReviewPayload } from "@/lib/types";
 
 interface PostOrderReviewModalProps {
   isOpen: boolean;
@@ -23,7 +26,7 @@ interface PostOrderReviewModalProps {
   restaurantId: string;
 }
 
-const StarRating = ({ rating, setRating }) => {
+const StarRating = ({ rating, setRating }: { rating: number; setRating: (rating: number) => void }) => {
   return (
     <div className="flex items-center justify-center gap-2">
       {[...Array(5)].map((_, i) => (
@@ -48,35 +51,77 @@ export default function PostOrderReviewModal({
 }: PostOrderReviewModalProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
 
-  const handleSubmitReview = () => {
-    // This is a mock submission for now.
-    // TODO: Replace with an API call to submit the review.
-    console.log({
-      restaurantId,
-      rating,
-      comment,
-    });
+   useEffect(() => {
+    if (isOpen) {
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }
+  }, [isOpen]);
 
-    toast({
-      title: "Review Submitted!",
-      description: `Thank you for reviewing ${restaurantName}.`,
-    });
-    
-    // Reset state and close
-    setRating(0);
-    setComment("");
-    onClose();
-  };
-
-  // Reset state when modal is closed without submitting
+  // Reset state when modal is closed
   useEffect(() => {
     if (!isOpen) {
       setRating(0);
       setComment("");
+      setIsSubmitting(false);
     }
   }, [isOpen]);
+
+  const handleSubmitReview = async () => {
+     if (!user) {
+        toast({
+            title: "Not Logged In",
+            description: "You must be logged in to submit a review.",
+            variant: "destructive",
+        });
+        return;
+    }
+    
+    if (rating === 0) {
+        toast({
+            title: "Rating Required",
+            description: "Please select a star rating before submitting.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload: ReviewPayload = {
+        restaurant: restaurantId,
+        user: user.id,
+        rating: rating,
+        comment: comment,
+      };
+
+      await submitRestaurantReview(restaurantId, payload);
+
+      toast({
+        title: "Review Submitted!",
+        description: `Thank you for reviewing ${restaurantName}.`,
+      });
+      
+      onClose();
+
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to submit review.";
+        toast({
+            title: "Submission Failed",
+            description: message,
+            variant: "destructive",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -97,8 +142,8 @@ export default function PostOrderReviewModal({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Skip</Button>
-          <Button onClick={handleSubmitReview} disabled={rating === 0}>
-            Submit Review
+          <Button onClick={handleSubmitReview} disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Review"}
           </Button>
         </DialogFooter>
       </DialogContent>

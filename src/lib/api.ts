@@ -1,4 +1,5 @@
 
+
 import {
 	PaginatedResponse,
 	Restaurant,
@@ -33,6 +34,7 @@ import {
 	OptionChoice,
 	OptionPayload,
 	SearchResult,
+	ReviewPayload,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -409,15 +411,6 @@ export async function getRestaurantProfile(): Promise<VendorProfile> {
 	return fetcher<VendorProfile>("/restaurants/me/");
 }
 
-export async function updateRestaurantProfile(
-	payload: VendorProfileUpdatePayload,
-): Promise<VendorProfile> {
-	return fetcher<VendorProfile>("/restaurants/me/", {
-		method: "PATCH",
-		body: JSON.stringify(payload),
-	});
-}
-
 export async function uploadRestaurantProfileImage(image: File): Promise<VendorProfile> {
     const formData = new FormData();
     formData.append("image", image);
@@ -524,12 +517,23 @@ export async function deletePayoutRecipient(
 	});
 }
 
+// Review API
+export async function submitRestaurantReview(
+	restaurantId: string,
+	payload: ReviewPayload,
+): Promise<void> {
+	await fetcher<void>(`/reviews/restaurant/${restaurantId}/`, {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
 // Search API
 export async function searchItemsAndRestaurants(
 	query: string,
 ): Promise<PaginatedResponse<SearchResult>> {
 	if (!query) {
-		return { count: 0, next: null, previous: null, result: [] };
+		return { count: 0, next: null, previous: null, results: [] };
 	}
 	return fetcher<PaginatedResponse<SearchResult>>(
 		`/search/?query=${encodeURIComponent(query)}`,

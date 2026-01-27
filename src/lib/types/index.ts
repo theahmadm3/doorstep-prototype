@@ -228,7 +228,8 @@ export type OrderStatus =
 	| "Arrived at Destination"
 	| "Picked Up by Customer"
 	| "Rejected"
-	| "Driver Assigned";
+	| "Driver Assigned"
+    | "Completed";
 
 export interface OrderItem {
 	cartItemId: string; // Unique identifier for this specific configuration in the cart
@@ -574,6 +575,14 @@ export const requestPayoutSchema = z.object({
 });
 
 export type InitiatePayoutPayload = z.infer<typeof requestPayoutSchema>;
+
+// Review
+export interface ReviewPayload {
+    restaurant: string;
+    user: string;
+    rating: number;
+    comment: string;
+}
 
 // Search
 export interface SearchResultMenuItem {
