@@ -183,17 +183,17 @@ export default function CustomerOrdersPage() {
 			return;
 		}
 
-		const lastOrderCount = parseInt(localStorage.getItem('lastOrderCount') || '0', 10);
-		const currentOrderCount = fetchedOrders.length;
+		const completedOrders = fetchedOrders.filter(
+			(order) => order.status === 'Delivered' || order.status === 'Picked Up by Customer'
+		);
+		const lastCompletedCount = parseInt(localStorage.getItem('lastCompletedOrderCount') || '0', 10);
+		const currentCompletedCount = completedOrders.length;
 
-		if (currentOrderCount > lastOrderCount) {
-			
+		if (currentCompletedCount > lastCompletedCount) {
 			const reviewedOrderIds: string[] = JSON.parse(localStorage.getItem('reviewedOrderIds') || '[]');
 			
-			const mostRecentCompletedOrder = fetchedOrders.find(
-				(order) => 
-				(order.status === 'Delivered' || order.status === 'Picked Up by Customer') &&
-				!reviewedOrderIds.includes(order.id)
+			const mostRecentCompletedOrder = completedOrders.find(
+				(order) => !reviewedOrderIds.includes(order.id)
 			);
 
 			if (mostRecentCompletedOrder) {
@@ -204,7 +204,7 @@ export default function CustomerOrdersPage() {
 			}
 		}
 
-		localStorage.setItem('lastOrderCount', String(currentOrderCount));
+		localStorage.setItem('lastCompletedOrderCount', String(currentCompletedCount));
 
 	}, [fetchedOrders, isLoadingOrders]);
 
@@ -272,7 +272,6 @@ export default function CustomerOrdersPage() {
 		"Cancelled",
 		"Picked Up by Customer",
 		"Rejected",
-		"Completed"
 	];
 	const activeOrders = fetchedOrders.filter(
 		(o) => !pastOrderStatuses.includes(o.status),
