@@ -41,6 +41,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatePresence, motion } from "framer-motion";
 import { ShoppingCart, Truck, History, RefreshCw } from "lucide-react";
 import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
+import PostOrderReviewModal from "@/components/reviews/post-order-review-modal";
+
 
 const OrderList = ({
 	title,
@@ -147,6 +149,7 @@ export default function CustomerOrdersPage() {
 
 	const [isCheckoutOpen, setCheckoutOpen] = useState(false);
 	const [orderForCheckout, setOrderForCheckout] = useState<Order | null>(null);
+	const [orderToReview, setOrderToReview] = useState<CustomerOrder | null>(null);
 
 	const [activeTab, setActiveTab] = useState("active");
 
@@ -174,6 +177,36 @@ export default function CustomerOrdersPage() {
 		queryFn: getCustomerOrders,
 		refetchOnWindowFocus: false,
 	});
+
+	useEffect(() => {
+		if (isLoadingOrders || fetchedOrders.length === 0) {
+			return;
+		}
+
+		const lastOrderCount = parseInt(localStorage.getItem('lastOrderCount') || '0', 10);
+		const currentOrderCount = fetchedOrders.length;
+
+		if (currentOrderCount > lastOrderCount) {
+			
+			const reviewedOrderIds: string[] = JSON.parse(localStorage.getItem('reviewedOrderIds') || '[]');
+			
+			const mostRecentCompletedOrder = fetchedOrders.find(
+				(order) => 
+				(order.status === 'Delivered' || order.status === 'Picked Up by Customer') &&
+				!reviewedOrderIds.includes(order.id)
+			);
+
+			if (mostRecentCompletedOrder) {
+				setOrderToReview(mostRecentCompletedOrder);
+				
+				const updatedReviewedIds = [...reviewedOrderIds, mostRecentCompletedOrder.id];
+				localStorage.setItem('reviewedOrderIds', JSON.stringify(updatedReviewedIds));
+			}
+		}
+
+		localStorage.setItem('lastOrderCount', String(currentOrderCount));
+
+	}, [fetchedOrders, isLoadingOrders]);
 
 	const { mutate: confirmDeliveryMutation, isPending: isConfirmingMutation } =
 		useMutation({
@@ -239,6 +272,7 @@ export default function CustomerOrdersPage() {
 		"Cancelled",
 		"Picked Up by Customer",
 		"Rejected",
+		"Completed"
 	];
 	const activeOrders = fetchedOrders.filter(
 		(o) => !pastOrderStatuses.includes(o.status),
@@ -361,6 +395,14 @@ export default function CustomerOrdersPage() {
 
 	return (
 		<div className="container px-3 py-8 md:py-12">
+			{orderToReview && (
+				<PostOrderReviewModal
+				isOpen={!!orderToReview}
+				onClose={() => setOrderToReview(null)}
+				restaurantName={orderToReview.restaurant_name}
+				restaurantId={orderToReview.restaurant_id}
+				/>
+			)}
 			<CheckoutModal
 				isOpen={isCheckoutOpen}
 				onClose={() => setCheckoutOpen(false)}
