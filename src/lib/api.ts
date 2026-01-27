@@ -421,6 +421,15 @@ export async function uploadRestaurantProfileImage(image: File): Promise<VendorP
     });
 }
 
+export async function updateRestaurantProfile(
+	payload: VendorProfileUpdatePayload,
+): Promise<VendorProfile> {
+	return fetcher<VendorProfile>("/restaurants/me/", {
+		method: "PATCH",
+		body: JSON.stringify(payload),
+	});
+}
+
 // Rider API
 export async function getAvailableRiderOrders(): Promise<PaginatedResponse<RiderOrderBatch>> {
 	return fetcher<PaginatedResponse<RiderOrderBatch>>(
