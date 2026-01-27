@@ -178,35 +178,50 @@ export default function CustomerOrdersPage() {
 		refetchOnWindowFocus: false,
 	});
 
+	const pastOrderStatuses: OrderStatus[] = [
+		"Delivered",
+		"Cancelled",
+		"Picked Up by Customer",
+		"Rejected",
+	];
+	const activeOrders = fetchedOrders.filter(
+		(o) => !pastOrderStatuses.includes(o.status),
+	);
+	const pastOrders = fetchedOrders.filter((o) =>
+		pastOrderStatuses.includes(o.status),
+	);
+
 	useEffect(() => {
 		if (isLoadingOrders || fetchedOrders.length === 0) {
 			return;
 		}
-
-		const completedOrders = fetchedOrders.filter(
-			(order) => order.status === 'Delivered' || order.status === 'Picked Up by Customer'
-		);
-		const lastCompletedCount = parseInt(localStorage.getItem('lastCompletedOrderCount') || '0', 10);
-		const currentCompletedCount = completedOrders.length;
-
-		if (currentCompletedCount > lastCompletedCount) {
+	
+		const lastPastCount = parseInt(localStorage.getItem('lastPastOrderCount') || '0', 10);
+		const currentPastCount = pastOrders.length;
+	
+		if (currentPastCount > lastPastCount) {
 			const reviewedOrderIds: string[] = JSON.parse(localStorage.getItem('reviewedOrderIds') || '[]');
 			
-			const mostRecentCompletedOrder = completedOrders.find(
+			// Find the most recent order in the "past" list that hasn't been reviewed
+			const mostRecentPastOrder = pastOrders.find(
 				(order) => !reviewedOrderIds.includes(order.id)
 			);
-
-			if (mostRecentCompletedOrder) {
-				setOrderToReview(mostRecentCompletedOrder);
+	
+			if (mostRecentPastOrder) {
+				// Only trigger review for successfully completed orders
+				if (mostRecentPastOrder.status === 'Delivered' || mostRecentPastOrder.status === 'Picked Up by Customer') {
+					setOrderToReview(mostRecentPastOrder);
+				}
 				
-				const updatedReviewedIds = [...reviewedOrderIds, mostRecentCompletedOrder.id];
+				// Mark this order as "processed for review" to avoid re-triggering, even if it wasn't a reviewable status
+				const updatedReviewedIds = [...reviewedOrderIds, mostRecentPastOrder.id];
 				localStorage.setItem('reviewedOrderIds', JSON.stringify(updatedReviewedIds));
 			}
 		}
-
-		localStorage.setItem('lastCompletedOrderCount', String(currentCompletedCount));
-
-	}, [fetchedOrders, isLoadingOrders]);
+	
+		localStorage.setItem('lastPastOrderCount', String(currentPastCount));
+	
+	}, [pastOrders, fetchedOrders, isLoadingOrders]);
 
 	const { mutate: confirmDeliveryMutation, isPending: isConfirmingMutation } =
 		useMutation({
@@ -267,18 +282,6 @@ export default function CustomerOrdersPage() {
 		triggerRefresh(() => refetch());
 	};
 
-	const pastOrderStatuses: OrderStatus[] = [
-		"Delivered",
-		"Cancelled",
-		"Picked Up by Customer",
-		"Rejected",
-	];
-	const activeOrders = fetchedOrders.filter(
-		(o) => !pastOrderStatuses.includes(o.status),
-	);
-	const pastOrders = fetchedOrders.filter((o) =>
-		pastOrderStatuses.includes(o.status),
-	);
 	const unsubmittedOrders = unplacedOrders.filter(
 		(o) => o.status === "unsubmitted",
 	);
