@@ -191,7 +191,7 @@ export default function CustomerProfilePage() {
                                     <div className="p-2 bg-primary/10 rounded-full">
                                         <HelpCircle className="h-5 w-5 text-primary" />
                                     </div>
-                                    <span className="font-medium">Help Center</span>
+                                    <span className="font-medium">Support</span>
                                 </div>
                                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
                             </div>
