@@ -120,8 +120,7 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 				className="fixed bottom-0 left-0 z-50 w-full md:hidden"
 				aria-label="Bottom navigation"
 			>
-				{/* Glassy container with enhanced blur */}
-				<div className="relative mx-3 mb-2 shadow-[0_0_2px_rgba(0,0,0,0.3)] bg-transparent rounded-[28px] overflow-hidden">
+				<div className="relative mx-3 mb-2 shadow-[0_0_2px_rgba(0,0,0,0.3)] bg-[rgba(255,255,255,0.9)] rounded-[28px] overflow-hidden">
 					{/* Content */}
 					<div className="relative inline-flex items-center justify-around h-16 w-full px-2 font-medium">
 						{links.map(({ href, label, icon: Icon }) => {
@@ -137,12 +136,12 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 									aria-current={isActive ? "page" : undefined}
 								>
 									{/* Active indicator */}
-									{/* {isActive && (
+									{isActive && (
 										<div className="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-300" />
-									)} */}
+									)}
 
 									{/* Hover effect */}
-									{/* <div className="absolute inset-0 rounded-2xl bg-white/10 dark:bg-white/5 opacity-0 group-hover:opacity-100 group-active:opacity-100 group-active:bg-white/20 dark:group-active:bg-white/10 transition-all duration-300 backdrop-blur-xl" /> */}
+									<div className="absolute inset-0 rounded-2xl bg-white/10 dark:bg-white/5 opacity-0 group-hover:opacity-100 group-active:opacity-100 group-active:bg-white/20 dark:group-active:bg-white/10 transition-all duration-300 backdrop-blur-xl" />
 
 									<Icon
 										className={cn(
