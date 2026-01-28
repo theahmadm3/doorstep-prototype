@@ -1,91 +1,90 @@
-// Push notification service worker
-self.addEventListener('push', (event) => {
-  let data = {};
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      // Malformed JSON, fallback to empty object
-      data = {};
-    }
-  }
-  const title = data.title || 'Doorstep Notification';
-  const options = {
-    body: data.body || 'You have a new notification',
-    icon: data.icon || '/eren.png',
-    badge: '/eren.png',
-    data: data.data || {},
-  };
+'use strict';
 
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
+console.log('[push-sw.js] Service worker loaded!');
+self.addEventListener('install', (e) => console.log('[push-sw.js] Installing...'));
+self.addEventListener('activate', (e) => {
+  console.log('[push-sw.js] Activated!');
+  // This ensures the new service worker takes control immediately.
+  return self.clients.claim();
+});
+
+self.addEventListener('push', (event) => {
+    console.log('[SW] Push notification received:', event.data.text());
+
+    let data;
+    try {
+        data = event.data.json();
+    } catch (e) {
+        console.error('[SW] Failed to parse push data. Payload:', event.data.text(), e);
+        return;
+    }
+
+    const title = data.title || 'Doorstep';
+    const options = {
+        body: data.body,
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/badge-72x72.png',
+        data: {
+            url: data.url || '/',
+        },
+    };
+
+    const notificationPromise = self.registration.showNotification(title, options);
+    
+    const clientsPromise = self.clients.matchAll({ 
+      type: 'window',
+      includeUncontrolled: true 
+    }).then(clients => {
+      console.log('[SW] Found clients:', clients.length);
+      
+      if (clients.length === 0) {
+        console.log('[SW] No clients to notify');
+        return;
+      }
+      
+      const message = {
+        type: 'ORDER_UPDATE',
+        notification: {
+          title: title,
+          body: options.body,
+          data: data
+        }
+      };
+      
+      console.log('[SW] Broadcasting message:', message);
+      
+      // iOS needs explicit message sending to each client
+      return Promise.all(
+        clients.map(client => {
+          console.log('[SW] Sending to client:', client.url);
+          return client.postMessage(message);
+        })
+      );
+    }).catch(err => {
+      console.error('[SW] Error sending messages:', err);
+    });
+
+    event.waitUntil(Promise.all([notificationPromise, clientsPromise]));
 });
 
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  event.waitUntil(
-    clients.openWindow(event.notification.data.url || '/')
-  );
+    event.notification.close();
+    const urlToOpen = event.notification.data.url || '/';
+    event.waitUntil(
+        self.clients.matchAll({
+            type: 'window',
+            includeUncontrolled: true,
+        }).then((clientList) => {
+            if (clientList.length > 0) {
+                let client = clientList[0];
+                for (let i = 0; i < clientList.length; i++) {
+                    if (clientList[i].focused) {
+                        client = clientList[i];
+                    }
+                }
+                return client.focus().then(c => c.navigate(urlToOpen));
+            }
+            return self.clients.openWindow(urlToOpen);
+        }),
+    );
 });
-
-// // Push notification service worker
-// self.addEventListener('push', (event) => {
-//   let data = {};
-//   if (event.data) {
-//     try {
-//       data = event.data.json();
-//     } catch (e) {
-//       // Malformed JSON, fallback to empty object
-//       data = {};
-//     }
-//   }
-//   const title = data.title || 'Doorstep Notification';
-//   const options = {
-//     body: data.body || 'You have a new notification',
-//     icon: data.icon || '/eren.png',
-//     badge: '/eren.png',
-//     data: data.data || {},
-//   };
-
-//   event.waitUntil(
-//     self.registration.showNotification(title, options)
-//   );
-// });
-
-// self.addEventListener('notificationclick', (event) => {
-//   event.notification.close();
-
-//   // Get user type and construct appropriate order page URL
-//   const userType = event.notification.data.userType || 'customer'; // customer, rider, or vendor
-//   const orderId = event.notification.data.orderId || '';
-
-//   let urlToOpen = '/';
-
-//   // Route to different order pages based on user type
-//   if (userType === 'rider') {
-//     urlToOpen = `/rider/orders/`;
-//   } else if (userType === 'vendor') {
-//     urlToOpen = `/vendor/orders/`;
-//   } else if (userType === 'customer') {
-//     urlToOpen = `/customer/orders/`;
-//   }
-
-//   // If a custom URL is provided, use it instead
-//   if (event.notification.data.url) {
-//     urlToOpen = event.notification.data.url;
-//   }
-
-//   event.waitUntil(
-//     clients.matchAll({ type: 'window' })
-//       .then((windowClients) => {
-//         // If any window is open, focus it and navigate
-//         if (windowClients.length > 0) {
-//           return windowClients[0].focus().then(() => windowClients[0].navigate(urlToOpen));
-//         }
-//         // Otherwise open a new window
-//         return clients.openWindow(urlToOpen);
-//       })
-//   );
-// });

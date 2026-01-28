@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -195,22 +196,14 @@ export default function VendorItemManagement() {
 			if (editingItem) {
 				// --- Editing Flow ---
 				setSavingStep("Updating item details...");
-				const updatedItemData = await updateVendorMenuItem(
-					editingItem.id,
-					payload,
-				);
-
-				let finalItem = updatedItemData;
+				await updateVendorMenuItem(editingItem.id, payload);
 
 				// If a new image was selected during edit, upload it
 				if (selectedImage) {
 					setSavingStep("Uploading new image...");
-					finalItem = await uploadMenuItemImage(editingItem.id, selectedImage);
+					await uploadMenuItemImage(editingItem.id, selectedImage);
 				}
 
-				setItems(
-					items.map((item) => (item.id === editingItem.id ? finalItem : item)),
-				);
 				toast({
 					title: "Item Updated",
 					description: `${payload.name} has been successfully updated.`,
@@ -218,7 +211,6 @@ export default function VendorItemManagement() {
 			} else {
 				// --- Creating Flow ---
 				if (!selectedImage) {
-					// Redundant check, but good for safety
 					throw new Error("Image not selected");
 				}
 
@@ -226,17 +218,18 @@ export default function VendorItemManagement() {
 				const newItem = await createVendorMenuItem(payload);
 
 				setSavingStep("Uploading image...");
-				const newItemWithImage = await uploadMenuItemImage(
-					newItem.id,
-					selectedImage,
-				);
+				await uploadMenuItemImage(newItem.id, selectedImage);
 
-				fetchItems();
 				toast({
 					title: "Item Added",
 					description: `${payload.name} has been successfully added.`,
 				});
 			}
+
+			// Invalidate the query to refetch in other components
+			await queryClient.invalidateQueries({ queryKey: ["vendorMenuItems"] });
+			// Refetch local state for this component
+			await fetchItems();
 			setDialogOpen(false);
 		} catch (error) {
 			const message =
@@ -261,6 +254,7 @@ export default function VendorItemManagement() {
 		try {
 			await deleteVendorMenuItem(itemToDelete.id);
 			setItems(items.filter((item) => item.id !== itemToDelete.id));
+			queryClient.invalidateQueries({ queryKey: ["vendorMenuItems"] });
 			toast({
 				title: "Item Deleted",
 				description: `${itemToDelete.name} has been removed from your menu.`,

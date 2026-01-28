@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -38,7 +39,10 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatePresence, motion } from "framer-motion";
-import { ShoppingCart, Truck, History } from "lucide-react";
+import { ShoppingCart, Truck, History, RefreshCw } from "lucide-react";
+import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
+import PostOrderReviewModal from "@/components/reviews/post-order-review-modal";
+
 
 const OrderList = ({
 	title,
@@ -145,8 +149,12 @@ export default function CustomerOrdersPage() {
 
 	const [isCheckoutOpen, setCheckoutOpen] = useState(false);
 	const [orderForCheckout, setOrderForCheckout] = useState<Order | null>(null);
+	const [orderToReview, setOrderToReview] = useState<CustomerOrder | null>(null);
 
 	const [activeTab, setActiveTab] = useState("active");
+
+	const { isCooldownActive, remainingSeconds, triggerRefresh } =
+		useRefreshCooldown();
 
 	useEffect(() => {
 		const savedTab = localStorage.getItem("customerOrdersTab");
@@ -159,11 +167,61 @@ export default function CustomerOrdersPage() {
 		localStorage.setItem("customerOrdersTab", activeTab);
 	}, [activeTab]);
 
-	const { data: fetchedOrders = [], isLoading: isLoadingOrders } = useQuery({
+	const {
+		data: fetchedOrders = [],
+		isLoading: isLoadingOrders,
+		isFetching,
+		refetch,
+	} = useQuery({
 		queryKey: ["customerOrders"],
 		queryFn: getCustomerOrders,
-		refetchInterval: 30000,
+		refetchOnWindowFocus: false,
 	});
+
+	const pastOrderStatuses: OrderStatus[] = [
+		"Delivered",
+		"Cancelled",
+		"Picked Up by Customer",
+		"Rejected",
+	];
+	const activeOrders = fetchedOrders.filter(
+		(o) => !pastOrderStatuses.includes(o.status),
+	);
+	const pastOrders = fetchedOrders.filter((o) =>
+		pastOrderStatuses.includes(o.status),
+	);
+
+	useEffect(() => {
+		if (isLoadingOrders || fetchedOrders.length === 0) {
+			return;
+		}
+	
+		const lastPastCount = parseInt(localStorage.getItem('lastPastOrderCount') || '0', 10);
+		const currentPastCount = pastOrders.length;
+	
+		if (currentPastCount > lastPastCount) {
+			const reviewedOrderIds: string[] = JSON.parse(localStorage.getItem('reviewedOrderIds') || '[]');
+			
+			// Find the most recent order in the "past" list that hasn't been reviewed
+			const mostRecentPastOrder = pastOrders.find(
+				(order) => !reviewedOrderIds.includes(order.id)
+			);
+	
+			if (mostRecentPastOrder) {
+				// Only trigger review for successfully completed orders
+				if (mostRecentPastOrder.status === 'Delivered' || mostRecentPastOrder.status === 'Picked Up by Customer') {
+					setOrderToReview(mostRecentPastOrder);
+				}
+				
+				// Mark this order as "processed for review" to avoid re-triggering, even if it wasn't a reviewable status
+				const updatedReviewedIds = [...reviewedOrderIds, mostRecentPastOrder.id];
+				localStorage.setItem('reviewedOrderIds', JSON.stringify(updatedReviewedIds));
+			}
+		}
+	
+		localStorage.setItem('lastPastOrderCount', String(currentPastCount));
+	
+	}, [pastOrders, fetchedOrders, isLoadingOrders]);
 
 	const { mutate: confirmDeliveryMutation, isPending: isConfirmingMutation } =
 		useMutation({
@@ -220,18 +278,10 @@ export default function CustomerOrdersPage() {
 		});
 	};
 
-	const pastOrderStatuses: OrderStatus[] = [
-		"Delivered",
-		"Cancelled",
-		"Picked Up by Customer",
-		"Rejected",
-	];
-	const activeOrders = fetchedOrders.filter(
-		(o) => !pastOrderStatuses.includes(o.status),
-	);
-	const pastOrders = fetchedOrders.filter((o) =>
-		pastOrderStatuses.includes(o.status),
-	);
+	const handleRefresh = () => {
+		triggerRefresh(() => refetch());
+	};
+
 	const unsubmittedOrders = unplacedOrders.filter(
 		(o) => o.status === "unsubmitted",
 	);
@@ -257,27 +307,27 @@ export default function CustomerOrdersPage() {
 								<div className="space-y-3">
 									{order.items.map((item) => (
 										<div
-											key={item.id}
+											key={item.cartItemId}
 											className="flex justify-between items-center text-sm"
 										>
 											<div className="flex items-center gap-3">
 												<Image
 													src={
-														item.image_url && item.image_url.startsWith("http")
-															? item.image_url
+														item.menuItem.image_url && item.menuItem.image_url.startsWith("http")
+															? item.menuItem.image_url
 															: "https://placehold.co/48x48.png"
 													}
-													alt={item.name}
+													alt={item.menuItem.name}
 													width={40}
 													height={40}
 													className="rounded-md"
 												/>
 												<span>
-													{item.quantity} x {item.name}
+													{item.quantity} x {item.menuItem.name}
 												</span>
 											</div>
 											<span className="font-medium">
-												₦{(item.quantity * parseFloat(item.price)).toFixed(2)}
+												₦{item.totalPrice.toFixed(2)}
 											</span>
 										</div>
 									))}
@@ -347,12 +397,36 @@ export default function CustomerOrdersPage() {
 
 	return (
 		<div className="container px-3 py-8 md:py-12">
+			{orderToReview && (
+				<PostOrderReviewModal
+				isOpen={!!orderToReview}
+				onClose={() => setOrderToReview(null)}
+				restaurantName={orderToReview.restaurant_name}
+				restaurantId={orderToReview.restaurant_id}
+				/>
+			)}
 			<CheckoutModal
 				isOpen={isCheckoutOpen}
 				onClose={() => setCheckoutOpen(false)}
 				order={orderForCheckout}
 			/>
-			<h1 className="text-3xl font-bold font-headline mb-8">Your Orders</h1>
+			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+				<h1 className="text-3xl font-bold font-headline">Your Orders</h1>
+				<Button
+					onClick={handleRefresh}
+					variant="outline"
+					disabled={isFetching || isCooldownActive}
+				>
+					<RefreshCw
+						className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+					/>
+					{isCooldownActive
+						? `Wait ${remainingSeconds}s`
+						: isFetching
+						? "Refreshing..."
+						: "Refresh Orders"}
+				</Button>
+			</div>
 
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
 				<TabsList className="sticky top-0 z-40 bg-background border-b rounded-none px-0 w-full grid grid-cols-3">

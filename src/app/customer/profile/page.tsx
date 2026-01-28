@@ -1,30 +1,24 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useEffect, useState } from "react";
-import { User, profileSchema, PasswordFormData, passwordSchema, ProfileFormData } from "@/lib/types";
+import { User, profileSchema, ProfileFormData } from "@/lib/types";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/auth-api";
 import AddressManagement from "@/components/profile/address-management";
-import { Bell } from "lucide-react";
+import { Bell, ChevronRight, CreditCard, HelpCircle } from "lucide-react";
+import LogoutButton from "@/components/auth/logout-button";
 import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
-
 
 export default function CustomerProfilePage() {
     const [user, setUser] = useState<User | null>(null);
     const { toast } = useToast();
     
-    // Push notification state and handler from central hook
-    const { isSupported, isSubscribed, isSubscribing, platformInfo } = usePushStore();
-    const { handleSubscribe } = usePushManager();
-
     const profileForm = useForm<ProfileFormData>({
         resolver: zodResolver(profileSchema),
         mode: "onChange",
@@ -34,16 +28,10 @@ export default function CustomerProfilePage() {
         },
     });
 
-    const passwordForm = useForm<PasswordFormData>({
-        resolver: zodResolver(passwordSchema),
-        defaultValues: {
-            currentPassword: "",
-            newPassword: "",
-        }
-    });
+    const { isSupported, isSubscribed, isSubscribing, platformInfo } = usePushStore();
+    const { handleSubscribe } = usePushManager();
     
     const { formState: { isDirty: isProfileDirty, isValid: isProfileValid, isSubmitting: isProfileSubmitting } } = profileForm;
-
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -74,18 +62,11 @@ export default function CustomerProfilePage() {
         }
     };
 
-    const onPasswordSubmit = (data: PasswordFormData) => {
-        console.log("Password change submitted");
-        // TODO: Add API call to update password
-        toast({ title: "Success", description: "Your password has been updated." });
-        passwordForm.reset();
-    };
-
     return (
         <div className="container py-8 md:py-12">
-            <h1 className="text-3xl font-bold font-headline mb-8">Your Profile</h1>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                <Card className="lg:col-span-1">
+            <h1 className="text-3xl font-bold font-headline mb-8 text-center md:text-left">Your Profile</h1>
+            <div className="max-w-md mx-auto space-y-6">
+                <Card>
                     <CardHeader>
                         <CardTitle>Personal Information</CardTitle>
                         <CardDescription>
@@ -128,14 +109,15 @@ export default function CustomerProfilePage() {
                                         </FormItem>
                                     )}
                                 />
-                                <Button type="submit" disabled={!isProfileDirty || !isProfileValid || isProfileSubmitting}>
+                                <Button type="submit" disabled={!isProfileDirty || !isProfileValid || isProfileSubmitting} className="w-full">
                                     {isProfileSubmitting ? "Saving..." : "Save Information"}
                                 </Button>
                             </form>
                         </Form>
                     </CardContent>
                 </Card>
-                 <Card className="lg:col-span-2">
+                 
+                <Card>
                     <CardHeader>
                         <CardTitle>Delivery Addresses</CardTitle>
                         <CardDescription>
@@ -146,15 +128,14 @@ export default function CustomerProfilePage() {
                        <AddressManagement />
                     </CardContent>
                 </Card>
-                <Card className="lg:col-span-3">
+
+                <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Bell className="h-5 w-5" />
                             Notification Settings
                         </CardTitle>
-                        <CardDescription>
-                            Manage push notifications for order updates.
-                        </CardDescription>
+                        <CardDescription>Manage push notifications for order updates.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {isSupported ? (
@@ -192,49 +173,35 @@ export default function CustomerProfilePage() {
                         )}
                     </CardContent>
                 </Card>
-                <Card className="lg:col-span-3">
-                    <CardHeader>
-                        <CardTitle>Account Security</CardTitle>
-                        <CardDescription>
-                            Update your login credentials.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Form {...passwordForm}>
-                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 max-w-md">
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input id="email" type="email" defaultValue={user?.email || ''} readOnly />
+                
+                <Card>
+                    <CardContent className="p-2">
+                        <div className="space-y-1">
+                            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted cursor-pointer">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-2 bg-primary/10 rounded-full">
+                                        <CreditCard className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <span className="font-medium">Payment Methods</span>
                                 </div>
-                                <FormField
-                                    control={passwordForm.control}
-                                    name="currentPassword"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Current Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={passwordForm.control}
-                                    name="newPassword"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>New Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <Button type="submit" className="w-full sm:w-auto">Update Password</Button>
-                            </form>
-                        </Form>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-muted cursor-pointer">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-2 bg-primary/10 rounded-full">
+                                        <HelpCircle className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <span className="font-medium">Support</span>
+                                </div>
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardContent className="p-4">
+                        <LogoutButton />
                     </CardContent>
                 </Card>
             </div>

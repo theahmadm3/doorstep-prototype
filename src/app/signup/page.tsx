@@ -45,6 +45,12 @@ export default function SignupPage() {
                             Log in
                             </Link>
                         </div>
+                         <div className="mt-2 text-center text-sm">
+                            Are you a partner?{" "}
+                            <Link href="/secret/non-accessible/to/customers/login" className="underline text-primary">
+                            Login here
+                            </Link>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

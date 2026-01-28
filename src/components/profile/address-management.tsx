@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { Address, AddressFormData, AddressPostData } from "@/lib/types";
-import { PlusCircle, Edit, Trash2, MapPin } from "lucide-react";
+import { PlusCircle, Edit, Home } from "lucide-react";
 import { updateAddress, deleteAddress } from "@/lib/api";
 import { Skeleton } from "../ui/skeleton";
 import {
@@ -206,6 +206,7 @@ export default function AddressManagement() {
                     </form>
                 </Form>
                 <DialogFooter>
+                    <Button variant="ghost" className="text-red-500 mr-auto" onClick={() => setAddressToDelete(addressToEdit)}>Delete</Button>
                     <Button variant="outline" onClick={() => setEditModalOpen(false)}>Cancel</Button>
                     <Button type="submit" form="address-form" disabled={isUpdating}>
                         {isUpdating ? 'Saving...' : 'Save Changes'}
@@ -214,41 +215,36 @@ export default function AddressManagement() {
             </DialogContent>
         </Dialog>
         
-        <Button variant="outline" className="w-full" onClick={() => setAddModalOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Address
-        </Button>
-
-        <div className="space-y-3 pt-4">
+        <div className="space-y-3">
             {isAddressesLoading ? (
                 <div className="space-y-3">
                     {[...Array(2)].map((_, i) => (
-                        <Skeleton key={i} className="h-16 w-full" />
+                        <Skeleton key={i} className="h-20 w-full" />
                     ))}
                 </div>
             ) : addresses.length > 0 ? (
                     addresses.map(address => (
-                    <div key={address.id} className="flex items-center gap-4 p-3 rounded-md border hover:bg-muted">
-                        <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
+                    <div key={address.id} className="flex items-center gap-4 p-3 rounded-lg border bg-background">
+                        <Home className="h-5 w-5 text-primary flex-shrink-0" />
                         <div className="flex-grow">
-                            <p className="font-semibold">{address.address_nickname || `${address.street_address || `Location @ ${Number(address.latitude)?.toFixed(2)}, ${Number(address.longitude)?.toFixed(2)}`}`}</p>
+                            <p className="font-semibold">{address.address_nickname || 'Address'}</p>
                             <p className="text-sm text-muted-foreground">{address.street_address ? `${address.street_address}, ${address.city || ''}`.trim().replace(/,$/, '') : "GPS Location"}</p>
                         </div>
-                        <div className="flex gap-1">
-                             <Button variant="ghost" size="icon" onClick={() => handleEditClick(address)}>
-                                <Edit className="h-4 w-4"/>
-                            </Button>
-                             <Button variant="ghost" size="icon" onClick={() => setAddressToDelete(address)}>
-                                <Trash2 className="h-4 w-4 text-red-500"/>
-                            </Button>
-                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(address)}>
+                            <Edit className="h-4 w-4 text-muted-foreground"/>
+                        </Button>
                     </div>
                 ))
             ) : (
-                <div className="text-center text-muted-foreground py-10">
+                <div className="text-center text-muted-foreground py-4">
                     <p>You have no saved addresses.</p>
                 </div>
             )}
         </div>
+
+        <Button variant="outline" className="w-full border-dashed border-2" onClick={() => setAddModalOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add New Address
+        </Button>
     </div>
   );
 }

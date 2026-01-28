@@ -80,6 +80,18 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     }
   }, []);
 
+  const checkoutItems = useMemo(() => {
+    return user && order ? order.items : [];
+  }, [order, user]);
+
+  useEffect(() => {
+    // This effect handles closing the modal if the order becomes invalid
+    // (e.g., all items are removed from the cart).
+    if (isOpen && (!order || checkoutItems.length === 0)) {
+      onClose();
+    }
+  }, [isOpen, order, checkoutItems, onClose]);
+
   useEffect(() => {
     if (orderType === 'delivery' && viewedRestaurant?.address && selectedAddress?.latitude && selectedAddress?.longitude) {
       const dist = haversineDistance(
@@ -105,10 +117,6 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     }
   }, [viewedRestaurant, selectedAddress, orderType]);
   
-  const checkoutItems = useMemo(() => {
-    return user && order ? order.items : [];
-  }, [order, user]);
-
   const { subtotal, taxes, total, totalInKobo } = useMemo(() => {
     const sub = checkoutItems.reduce((acc, item) => acc + item.totalPrice, 0);
     const tax = Math.min(sub * 0.05, 500);
@@ -282,9 +290,6 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const isPaymentDisabled = isPlacingOrder || !viewedRestaurant || (orderType === 'delivery' && (!selectedAddress || deliveryFee > 2500));
 
   if (!isOpen || !order || checkoutItems.length === 0) {
-    if (isOpen && (!order || checkoutItems.length === 0)) {
-        onClose();
-    }
     return null;
   }
   

@@ -41,23 +41,49 @@ export const usePushManager = () => {
     const { setIsSubscribed } = usePushStore();
 
     const initialize = useCallback(async () => {
-        if (typeof window === 'undefined') return;
+        console.log("[Push Init] Starting initialization...");
+        
+        if (typeof window === 'undefined') {
+          console.log("[Push Init] Window undefined, exiting");
+          return;
+        }
 
         const supported = isPushNotificationSupported();
-        usePushStore.setState({ isSupported: supported });
-        usePushStore.setState({ platformInfo: detectPlatform() });
+        console.log("[Push Init] Push supported:", supported);
+        
+        const platform = detectPlatform();
+        console.log("[Push Init] Platform:", platform);
+        
+        usePushStore.setState({ isSupported: supported, platformInfo: platform });
         
         if (!supported) {
-            console.log("Push notifications not supported.");
+            console.log("[Push Init] Not supported, exiting");
             return;
         }
 
         try {
-            await registerPushServiceWorker();
+            console.log("[PushManager] Registering service worker...");
+            const registration = await registerPushServiceWorker();
+            
+            // Wait for service worker to be active
+            if (registration.installing) {
+                console.log("[PushManager] Service worker installing...");
+                await new Promise<void>((resolve) => {
+                    registration.installing!.addEventListener('statechange', (e) => {
+                        if ((e.target as ServiceWorker).state === 'activated') {
+                            console.log("[PushManager] Service worker activated.");
+                            resolve();
+                        }
+                    });
+                });
+            }
+            
+            console.log("[PushManager] Service worker ready, checking subscription...");
             const subscription = await getCurrentSubscription();
             setIsSubscribed(!!subscription);
+            console.log("[PushManager] Initialization complete. Subscription status:", !!subscription);
         } catch (error) {
-            console.error("Failed to initialize push manager:", error);
+            console.error("[PushManager] Failed to initialize push manager:", error);
         }
     }, [setIsSubscribed]);
 
@@ -67,10 +93,12 @@ export const usePushManager = () => {
 
     const handleSubscribe = async () => {
         const { platformInfo, isSubscribed } = usePushStore.getState();
+        console.log('[PushManager] handleSubscribe called. isSubscribed:', isSubscribed);
 
         if (isSubscribed) return;
 
         if (platformInfo.needsPWAInstall) {
+            console.warn('[PushManager] PWA installation needed on iOS.');
             toast({
                 title: "Install App to Enable Notifications",
                 description: "On iOS, please add this app to your Home Screen to enable notifications. Tap the Share button and select 'Add to Home Screen'.",
@@ -82,15 +110,22 @@ export const usePushManager = () => {
         usePushStore.setState({ isSubscribing: true });
 
         try {
+            console.log('[PushManager] Requesting notification permission...');
             const permission = await Notification.requestPermission();
+            console.log('[PushManager] Notification permission status:', permission);
             if (permission !== 'granted') {
                 throw new Error("Push notification permission denied.");
             }
 
             const registration = await navigator.serviceWorker.ready;
+            console.log('[PushManager] Service worker is ready for subscription.');
+
             const subscription = await subscribeToPushNotifications(registration);
+            console.log('[PushManager] Successfully subscribed to push notifications:', subscription.endpoint);
             
+            console.log('[PushManager] Sending subscription to server...');
             await subscribeToNotifications(subscription);
+            console.log('[PushManager] Server subscription successful.');
             
             usePushStore.setState({ isSubscribed: true });
             toast({
@@ -99,6 +134,7 @@ export const usePushManager = () => {
             });
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+            console.error("[PushManager] Subscription Failed:", message);
             toast({
                 title: "Subscription Failed",
                 description: message,
@@ -107,6 +143,7 @@ export const usePushManager = () => {
             usePushStore.setState({ isSubscribed: false });
         } finally {
             usePushStore.setState({ isSubscribing: false });
+            console.log('[PushManager] handleSubscribe finished.');
         }
     };
     
