@@ -123,23 +123,31 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 				<div className="relative mx-3 mb-2 shadow-[0_0_2px_rgba(0,0,0,0.3)] bg-[rgba(255,255,255,0.9)] rounded-[28px] overflow-hidden">
 					{/* Content */}
 					<div className="relative inline-flex items-center justify-around h-16 w-full px-2 font-medium">
+						{/* Animated background bubble */}
+						<div
+							className="absolute h-12 bg-primary/10 dark:bg-primary/20 rounded-2xl backdrop-blur-xl transition-all duration-300 ease-out"
+							style={{
+								width: `${100 / links.length}%`,
+								left: `${
+									(links.findIndex((link) => pathname.startsWith(link.href)) *
+										100) /
+									links.length
+								}%`,
+							}}
+						/>
+
 						{links.map(({ href, label, icon: Icon }) => {
 							const isActive = pathname.startsWith(href);
 							return (
 								<Link
-									key={label}
+									key={href}
 									href={href}
 									className={cn(
-										"group relative inline-flex flex-col items-center justify-center px-3 py-1 rounded-2xl transition-all duration-300",
+										"group relative inline-flex flex-col items-center justify-center px-3 py-1 rounded-2xl transition-all duration-300 flex-1",
 										isActive && "text-primary",
 									)}
 									aria-current={isActive ? "page" : undefined}
 								>
-									{/* Active indicator */}
-									{isActive && (
-										<div className="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-300" />
-									)}
-
 									{/* Hover effect */}
 									<div className="absolute inset-0 rounded-2xl bg-white/10 dark:bg-white/5 opacity-0 group-hover:opacity-100 group-active:opacity-100 group-active:bg-white/20 dark:group-active:bg-white/10 transition-all duration-300 backdrop-blur-xl" />
 
@@ -161,7 +169,6 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 								</Link>
 							);
 						})}
-						{/* <TempLogoutButton /> */}
 					</div>
 				</div>
 			</nav>
