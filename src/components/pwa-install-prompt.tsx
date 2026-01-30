@@ -14,7 +14,7 @@ export default function PWAInstallPrompt() {
 		const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 		const isStandalone = window.matchMedia(
 			"(display-mode: standalone)",
-		).matches;
+		).matches || (window.navigator as any).standalone === true;
 
 		setIsIOS(iOS);
 

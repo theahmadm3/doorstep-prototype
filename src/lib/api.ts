@@ -1,3 +1,5 @@
+
+
 import {
 	PaginatedResponse,
 	Restaurant,
@@ -19,7 +21,7 @@ import {
 	VendorAnalyticsData,
 	VendorProfile,
 	VendorProfileUpdatePayload,
-	AvailableRiderOrder,
+	RiderOrderBatch,
 	RiderOrderResponse,
 	PickupConfirmationPayload,
 	RiderOrder,
@@ -31,6 +33,8 @@ import {
 	CategoryPayload,
 	OptionChoice,
 	OptionPayload,
+	SearchResult,
+	ReviewPayload,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -50,17 +54,19 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 
 	const isFormData = options.body instanceof FormData;
 
-	const headers: Record<string, string> = {};
+	const headers = new Headers(options.headers);
 
 	if (!isFormData) {
-		headers["Content-Type"] = "application/json";
+		headers.set("Content-Type", "application/json");
 	}
 
 	if (token) {
-		headers["Authorization"] = `Bearer ${token}`;
+		headers.set("Authorization", `Bearer ${token}`);
 	}
 
-	const res = await fetch(`${BASE_URL}${url}`, { ...options, headers });
+	options.headers = headers;
+
+	const res = await fetch(`${BASE_URL}${url}`, options);
 
 	if (!res.ok) {
 		if (res.status === 401 && typeof window !== "undefined") {
@@ -297,7 +303,7 @@ export async function confirmPickupByCustomer(
 // Vendor Category Management
 export async function getMenuCategories(): Promise<MenuCategory[]> {
 	const response = await fetcher<PaginatedResponse<MenuCategory>>(
-		"/restaurants/me/menu/categories",
+		"/restaurants/me/menu/categories/",
 	);
 	return response.results;
 }
@@ -305,28 +311,28 @@ export async function getMenuCategories(): Promise<MenuCategory[]> {
 export async function createMenuCategory(
 	payload: CategoryPayload,
 ): Promise<MenuCategory> {
-	return fetcher<MenuCategory>("/restaurants/me/menu/categories", {
+	return fetcher<MenuCategory>("/restaurants/me/menu/categories/", {
 		method: "POST",
 		body: JSON.stringify(payload),
 	});
 }
 
 export async function getMenuCategory(id: string): Promise<MenuCategory> {
-	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`);
+	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}/`);
 }
 
 export async function updateMenuCategory(
 	id: string,
 	payload: CategoryPayload,
 ): Promise<MenuCategory> {
-	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}`, {
+	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}/`, {
 		method: "PUT",
 		body: JSON.stringify(payload),
 	});
 }
 
 export async function deleteMenuCategory(id: string): Promise<void> {
-	await fetcher<void>(`/restaurants/me/menu/categories/${id}`, {
+	await fetcher<void>(`/restaurants/me/menu/categories/${id}/`, {
 		method: "DELETE",
 	});
 }
@@ -405,6 +411,16 @@ export async function getRestaurantProfile(): Promise<VendorProfile> {
 	return fetcher<VendorProfile>("/restaurants/me/");
 }
 
+export async function uploadRestaurantProfileImage(image: File): Promise<VendorProfile> {
+    const formData = new FormData();
+    formData.append("image", image);
+
+    return fetcher<VendorProfile>("/upload_restaurant_profile_pic/", {
+        method: "POST",
+        body: formData,
+    });
+}
+
 export async function updateRestaurantProfile(
 	payload: VendorProfileUpdatePayload,
 ): Promise<VendorProfile> {
@@ -415,13 +431,10 @@ export async function updateRestaurantProfile(
 }
 
 // Rider API
-export async function getAvailableRiderOrders(): Promise<
-	AvailableRiderOrder[]
-> {
-	const response = await fetcher<PaginatedResponse<AvailableRiderOrder>>(
+export async function getAvailableRiderOrders(): Promise<PaginatedResponse<RiderOrderBatch>> {
+	return fetcher<PaginatedResponse<RiderOrderBatch>>(
 		"/drivers/orders/available",
 	);
-	return response.results;
 }
 
 export async function getRiderOrders(): Promise<RiderOrder[]> {
@@ -435,7 +448,7 @@ export async function performRiderAction(
 	payload?: object,
 ): Promise<RiderOrder> {
 	const response = await fetcher<{ data: RiderOrder }>(
-		`/drivers/orders/${orderId}/${action}`,
+		`/drivers/orders/${orderId}/${action}/`,
 		{
 			method: "POST",
 			body: payload ? JSON.stringify(payload) : undefined,
@@ -511,4 +524,27 @@ export async function deletePayoutRecipient(
 	await fetcher<void>(`/recipients/${recipientCode}/delete/`, {
 		method: "DELETE",
 	});
+}
+
+// Review API
+export async function submitRestaurantReview(
+	restaurantId: string,
+	payload: ReviewPayload,
+): Promise<void> {
+	await fetcher<void>(`/reviews/restaurant/${restaurantId}/`, {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+// Search API
+export async function searchItemsAndRestaurants(
+	query: string,
+): Promise<PaginatedResponse<SearchResult>> {
+	if (!query) {
+		return { count: 0, next: null, previous: null, results: [] };
+	}
+	return fetcher<PaginatedResponse<SearchResult>>(
+		`/search/?query=${encodeURIComponent(query)}`,
+	);
 }

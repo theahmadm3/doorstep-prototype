@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Star, MapPin, LocateFixed, Search, PlusCircle, Bell } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { getRestaurantProfile, updateRestaurantProfile } from "@/lib/api";
+import { getRestaurantProfile, updateRestaurantProfile, uploadRestaurantProfileImage } from "@/lib/api";
 import { VendorProfile, VendorProfileUpdatePayload } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,6 +111,13 @@ function VendorProfilePage() {
     const [description, setDescription] = useState("");
     const [isActive, setIsActive] = useState(true);
     const [addressState, setAddressState] = useState<{ street_name: string | null; latitude: number; longitude: number; }>({ street_name: null, latitude: 0, longitude: 0 });
+
+    // State for image upload
+    const profileImageInputRef = useRef<HTMLInputElement>(null);
+    const [selectedProfileImage, setSelectedProfileImage] = useState<File | null>(null);
+    const [previewProfileImage, setPreviewProfileImage] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
 
     // Push notification state and handler from central hook
     const { isSupported, isSubscribed, isSubscribing, platformInfo } = usePushStore();
@@ -230,6 +237,60 @@ function VendorProfilePage() {
         }
     };
 
+    const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+            if (file.size > MAX_SIZE) {
+                toast({
+                    title: "File too large",
+                    description: "Image size should not exceed 5MB.",
+                    variant: "destructive",
+                });
+                return;
+            }
+            if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+                toast({
+                    title: "Invalid file type",
+                    description: "Please upload a JPG or PNG image.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            setSelectedProfileImage(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewProfileImage(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleProfileImageUpload = async () => {
+        if (!selectedProfileImage) return;
+        setIsUploading(true);
+        try {
+            const updatedProfile = await uploadRestaurantProfileImage(selectedProfileImage);
+            setProfile(prevProfile => ({ ...prevProfile!, ...updatedProfile }));
+            toast({
+                title: "Success",
+                description: "Profile image updated successfully.",
+            });
+            setPreviewProfileImage(null);
+            setSelectedProfileImage(null);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+            toast({
+                title: "Upload Failed",
+                description: message,
+                variant: "destructive",
+            });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="space-y-8">
@@ -276,13 +337,46 @@ function VendorProfilePage() {
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="flex flex-col md:flex-row gap-6">
-                                <Image
-                                    src={profileImageUrl}
-                                    alt={profile.name}
-                                    width={200}
-                                    height={200}
-                                    className="rounded-lg object-cover bg-muted mx-auto md:mx-0"
-                                />
+                                <div className="flex-shrink-0 mx-auto md:mx-0">
+                                    <div className="relative group w-48 h-48">
+                                        <Image
+                                            src={previewProfileImage || profileImageUrl}
+                                            alt={profile.name}
+                                            fill
+                                            className="rounded-lg object-cover bg-muted"
+                                        />
+                                        <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => profileImageInputRef.current?.click()}
+                                            >
+                                                <Edit className="mr-2 h-4 w-4" /> Change
+                                            </Button>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            ref={profileImageInputRef}
+                                            onChange={handleProfileImageChange}
+                                            className="hidden"
+                                            accept="image/png, image/jpeg, image/jpg"
+                                        />
+                                    </div>
+                                    {previewProfileImage && (
+                                        <div className="flex gap-2 mt-2">
+                                            <Button size="sm" onClick={handleProfileImageUpload} disabled={isUploading} className="flex-1">
+                                                {isUploading ? "Uploading..." : "Save Image"}
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={() => {
+                                                setPreviewProfileImage(null);
+                                                setSelectedProfileImage(null);
+                                            }} className="flex-1">
+                                                Cancel
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="flex-1 space-y-4">
                                     <h2 className="text-2xl font-bold">{profile.name}</h2>
                                     <p className="text-muted-foreground">{profile.description}</p>
@@ -482,3 +576,5 @@ export default function VendorProfilePageWrapper() {
 
     return <VendorProfilePage />;
 }
+
+    

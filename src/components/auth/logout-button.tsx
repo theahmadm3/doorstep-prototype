@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -56,12 +55,11 @@ export default function LogoutButton() {
 		<AlertDialog open={open} onOpenChange={setOpen}>
 			<AlertDialogTrigger asChild>
 				<Button
-					variant="ghost"
-					size="icon"
-					className="h-8 w-full text-white m-auto bg-primary"
+					variant="destructive"
+					className="w-full"
 				>
-					Logout{" "}
-					<LogOut className="w-5 h-5 text-white-foreground hover:text-foreground" />
+					<LogOut className="mr-2 h-4 w-4" />
+					Logout
 				</Button>
 			</AlertDialogTrigger>
 			<AlertDialogContent>

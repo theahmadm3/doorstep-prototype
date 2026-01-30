@@ -26,6 +26,7 @@ import { useEffect, useState, createContext, useContext } from 'react';
 import type { User as UserType } from '@/lib/types';
 import BottomNavigation from '@/components/layout/bottom-navigation';
 import { useRiderLocation as useRiderLocationData, LocationStatus } from '@/hooks/use-rider-location-socket';
+import { useNotificationListener } from '@/hooks/use-notification-listener';
 
 const riderNavLinks = [
   { href: "/rider/dashboard", label: "Dashboard", icon: Home },
@@ -56,7 +57,7 @@ export default function RiderLayout({
 }: {
   children: React.ReactNode;
 }) {
-
+  useNotificationListener();
   const [user, setUser] = useState<UserType | null>(null);
 
   useEffect(() => {

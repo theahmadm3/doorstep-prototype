@@ -12,7 +12,7 @@ import {
 	SidebarFooter,
 	SidebarContent,
 } from "@/components/ui/sidebar";
-import { Home, Package, User, Utensils } from "lucide-react";
+import { Home, Package, User, Utensils, Search } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ClientHeader from "@/components/layout/client-header";
@@ -24,10 +24,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { usePathname } from "next/navigation";
+import { useNotificationListener } from "@/hooks/use-notification-listener";
 
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
 	{ href: "/customer/orders", label: "Orders", icon: Package },
+	{ href: "/customer/search", label: "Search", icon: Search },
 	{ href: "/customer/profile", label: "Profile", icon: User },
 ];
 
@@ -36,6 +38,7 @@ export default function CustomerLayout({
 }: {
 	children: React.ReactNode;
 }) {
+	useNotificationListener();
 	const [user, setUser] = useState<UserType | null>(null);
 	const { addresses, isAddressesLoading } = useAddresses();
 	const [isAddressModalRequired, setAddressModalRequired] = useState(false);
@@ -91,7 +94,7 @@ export default function CustomerLayout({
 					<SidebarContent className="flex-1 overflow-y-auto py-4">
 						<SidebarMenu>
 							{customerNavLinks.map((link) => (
-								<SidebarMenuItem key={link.href}>
+								<SidebarMenuItem key={link.label}>
 									<SidebarMenuButton asChild>
 										<Link href={link.href}>
 											<link.icon />
@@ -117,7 +120,7 @@ export default function CustomerLayout({
 								<div className="flex items-center gap-3">
 									<Avatar className="h-10 w-10">
 										<AvatarImage
-											src={user.avatar_url || "https://github.com/shadcn.png"}
+											src={`https://robohash.org/${user.full_name}`}
 											alt={user.full_name || "Customer"}
 										/>
 										<AvatarFallback>
