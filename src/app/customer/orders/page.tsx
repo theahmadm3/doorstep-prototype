@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -42,7 +41,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ShoppingCart, Truck, History, RefreshCw } from "lucide-react";
 import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 import PostOrderReviewModal from "@/components/reviews/post-order-review-modal";
-
 
 const OrderList = ({
 	title,
@@ -92,17 +90,17 @@ const OrderList = ({
 				>
 					{orders.map((order) => (
 						<AccordionItem value={order.id} key={order.id}>
-							<AccordionTrigger className="px-6 py-4 hover:no-underline">
+							<AccordionTrigger className="flex items-center px-6 py-4 hover:no-underline">
 								<div className="flex justify-between items-center w-full">
 									<div className="text-left">
 										<p className="font-bold text-lg">
-											Order #{order.id.slice(0, 8)}
-										</p>
-										<p className="text-sm text-muted-foreground">
 											{order.restaurant_name} - {order.created_at}
 										</p>
+										<p className="text-sm text-muted-foreground">
+											Order #{order.id.slice(0, 8)}
+										</p>
 									</div>
-									<div className="flex items-center gap-4">
+									<div className="flex flex-col items-center gap-4">
 										<span className="font-bold text-lg hidden sm:inline-block">
 											₦{parseFloat(order.total_amount).toFixed(2)}
 										</span>
@@ -111,12 +109,17 @@ const OrderList = ({
 												order.status === "Delivered" ? "default" : "secondary"
 											}
 											className={
-												order.status === "Delivered"
-													? "bg-green-600 text-white"
+												order.status === "Delivered" ||
+												order.status === "Picked Up by Customer"
+													? "bg-green-700 text-white"
 													: ""
 											}
 										>
-											{order.status}
+											{order.status === "Delivered"
+												? "Completed"
+												: order.status === "Picked Up by Customer"
+												? "Completed"
+												: order.status}
 										</Badge>
 									</div>
 								</div>
@@ -149,7 +152,9 @@ export default function CustomerOrdersPage() {
 
 	const [isCheckoutOpen, setCheckoutOpen] = useState(false);
 	const [orderForCheckout, setOrderForCheckout] = useState<Order | null>(null);
-	const [orderToReview, setOrderToReview] = useState<CustomerOrder | null>(null);
+	const [orderToReview, setOrderToReview] = useState<CustomerOrder | null>(
+		null,
+	);
 
 	const [activeTab, setActiveTab] = useState("active");
 
@@ -195,32 +200,45 @@ export default function CustomerOrdersPage() {
 		if (isLoadingOrders || fetchedOrders.length === 0) {
 			return;
 		}
-	
-		const lastPastCount = parseInt(localStorage.getItem('lastPastOrderCount') || '0', 10);
+
+		const lastPastCount = parseInt(
+			localStorage.getItem("lastPastOrderCount") || "0",
+			10,
+		);
 		const currentPastCount = pastOrders.length;
-	
+
 		if (currentPastCount > lastPastCount) {
-			const reviewedOrderIds: string[] = JSON.parse(localStorage.getItem('reviewedOrderIds') || '[]');
-			
+			const reviewedOrderIds: string[] = JSON.parse(
+				localStorage.getItem("reviewedOrderIds") || "[]",
+			);
+
 			// Find the most recent order in the "past" list that hasn't been reviewed
 			const mostRecentPastOrder = pastOrders.find(
-				(order) => !reviewedOrderIds.includes(order.id)
+				(order) => !reviewedOrderIds.includes(order.id),
 			);
-	
+
 			if (mostRecentPastOrder) {
 				// Only trigger review for successfully completed orders
-				if (mostRecentPastOrder.status === 'Delivered' || mostRecentPastOrder.status === 'Picked Up by Customer') {
+				if (
+					mostRecentPastOrder.status === "Delivered" ||
+					mostRecentPastOrder.status === "Picked Up by Customer"
+				) {
 					setOrderToReview(mostRecentPastOrder);
 				}
-				
+
 				// Mark this order as "processed for review" to avoid re-triggering, even if it wasn't a reviewable status
-				const updatedReviewedIds = [...reviewedOrderIds, mostRecentPastOrder.id];
-				localStorage.setItem('reviewedOrderIds', JSON.stringify(updatedReviewedIds));
+				const updatedReviewedIds = [
+					...reviewedOrderIds,
+					mostRecentPastOrder.id,
+				];
+				localStorage.setItem(
+					"reviewedOrderIds",
+					JSON.stringify(updatedReviewedIds),
+				);
 			}
 		}
-	
-		localStorage.setItem('lastPastOrderCount', String(currentPastCount));
-	
+
+		localStorage.setItem("lastPastOrderCount", String(currentPastCount));
 	}, [pastOrders, fetchedOrders, isLoadingOrders]);
 
 	const { mutate: confirmDeliveryMutation, isPending: isConfirmingMutation } =
@@ -313,7 +331,8 @@ export default function CustomerOrdersPage() {
 											<div className="flex items-center gap-3">
 												<Image
 													src={
-														item.menuItem.image_url && item.menuItem.image_url.startsWith("http")
+														item.menuItem.image_url &&
+														item.menuItem.image_url.startsWith("http")
 															? item.menuItem.image_url
 															: "https://placehold.co/48x48.png"
 													}
@@ -399,10 +418,10 @@ export default function CustomerOrdersPage() {
 		<div className="container px-3 py-8 md:py-12">
 			{orderToReview && (
 				<PostOrderReviewModal
-				isOpen={!!orderToReview}
-				onClose={() => setOrderToReview(null)}
-				restaurantName={orderToReview.restaurant_name}
-				restaurantId={orderToReview.restaurant_id}
+					isOpen={!!orderToReview}
+					onClose={() => setOrderToReview(null)}
+					restaurantName={orderToReview.restaurant_name}
+					restaurantId={orderToReview.restaurant_id}
 				/>
 			)}
 			<CheckoutModal
