@@ -205,7 +205,7 @@ export default function VendorDashboardPage() {
 									)}
 								</span>
 								<Label htmlFor="restaurant-status" className="font-medium">
-									{profile.is_active ? "Open" : "Closed"}
+									{profile.is_active ? "Actively taking orders" : "Currently closed"}
 								</Label>
 							</div>
 							<Switch
@@ -224,7 +224,7 @@ export default function VendorDashboardPage() {
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-						<span className="px-1"></span>₦
+						<DollarSign className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						{isLoading ? (
