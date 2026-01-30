@@ -1,4 +1,5 @@
 
+
 import * as z from "zod";
 
 // Generic
@@ -466,12 +467,12 @@ export interface VendorProfile {
 	image_url: string | null;
 	rating: string;
 	is_active: boolean;
+	is_open: boolean;
 }
 
 export interface VendorProfileUpdatePayload {
 	name?: string;
 	description?: string;
-	is_active?: boolean;
 	address?: {
 		street_name: string | null;
 		latitude: number;

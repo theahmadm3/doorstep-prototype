@@ -109,7 +109,6 @@ function VendorProfilePage() {
     // State for forms
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const [isActive, setIsActive] = useState(true);
     const [addressState, setAddressState] = useState<{ street_name: string | null; latitude: number; longitude: number; }>({ street_name: null, latitude: 0, longitude: 0 });
 
     // State for image upload
@@ -131,7 +130,6 @@ function VendorProfilePage() {
             setProfile(data);
             setName(data.name);
             setDescription(data.description || "");
-            setIsActive(data.is_active);
             setAddressState(data.address || { street_name: "", latitude: 0, longitude: 0 });
         } catch (error) {
             toast({
@@ -152,7 +150,6 @@ function VendorProfilePage() {
         if (!profile) return;
         setName(profile.name);
         setDescription(profile.description || "");
-        setIsActive(profile.is_active);
         setInfoModalOpen(true);
     };
     
@@ -169,7 +166,6 @@ function VendorProfilePage() {
         try {
             const payload: VendorProfileUpdatePayload = { name };
             if (description !== profile.description) payload.description = description;
-            if (isActive !== profile.is_active) payload.is_active = isActive;
 
             await updateRestaurantProfile(payload);
             toast({ title: "Success", description: "Restaurant information updated."});
@@ -382,9 +378,9 @@ function VendorProfilePage() {
                                     <p className="text-muted-foreground">{profile.description}</p>
                                     <StarRating rating={parseFloat(profile.rating)} />
                                      <div className="flex items-center space-x-2">
-                                        <Switch id="is_active" checked={profile.is_active} disabled />
-                                        <Label htmlFor="is_active">
-                                            {profile.is_active ? "Actively taking orders" : "Currently closed"}
+                                        <Switch id="is_open" checked={profile.is_open} disabled />
+                                        <Label htmlFor="is_open">
+                                            {profile.is_open ? "Actively taking orders" : "Currently closed"}
                                         </Label>
                                     </div>
                                 </div>
@@ -509,10 +505,6 @@ function VendorProfilePage() {
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
                             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Switch id="modal-is_active" checked={isActive} onCheckedChange={setIsActive} />
-                            <Label htmlFor="modal-is_active">Actively taking orders</Label>
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>

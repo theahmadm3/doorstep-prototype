@@ -430,6 +430,12 @@ export async function updateRestaurantProfile(
 	});
 }
 
+export async function toggleRestaurantOpenStatus(): Promise<VendorProfile> {
+	return fetcher<VendorProfile>("/restaurants/me/toggle-open/", {
+		method: "PATCH",
+	});
+}
+
 // Rider API
 export async function getAvailableRiderOrders(): Promise<PaginatedResponse<RiderOrderBatch>> {
 	return fetcher<PaginatedResponse<RiderOrderBatch>>(
