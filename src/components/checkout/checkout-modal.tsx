@@ -185,7 +185,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
         }
         const currentSubtotal = checkoutItems.reduce((acc, item) => acc + item.totalPrice, 0);
         if (currentSubtotal < result.min_order_value) {
-            throw new Error(`Your order total must be at least ₦${result.min_order_value} to use this code.`);
+            throw new Error(`Discount only applies to orders ₦${result.min_order_value}+`);
         }
         if (result.scope_type === 'delivery' && orderType !== 'delivery') {
             throw new Error("This code is only valid for delivery orders.");
@@ -588,3 +588,5 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     </Dialog>
   );
 }
+
+    
