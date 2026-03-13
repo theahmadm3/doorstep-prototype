@@ -35,6 +35,7 @@ import {
 	OptionPayload,
 	SearchResult,
 	ReviewPayload,
+	Discount,
 } from "./types";
 import type {
 	InitializePaymentPayload,
@@ -541,6 +542,16 @@ export async function submitRestaurantReview(
 		method: "POST",
 		body: JSON.stringify(payload),
 	});
+}
+
+// Discount API
+export async function applyDiscountCode(
+	code: string,
+	restaurantId: string,
+): Promise<Discount> {
+	return fetcher<Discount>(
+		`/discounts/lookup/?code=${code}&restaurant_id=${restaurantId}`,
+	);
 }
 
 // Search API

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import type { User, Order, OrderPayload, OrderItemPayload } from "@/lib/types";
+import type { User, Order, OrderPayload, OrderItemPayload, Discount } from "@/lib/types";
 import type { PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
 import {
   Dialog,
@@ -26,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { placeOrder, initializePayment } from "@/lib/api";
+import { placeOrder, initializePayment, applyDiscountCode } from "@/lib/api";
 import { Minus, Plus, Edit, Info, Truck, Package, Trash2, Tag } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import AddressSelectionModal from "../location/address-selection-modal";
@@ -73,7 +74,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
 
   // Discount State
   const [discountCode, setDiscountCode] = useState("");
-  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number; type: 'percentage' | 'fixed' | 'free_delivery' } | null>(null);
+  const [appliedDiscount, setAppliedDiscount] = useState<Discount | null>(null);
   const [isDiscountLoading, setIsDiscountLoading] = useState(false);
 
 
@@ -128,58 +129,77 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     const tax = Math.min(sub * 0.05, 500);
     const fee = orderType === 'delivery' ? deliveryFee : 0;
 
-    let discount = 0;
+    let discountAmount = 0;
     if (appliedDiscount) {
-      if (appliedDiscount.type === 'free_delivery') {
-        discount = fee;
-      } else if (appliedDiscount.type === 'percentage') {
-        discount = sub * 0.10; // This is coupled with handleApplyDiscount logic.
-      } else {
-        discount = appliedDiscount.amount;
-      }
+        if (sub >= appliedDiscount.min_order_value) {
+            switch (appliedDiscount.scope_type) {
+                case 'order':
+                    if (appliedDiscount.discount_type === 'percentage') {
+                        discountAmount = sub * (appliedDiscount.value / 100);
+                        if (appliedDiscount.max_discount_amount) {
+                            discountAmount = Math.min(discountAmount, appliedDiscount.max_discount_amount);
+                        }
+                    } else { // fixed_amount
+                        discountAmount = appliedDiscount.value;
+                    }
+                    break;
+                case 'delivery':
+                    if (orderType === 'delivery') {
+                        discountAmount = fee;
+                    }
+                    break;
+                case 'service_fee':
+                    discountAmount = tax;
+                    break;
+            }
+        }
     }
     
-    const grandTotal = Math.max(0, sub + tax + fee - discount);
+    const totalBeforeDiscount = sub + tax + fee;
+    discountAmount = Math.min(discountAmount, totalBeforeDiscount);
+    const grandTotal = Math.max(0, totalBeforeDiscount - discountAmount);
 
     return {
         subtotal: sub,
         taxes: tax,
         total: grandTotal,
         totalInKobo: Math.round(grandTotal * 100),
-        discountDisplayAmount: discount,
+        discountDisplayAmount: discountAmount,
     };
   }, [checkoutItems, deliveryFee, orderType, appliedDiscount]);
 
 
   const handleApplyDiscount = async () => {
-    if (!discountCode) return;
+    if (!discountCode || !order) return;
     setIsDiscountLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
 
-    const currentSubtotal = checkoutItems.reduce((acc, item) => acc + item.totalPrice, 0);
-    const upperCaseCode = discountCode.toUpperCase();
-
-    if (upperCaseCode === 'SAVE10') {
-        setAppliedDiscount({ code: 'SAVE10', amount: currentSubtotal * 0.10, type: 'percentage' });
-        toast({ title: "Discount Applied!", description: "10% has been taken off your subtotal." });
-    } else if (upperCaseCode === '500OFF') {
-        setAppliedDiscount({ code: '500OFF', amount: 500, type: 'fixed' });
-        toast({ title: "Discount Applied!", description: "₦500 has been taken off your order." });
-    } else if (upperCaseCode === 'FREEDELIVERY') {
-        if (orderType !== 'delivery') {
-             toast({ title: "Cannot Apply", description: "This code is only valid for delivery orders.", variant: "destructive" });
-        } else {
-            setAppliedDiscount({ code: 'FREEDELIVERY', amount: deliveryFee, type: 'free_delivery' });
-            toast({ title: "Discount Applied!", description: "Your delivery fee has been waived." });
+    try {
+        const result = await applyDiscountCode(discountCode, order.restaurantId);
+        
+        if (!result.is_active) {
+            throw new Error("This discount code is no longer active.");
         }
-    } else {
+        const now = new Date();
+        if (new Date(result.end_date) < now) {
+            throw new Error("This discount code has expired.");
+        }
+        const currentSubtotal = checkoutItems.reduce((acc, item) => acc + item.totalPrice, 0);
+        if (currentSubtotal < result.min_order_value) {
+            throw new Error(`Your order total must be at least ₦${result.min_order_value} to use this code.`);
+        }
+        if (result.scope_type === 'delivery' && orderType !== 'delivery') {
+            throw new Error("This code is only valid for delivery orders.");
+        }
+        
+        setAppliedDiscount(result);
+        toast({ title: "Discount Applied!", description: result.description || `Code ${result.code} applied.` });
+    } catch (error) {
         setAppliedDiscount(null);
-        toast({ title: "Invalid Code", description: "The discount code you entered is not valid.", variant: "destructive" });
+        const message = error instanceof Error ? error.message : "The discount code is not valid for this order.";
+        toast({ title: "Invalid Code", description: message, variant: "destructive" });
+    } finally {
+        setIsDiscountLoading(false);
     }
-
-    setIsDiscountLoading(false);
   };
 
   const handleRemoveDiscount = () => {

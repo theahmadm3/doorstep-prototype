@@ -585,6 +585,37 @@ export interface ReviewPayload {
     comment: string;
 }
 
+// Discount
+export interface Discount {
+	id: string;
+	code?: string | null;
+	description?: string | null;
+	discount_type: "percentage" | "fixed_amount";
+	value: number;
+	min_order_value: number;
+	max_discount_amount?: number | null;
+	start_date: string;
+	end_date: string;
+	is_active: boolean;
+	scope_type:
+		| "order"
+		| "delivery"
+		| "service_fee"
+		| "item"
+		| "category"
+		| "all_menu_items";
+	restaurant?: string | null;
+	menu_items: string[];
+	categories: string[];
+	funded_by: "restaurant" | "doorstep";
+	is_first_order_only: boolean;
+	usage_limit_per_user?: number | null;
+	total_usage_limit?: number | null;
+	created_at: string;
+	updated_at: string;
+}
+
+
 // Search
 export interface SearchResultMenuItem {
 	id: string;
