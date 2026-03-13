@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { placeOrder, initializePayment } from "@/lib/api";
-import { Minus, Plus, Edit, Info, Truck, Package, Trash2 } from "lucide-react";
+import { Minus, Plus, Edit, Info, Truck, Package, Trash2, Tag } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import AddressSelectionModal from "../location/address-selection-modal";
 import { haversineDistance } from "@/lib/utils";
@@ -37,6 +37,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { ScrollArea } from "../ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
+import { Input } from "../ui/input";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -69,6 +70,11 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const [showHighFeeModal, setShowHighFeeModal] = useState(false);
   
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
+
+  // Discount State
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string; amount: number; type: 'percentage' | 'fixed' | 'free_delivery' } | null>(null);
+  const [isDiscountLoading, setIsDiscountLoading] = useState(false);
 
 
   const order = initialOrder ? orders.find(o => o.id === initialOrder.id) : null;
@@ -117,18 +123,70 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     }
   }, [viewedRestaurant, selectedAddress, orderType]);
   
-  const { subtotal, taxes, total, totalInKobo } = useMemo(() => {
+  const { subtotal, taxes, total, totalInKobo, discountDisplayAmount } = useMemo(() => {
     const sub = checkoutItems.reduce((acc, item) => acc + item.totalPrice, 0);
     const tax = Math.min(sub * 0.05, 500);
     const fee = orderType === 'delivery' ? deliveryFee : 0;
-    const grandTotal = sub + tax + fee;
+
+    let discount = 0;
+    if (appliedDiscount) {
+      if (appliedDiscount.type === 'free_delivery') {
+        discount = fee;
+      } else if (appliedDiscount.type === 'percentage') {
+        discount = sub * 0.10; // This is coupled with handleApplyDiscount logic.
+      } else {
+        discount = appliedDiscount.amount;
+      }
+    }
+    
+    const grandTotal = Math.max(0, sub + tax + fee - discount);
+
     return {
         subtotal: sub,
         taxes: tax,
         total: grandTotal,
         totalInKobo: Math.round(grandTotal * 100),
+        discountDisplayAmount: discount,
     };
-  }, [checkoutItems, deliveryFee, orderType]);
+  }, [checkoutItems, deliveryFee, orderType, appliedDiscount]);
+
+
+  const handleApplyDiscount = async () => {
+    if (!discountCode) return;
+    setIsDiscountLoading(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const currentSubtotal = checkoutItems.reduce((acc, item) => acc + item.totalPrice, 0);
+    const upperCaseCode = discountCode.toUpperCase();
+
+    if (upperCaseCode === 'SAVE10') {
+        setAppliedDiscount({ code: 'SAVE10', amount: currentSubtotal * 0.10, type: 'percentage' });
+        toast({ title: "Discount Applied!", description: "10% has been taken off your subtotal." });
+    } else if (upperCaseCode === '500OFF') {
+        setAppliedDiscount({ code: '500OFF', amount: 500, type: 'fixed' });
+        toast({ title: "Discount Applied!", description: "₦500 has been taken off your order." });
+    } else if (upperCaseCode === 'FREEDELIVERY') {
+        if (orderType !== 'delivery') {
+             toast({ title: "Cannot Apply", description: "This code is only valid for delivery orders.", variant: "destructive" });
+        } else {
+            setAppliedDiscount({ code: 'FREEDELIVERY', amount: deliveryFee, type: 'free_delivery' });
+            toast({ title: "Discount Applied!", description: "Your delivery fee has been waived." });
+        }
+    } else {
+        setAppliedDiscount(null);
+        toast({ title: "Invalid Code", description: "The discount code you entered is not valid.", variant: "destructive" });
+    }
+
+    setIsDiscountLoading(false);
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountCode("");
+  };
+
 
   const handlePlaceOrder = useCallback(async (transaction: PaystackTransaction) => {
     if (!order) return;
@@ -416,6 +474,43 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                     </div>
                     </ScrollArea>
                     <Separator className="my-4" />
+                     <div className="space-y-2">
+                        <Label htmlFor="discount-code" className="flex items-center gap-2 text-xs">
+                            <Tag className="h-4 w-4" />
+                            Discount Code
+                        </Label>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                id="discount-code"
+                                placeholder="Enter code"
+                                value={discountCode}
+                                onChange={(e) => setDiscountCode(e.target.value)}
+                                disabled={!!appliedDiscount || isDiscountLoading}
+                                className="h-9"
+                            />
+                            {appliedDiscount ? (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleRemoveDiscount}
+                                >
+                                    Remove
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={handleApplyDiscount}
+                                    disabled={isDiscountLoading || !discountCode}
+                                >
+                                    {isDiscountLoading ? "Applying..." : "Get Discount"}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                    <Separator className="my-4" />
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                         <span>Subtotal</span>
@@ -447,6 +542,12 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                                 <span>
                                     {distance === null ? 'Select address' : deliveryFee > 2500 ? 'Distance too far' : `₦${deliveryFee.toFixed(2)}`}
                                 </span>
+                            </div>
+                        )}
+                        {appliedDiscount && (
+                            <div className="flex justify-between text-green-600 font-medium">
+                                <span>Discount ({appliedDiscount.code})</span>
+                                <span>-₦{discountDisplayAmount.toFixed(2)}</span>
                             </div>
                         )}
                         <Separator className="my-2" />
