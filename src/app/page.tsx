@@ -5,9 +5,10 @@ import LoginForm from "@/components/auth/login-form";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { Utensils } from "lucide-react";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import WhatsappOnboarding from "@/components/auth/whatsapp-onboarding";
+import { useRouter } from "next/navigation";
 
 function LoginFormSkeleton() {
   return (
@@ -21,8 +22,45 @@ function LoginFormSkeleton() {
   );
 }
 
+const ROLE_ROUTES: Record<string, string> = {
+  customer: "/customer/dashboard",
+  restaurant: "/vendor/dashboard",
+  driver: "/rider/dashboard",
+  admin: "/admin/dashboard",
+};
+
 export default function LoginPage() {
   const [hasOnboarded, setHasOnboarded] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    const storedUser = localStorage.getItem("user");
+
+    if (token && storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        const destination = ROLE_ROUTES[user.role];
+        if (destination) {
+          router.replace(destination);
+          return;
+        }
+      } catch {
+        // Corrupted data — fall through to show login
+      }
+    }
+
+    setIsCheckingAuth(false);
+  }, [router]);
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-muted/40">
+        <Utensils className="h-8 w-8 text-primary animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
