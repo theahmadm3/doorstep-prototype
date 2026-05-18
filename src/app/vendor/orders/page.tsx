@@ -7,11 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getVendorOrders, updateVendorOrderStatus, getVendorRiders, assignRiderToOrder } from "@/lib/api";
-import { CheckCircle, Clock, Utensils, ThumbsUp, Bike, ThumbsDown, Send, UserCheck } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { CheckCircle, Utensils, ThumbsUp, ThumbsDown, UserCheck, RefreshCw } from "lucide-react";
+import { useState } from "react";
 import type { VendorOrder, Rider } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +23,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -39,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import PickupConfirmationModal from "@/components/vendor/pickup-confirmation-modal";
+import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -161,10 +161,23 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
 
 
 export default function VendorOrdersPage() {
-    const [orders, setOrders] = useState<VendorOrder[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isUpdating, setIsUpdating] = useState<string | null>(null);
     const { toast } = useToast();
+    const { isCooldownActive, remainingSeconds, triggerRefresh } = useRefreshCooldown();
+
+    const { data: orders = [], isLoading, isFetching, refetch } = useQuery<VendorOrder[], Error>({
+        queryKey: ['vendorOrders'],
+        queryFn: getVendorOrders,
+        refetchOnWindowFocus: false,
+        onError: () => {
+            toast({
+                title: "Error fetching orders",
+                description: "Could not retrieve your orders. Please try again later.",
+                variant: "destructive"
+            });
+        }
+    });
+
+    const [isUpdating, setIsUpdating] = useState<string | null>(null);
     
     // State for rider assignment modal
     const [isAssignModalOpen, setAssignModalOpen] = useState(false);
@@ -181,38 +194,16 @@ export default function VendorOrdersPage() {
     const [isPickupModalOpen, setPickupModalOpen] = useState(false);
     const [orderForPickup, setOrderForPickup] = useState<VendorOrder | null>(null);
 
+    const handleRefresh = () => {
+        triggerRefresh(() => refetch());
+    };
 
-    const fetchOrders = useCallback(async () => {
-        if (orders.length === 0) setIsLoading(true);
-        try {
-            const data = await getVendorOrders();
-            setOrders(data);
-        } catch (error) {
-            toast({
-                title: "Error fetching orders",
-                description: "Could not retrieve your orders. Please try again later.",
-                variant: "destructive"
-            });
-        } finally {
-            if (isLoading) setIsLoading(false);
-        }
-    }, [toast, isLoading, orders.length]);
-
-    useEffect(() => {
-        fetchOrders();
-        const interval = setInterval(fetchOrders, 60000);
-
-        return () => clearInterval(interval);
-    }, [fetchOrders]);
-    
     const handleUpdateStatus = async (orderId: string, action: 'accept' | 'reject' | 'preparing' | 'ready') => {
         const orderToUpdate = orders.find(o => o.id === orderId);
         if (!orderToUpdate) return;
         
         if (action === 'ready') {
             if (orderToUpdate.order_type === 'pickup') {
-                // For pickup orders, just update the status to "Ready for Pickup"
-                // The confirmation will be a separate step.
                 setIsUpdating(orderId);
                  try {
                     await updateVendorOrderStatus(orderId, 'ready', 'inhouse');
@@ -220,7 +211,7 @@ export default function VendorOrdersPage() {
                         title: "Success",
                         description: "Order marked as Ready for Pickup.",
                     });
-                    await fetchOrders();
+                    await refetch();
                 } catch (error) {
                     const message = error instanceof Error ? error.message : "An unexpected error occurred.";
                     toast({
@@ -233,7 +224,6 @@ export default function VendorOrdersPage() {
                 }
                 return;
             } else {
-                 // For delivery orders, open the rider type selection modal
                  setOrderForRiderSelection(orderToUpdate);
                  setRiderTypeModalOpen(true);
                  return;
@@ -247,7 +237,7 @@ export default function VendorOrdersPage() {
                 title: "Success",
                 description: `Order has been successfully updated.`,
             });
-            await fetchOrders();
+            await refetch();
         } catch (error) {
              const message = error instanceof Error ? error.message : "An unexpected error occurred.";
              toast({
@@ -273,7 +263,7 @@ export default function VendorOrdersPage() {
                 title: "Success",
                 description: "Order marked as ready for pickup by rider.",
             });
-            await fetchOrders();
+            await refetch();
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
             toast({
@@ -311,7 +301,7 @@ export default function VendorOrdersPage() {
             await assignRiderToOrder(selectedOrder.id, selectedRiderName);
             toast({ title: "Success!", description: `${selectedRiderName} has been assigned to the order.` });
             setAssignModalOpen(false);
-            await fetchOrders();
+            await refetch();
         } catch (error) {
              const message = error instanceof Error ? error.message : "Assignment failed.";
              toast({ title: "Error", description: message, variant: "destructive" });
@@ -339,11 +329,11 @@ export default function VendorOrdersPage() {
         past: 1,
     });
     
-    const handlePageChange = (category, page) => {
+    const handlePageChange = (category: string, page: number) => {
         setPages(prev => ({ ...prev, [category]: page }));
     };
 
-    const paginate = (data, page) => {
+    const paginate = (data: VendorOrder[], page: number) => {
         const start = (page - 1) * ITEMS_PER_PAGE;
         const end = start + ITEMS_PER_PAGE;
         return data.slice(start, end);
@@ -372,7 +362,7 @@ export default function VendorOrdersPage() {
                     onClose={() => setPickupModalOpen(false)}
                     orderId={orderForPickup.id}
                     onSuccess={() => {
-                        fetchOrders();
+                        refetch();
                         setOrderForPickup(null);
                     }}
                 />
@@ -428,7 +418,17 @@ export default function VendorOrdersPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
+                <Button onClick={handleRefresh} variant="outline" disabled={isFetching || isCooldownActive}>
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+                    {isCooldownActive
+						? `Wait ${remainingSeconds}s`
+						: isFetching
+						? "Refreshing..."
+						: "Refresh Orders"}
+                </Button>
+            </div>
 
             <Tabs defaultValue="incoming" className="w-full">
                 <TabsList style={{flexWrap: 'nowrap'}} className="w-full inline-flex gap-x-1 md:gap-x-4 justify-start items-center overflow-x-auto">
@@ -547,4 +547,3 @@ export default function VendorOrdersPage() {
         </div>
     );
 }
-

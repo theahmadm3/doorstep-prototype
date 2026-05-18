@@ -1,4 +1,5 @@
 
+
 import * as z from "zod";
 
 // Generic
@@ -228,7 +229,8 @@ export type OrderStatus =
 	| "Arrived at Destination"
 	| "Picked Up by Customer"
 	| "Rejected"
-	| "Driver Assigned";
+	| "Driver Assigned"
+    | "Completed";
 
 export interface OrderItem {
 	cartItemId: string; // Unique identifier for this specific configuration in the cart
@@ -273,6 +275,7 @@ export interface OrderPayload {
 
 export interface CustomerOrder {
 	id: string;
+	restaurant_id: string;
 	restaurant_name: string;
 	total_amount: string;
 	status: OrderStatus;
@@ -464,12 +467,12 @@ export interface VendorProfile {
 	image_url: string | null;
 	rating: string;
 	is_active: boolean;
+	is_open: boolean;
 }
 
 export interface VendorProfileUpdatePayload {
 	name?: string;
 	description?: string;
-	is_active?: boolean;
 	address?: {
 		street_name: string | null;
 		latitude: number;
@@ -504,12 +507,23 @@ export interface RiderOrderResponse {
 	data: RiderOrder[];
 }
 
-export interface AvailableRiderOrder {
+export interface BatchedRiderOrder {
 	id: string;
 	status: OrderStatus;
 	order_type: "delivery" | "pickup";
 	restaurant_name: string;
 	distance_to_order: number;
+	customer_name: string;
+	customer_phone: string;
+	delivery_latitude: string;
+	delivery_longitude: string;
+}
+
+export interface RiderOrderBatch {
+	restaurant_name: string;
+	restaurant_id: string;
+	orders: BatchedRiderOrder[];
+	batch_count: number;
 }
 
 export const OTPSchema = z.object({
@@ -562,3 +576,82 @@ export const requestPayoutSchema = z.object({
 });
 
 export type InitiatePayoutPayload = z.infer<typeof requestPayoutSchema>;
+
+// Review
+export interface ReviewPayload {
+    restaurant: string;
+    user: string;
+    rating: number;
+    comment: string;
+}
+
+// Discount
+export interface Discount {
+	id: string;
+	code?: string | null;
+	description?: string | null;
+	discount_type: "percentage" | "fixed_amount";
+	value: number;
+	min_order_value: number;
+	max_discount_amount?: number | null;
+	start_date: string;
+	end_date: string;
+	is_active: boolean;
+	scope_type:
+		| "order"
+		| "delivery"
+		| "service_fee"
+		| "item"
+		| "category"
+		| "all_menu_items";
+	restaurant?: string | null;
+	menu_items: string[];
+	categories: string[];
+	funded_by: "restaurant" | "doorstep";
+	is_first_order_only: boolean;
+	usage_limit_per_user?: number | null;
+	total_usage_limit?: number | null;
+	created_at: string;
+	updated_at: string;
+}
+
+
+// Search
+export interface SearchResultMenuItem {
+	id: string;
+	name: string;
+	description: string;
+	price: string;
+	item_type: string;
+	image_url: string | null;
+	is_available: boolean;
+	restaurant_name: string;
+	restaurant_id: string;
+}
+
+export interface SearchResultRestaurant {
+	id: string;
+	name: string;
+	description: string;
+	address: {
+		id: string;
+		street_name: string;
+		latitude: string;
+		longitude: string;
+	} | null;
+	image_url: string | null;
+	rating: string;
+	is_active: boolean;
+	created_at: string;
+	updated_at: string;
+}
+
+export type SearchResult =
+	| {
+			result_type: "menu_item";
+			data: SearchResultMenuItem;
+	  }
+	| {
+			result_type: "restaurant";
+			data: SearchResultRestaurant;
+	  };

@@ -1,26 +1,21 @@
 {
-	"theme_color": "#005380",
-	"background_color": "#005380a",
-	"icons": [
-		{
-			"purpose": "maskable",
-			"sizes": "512x512",
-			"src": "/doorstep-logo.png",
-			"type": "image/png"
-		},
-		{
-			"purpose": "any",
-			"sizes": "512x512",
-			"src": "/doorstep-logo.png",
-			"type": "image/png"
-		}
-	],
-	"orientation": "any",
-	"display": "standalone",
-	"dir": "auto",
-	"lang": "en-GB",
-	"name": "Doorstep Limited",
-	"short_name": "Doorstep",
-	"description": "Get Your items delivered to your doorstep.",
-	"start_url": "/"
+  "name": "Doorstep",
+  "short_name": "Doorstep",
+  "description": "Your favourite food, delivered to your doorstep.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3f3f3",
+  "theme_color": "#005582",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }

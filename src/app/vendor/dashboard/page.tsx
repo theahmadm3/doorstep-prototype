@@ -25,13 +25,12 @@ import {
 	getVendorAnalytics,
 	getVendorOrders,
 	getRestaurantProfile,
-	updateRestaurantProfile,
+	toggleRestaurantOpenStatus,
 } from "@/lib/api";
 import {
 	VendorAnalyticsData,
 	VendorOrder,
 	VendorProfile,
-	VendorProfileUpdatePayload,
 } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -99,6 +98,7 @@ export default function VendorDashboardPage() {
 			setAnalytics(analyticsData);
 			setRecentOrders(ordersData.slice(0, 5)); // Get latest 5
 			setProfile(profileData);
+			localStorage.setItem('restaurant_is_open', String(profileData.is_open));
 		} catch (error) {
 			toast({
 				title: "Error fetching dashboard data",
@@ -119,20 +119,36 @@ export default function VendorDashboardPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	const handleStatusToggle = async (isActive: boolean) => {
+	const handleStatusToggle = async () => {
 		if (!profile) return;
+		
 		setToggleUpdating(true);
+		
+		// Optimistic update of local state
+		const originalProfile = profile;
+		const newStatus = !profile.is_open;
+		setProfile({ ...profile, is_open: newStatus });
+        localStorage.setItem('restaurant_is_open', String(newStatus));
+
 		try {
-			const payload: VendorProfileUpdatePayload = { is_active: isActive };
-			const updatedProfile = await updateRestaurantProfile(payload);
+			// API call to the new endpoint
+			const updatedProfile = await toggleRestaurantOpenStatus();
+			
+			// Sync state with server response
 			setProfile(updatedProfile);
+			localStorage.setItem('restaurant_is_open', String(updatedProfile.is_open));
+
 			toast({
-				title: `Restaurant is now ${isActive ? "Open" : "Closed"}`,
+				title: `Restaurant is now ${updatedProfile.is_open ? "Open" : "Closed"}`,
 				description: `You are now ${
-          isActive ? "accepting" : "not accepting"
-        } new orders.`,
+          			updatedProfile.is_open ? "accepting" : "not accepting"
+        		} new orders.`,
 			});
 		} catch (error) {
+			// Revert on failure
+			setProfile(originalProfile);
+			localStorage.setItem('restaurant_is_open', String(originalProfile.is_open));
+			
 			const message =
 				error instanceof Error ? error.message : "Failed to update status.";
 			toast({ title: "Update Failed", description: message, variant: "destructive" });
@@ -197,20 +213,20 @@ export default function VendorDashboardPage() {
 							<div className="flex items-center space-x-2">
 								<span
 									className={`relative flex h-3 w-3 rounded-full ${
-                    profile.is_active ? "bg-green-500" : "bg-red-500"
+                    profile.is_open ? "bg-green-500" : "bg-red-500"
                   }`}
 								>
-									{profile.is_active && (
+									{profile.is_open && (
 										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
 									)}
 								</span>
 								<Label htmlFor="restaurant-status" className="font-medium">
-									{profile.is_active ? "Open" : "Closed"}
+									{profile.is_open ? "Open for orders" : "Currently closed"}
 								</Label>
 							</div>
 							<Switch
 								id="restaurant-status"
-								checked={profile.is_active}
+								checked={profile.is_open}
 								onCheckedChange={handleStatusToggle}
 								disabled={isToggleUpdating}
 							/>
@@ -224,7 +240,7 @@ export default function VendorDashboardPage() {
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-						<span className="px-1"></span>₦
+						<DollarSign className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						{isLoading ? (

@@ -29,6 +29,7 @@ import type { User as UserType } from "@/lib/types";
 import { getRestaurantProfile } from "@/lib/api";
 import VendorAddressModal from "@/components/vendor/vendor-address-modal";
 import BottomNavigation from "@/components/layout/bottom-navigation";
+import { useNotificationListener } from "@/hooks/use-notification-listener";
 
 const vendorNavLinks = [
 	{ href: "/vendor/dashboard", label: "Dashboard", icon: Home },
@@ -44,6 +45,7 @@ export default function VendorLayout({
 }: {
 	children: React.ReactNode;
 }) {
+	useNotificationListener();
 	const [user, setUser] = useState<UserType | null>(null);
 	const [showAddressModal, setShowAddressModal] = useState(false);
 

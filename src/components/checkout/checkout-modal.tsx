@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import type { User, Order, OrderPayload, OrderItemPayload } from "@/lib/types";
+import type { User, Order, OrderPayload, OrderItemPayload, Discount } from "@/lib/types";
 import type { PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
 import {
   Dialog,
@@ -26,8 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { placeOrder, initializePayment } from "@/lib/api";
-import { Minus, Plus, Edit, Info, Truck, Package, Trash2 } from "lucide-react";
+import { placeOrder, initializePayment, applyDiscountCode } from "@/lib/api";
+import { Minus, Plus, Edit, Info, Truck, Package, Trash2, Tag } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import AddressSelectionModal from "../location/address-selection-modal";
 import { haversineDistance } from "@/lib/utils";
@@ -37,6 +38,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { ScrollArea } from "../ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
+import { Input } from "../ui/input";
 
 interface CheckoutModalProps {
     isOpen: boolean;
@@ -70,6 +72,11 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
 
+  // Discount State
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<Discount | null>(null);
+  const [isDiscountLoading, setIsDiscountLoading] = useState(false);
+
 
   const order = initialOrder ? orders.find(o => o.id === initialOrder.id) : null;
 
@@ -79,6 +86,18 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
         setUser(JSON.parse(storedUser));
     }
   }, []);
+
+  const checkoutItems = useMemo(() => {
+    return user && order ? order.items : [];
+  }, [order, user]);
+
+  useEffect(() => {
+    // This effect handles closing the modal if the order becomes invalid
+    // (e.g., all items are removed from the cart).
+    if (isOpen && (!order || checkoutItems.length === 0)) {
+      onClose();
+    }
+  }, [isOpen, order, checkoutItems, onClose]);
 
   useEffect(() => {
     if (orderType === 'delivery' && viewedRestaurant?.address && selectedAddress?.latitude && selectedAddress?.longitude) {
@@ -105,22 +124,89 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     }
   }, [viewedRestaurant, selectedAddress, orderType]);
   
-  const checkoutItems = useMemo(() => {
-    return user && order ? order.items : [];
-  }, [order, user]);
-
-  const { subtotal, taxes, total, totalInKobo } = useMemo(() => {
+  const { subtotal, taxes, total, totalInKobo, discountDisplayAmount } = useMemo(() => {
     const sub = checkoutItems.reduce((acc, item) => acc + item.totalPrice, 0);
     const tax = Math.min(sub * 0.05, 500);
     const fee = orderType === 'delivery' ? deliveryFee : 0;
-    const grandTotal = sub + tax + fee;
+
+    let discountAmount = 0;
+    if (appliedDiscount) {
+        if (sub >= appliedDiscount.min_order_value) {
+            switch (appliedDiscount.scope_type) {
+                case 'order':
+                    if (appliedDiscount.discount_type === 'percentage') {
+                        discountAmount = sub * (appliedDiscount.value / 100);
+                        if (appliedDiscount.max_discount_amount) {
+                            discountAmount = Math.min(discountAmount, appliedDiscount.max_discount_amount);
+                        }
+                    } else { // fixed_amount
+                        discountAmount = appliedDiscount.value;
+                    }
+                    break;
+                case 'delivery':
+                    if (orderType === 'delivery') {
+                        discountAmount = fee;
+                    }
+                    break;
+                case 'service_fee':
+                    discountAmount = tax;
+                    break;
+            }
+        }
+    }
+    
+    const totalBeforeDiscount = sub + tax + fee;
+    discountAmount = Math.min(discountAmount, totalBeforeDiscount);
+    const grandTotal = Math.max(0, totalBeforeDiscount - discountAmount);
+
     return {
         subtotal: sub,
         taxes: tax,
         total: grandTotal,
         totalInKobo: Math.round(grandTotal * 100),
+        discountDisplayAmount: discountAmount,
     };
-  }, [checkoutItems, deliveryFee, orderType]);
+  }, [checkoutItems, deliveryFee, orderType, appliedDiscount]);
+
+
+  const handleApplyDiscount = async () => {
+    if (!discountCode || !order) return;
+    setIsDiscountLoading(true);
+
+    try {
+        const result = await applyDiscountCode(discountCode, order.restaurantId);
+        
+        if (!result.is_active) {
+            throw new Error("This discount code is no longer active.");
+        }
+        const now = new Date();
+        if (new Date(result.end_date) < now) {
+            throw new Error("This discount code has expired.");
+        }
+        const currentSubtotal = checkoutItems.reduce((acc, item) => acc + item.totalPrice, 0);
+        if (currentSubtotal < result.min_order_value) {
+            throw new Error(`Discount only applies to orders ₦${result.min_order_value}+`);
+        }
+        if (result.scope_type === 'delivery' && orderType !== 'delivery') {
+            throw new Error("This code is only valid for delivery orders.");
+        }
+        
+        setAppliedDiscount(result);
+        toast({ title: "Discount Applied!", description: result.description || `Code ${result.code} applied.` });
+    } catch (error) {
+        setAppliedDiscount(null);
+        const message = error instanceof Error ? error.message : "The discount code is not valid for this order.";
+        toast({ title: "Invalid Code", description: message, variant: "destructive" });
+    } finally {
+        setIsDiscountLoading(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountCode("");
+  };
+
 
   const handlePlaceOrder = useCallback(async (transaction: PaystackTransaction) => {
     if (!order) return;
@@ -282,9 +368,6 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   const isPaymentDisabled = isPlacingOrder || !viewedRestaurant || (orderType === 'delivery' && (!selectedAddress || deliveryFee > 2500));
 
   if (!isOpen || !order || checkoutItems.length === 0) {
-    if (isOpen && (!order || checkoutItems.length === 0)) {
-        onClose();
-    }
     return null;
   }
   
@@ -411,6 +494,43 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                     </div>
                     </ScrollArea>
                     <Separator className="my-4" />
+                     <div className="space-y-2">
+                        <Label htmlFor="discount-code" className="flex items-center gap-2 text-xs">
+                            <Tag className="h-4 w-4" />
+                            Discount Code
+                        </Label>
+                        <div className="flex items-center gap-2">
+                            <Input
+                                id="discount-code"
+                                placeholder="Enter code"
+                                value={discountCode}
+                                onChange={(e) => setDiscountCode(e.target.value)}
+                                disabled={!!appliedDiscount || isDiscountLoading}
+                                className="h-9"
+                            />
+                            {appliedDiscount ? (
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleRemoveDiscount}
+                                >
+                                    Remove
+                                </Button>
+                            ) : (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={handleApplyDiscount}
+                                    disabled={isDiscountLoading || !discountCode}
+                                >
+                                    {isDiscountLoading ? "Applying..." : "Get Discount"}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                    <Separator className="my-4" />
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                         <span>Subtotal</span>
@@ -444,6 +564,12 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                                 </span>
                             </div>
                         )}
+                        {appliedDiscount && (
+                            <div className="flex justify-between text-green-600 font-medium">
+                                <span>Discount ({appliedDiscount.code})</span>
+                                <span>-₦{discountDisplayAmount.toFixed(2)}</span>
+                            </div>
+                        )}
                         <Separator className="my-2" />
                         <div className="flex justify-between font-bold text-lg">
                         <span>Total</span>
@@ -462,3 +588,5 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     </Dialog>
   );
 }
+
+    

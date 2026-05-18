@@ -116,25 +116,26 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 
 	return (
 		<>
-			{/* Backdrop blur background */}
-			<div className="fixed bottom-0 left-0 z-40 w-full h-20 bg-transparent pointer-events-none md:hidden border-0 backdrop-blur-2xl" />
-
 			<nav
 				className="fixed bottom-0 left-0 z-50 w-full md:hidden"
 				aria-label="Bottom navigation"
 			>
-				{/* Glassy container with enhanced blur */}
-				<div className="relative mx-3 mb-2 rounded-[28px] overflow-hidden">
-					{/* Multi-layered glass effect */}
-					<div className="absolute inset-0 bg-transparent dark:bg-gray-900/70 backdrop-blur-3xl" />
-					<div className="absolute inset-0 bg-gradient-to-b  dark:from-white/10 dark:to-white/5" />
-
-					{/* Border glow */}
-					<div className="absolute inset-0 rounded-[28px] border border-white/40 dark:border-white/20" />
-					<div className="absolute inset-0 rounded-[28px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]" />
-
+				<div className="relative mx-3 mb-2 shadow-[0_0_2px_rgba(0,0,0,0.3)] bg-[rgba(255,255,255,0.9)] rounded-[28px] overflow-hidden">
 					{/* Content */}
 					<div className="relative inline-flex items-center justify-around h-16 w-full px-2 font-medium">
+						{/* Animated background bubble */}
+						<div
+							className="absolute h-12 bg-primary/10 dark:bg-primary/20 rounded-2xl backdrop-blur-xl transition-all duration-300 ease-out"
+							style={{
+								width: `${100 / links.length}%`,
+								left: `${
+									(links.findIndex((link) => pathname.startsWith(link.href)) *
+										100) /
+									links.length
+								}%`,
+							}}
+						/>
+
 						{links.map(({ href, label, icon: Icon }) => {
 							const isActive = pathname.startsWith(href);
 							return (
@@ -142,16 +143,11 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 									key={href}
 									href={href}
 									className={cn(
-										"group relative inline-flex flex-col items-center justify-center px-3 py-1 rounded-2xl transition-all duration-300",
+										"group relative inline-flex flex-col items-center justify-center px-3 py-1 rounded-2xl transition-all duration-300 flex-1",
 										isActive && "text-primary",
 									)}
 									aria-current={isActive ? "page" : undefined}
 								>
-									{/* Active indicator */}
-									{isActive && (
-										<div className="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-300" />
-									)}
-
 									{/* Hover effect */}
 									<div className="absolute inset-0 rounded-2xl bg-white/10 dark:bg-white/5 opacity-0 group-hover:opacity-100 group-active:opacity-100 group-active:bg-white/20 dark:group-active:bg-white/10 transition-all duration-300 backdrop-blur-xl" />
 
@@ -173,7 +169,6 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 								</Link>
 							);
 						})}
-						<TempLogoutButton />
 					</div>
 				</div>
 			</nav>
