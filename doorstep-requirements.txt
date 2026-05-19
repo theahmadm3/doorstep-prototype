@@ -1,0 +1,2039 @@
+================================================================================
+  DOORSTEP — PLATFORM REQUIREMENTS & REBUILD GUIDE (React + TypeScript)
+================================================================================
+Generated: 2026-05-19
+Source: doorstep-prototype (Next.js 15 / React 18)
+Target: React + TypeScript (Vite or Next.js — see notes)
+
+This document describes every requirement, feature, data structure, API
+contract, business rule, and UI pattern needed to rebuild this platform
+from scratch in a new React + TypeScript repository.
+
+================================================================================
+  TABLE OF CONTENTS
+================================================================================
+
+  1.  Platform Overview
+  2.  Tech Stack & Dependencies
+  3.  Environment Variables
+  4.  Project Structure (Recommended)
+  5.  Authentication
+  6.  Role System
+  7.  Routing Architecture
+  8.  State Management
+  9.  API Layer
+  10. Data Types / TypeScript Interfaces
+  11. Validation Schemas (Zod)
+  12. Customer Features
+  13. Vendor / Restaurant Features
+  14. Rider / Driver Features
+  15. Admin Features
+  16. Cart & Checkout Flow
+  17. Order Lifecycle
+  18. Discount / Coupon System
+  19. Payment Integration (Paystack)
+  20. Payout & Withdrawal System
+  21. Address & Map Integration
+  22. Reviews System
+  23. Analytics
+  24. Push Notifications & PWA
+  25. UI Component Library
+  26. Custom Hooks
+  27. Business Logic & Calculations
+  28. Nigerian Banks Reference List
+  29. Security Considerations
+  30. Rebuild Checklist
+
+================================================================================
+  1. PLATFORM OVERVIEW
+================================================================================
+
+Doorstep is a multi-role Nigerian food delivery platform. It has four distinct
+user roles operating on the same platform with separate dashboards:
+
+  - Customer       → browse restaurants, add to cart, checkout, track orders
+  - Restaurant     → manage menu, accept/reject orders, track earnings
+  - Rider / Driver → accept delivery batches, navigate to customer, deliver
+  - Admin          → view all platform data, manage users and vendors
+
+Currency: Nigerian Naira (₦). Prices stored in Naira. Paystack requires Kobo
+(multiply Naira × 100 when passing to Paystack).
+
+Backend: Django REST Framework at https://doorstep-backend-gzqk.onrender.com/api
+All frontend-backend communication is via REST/JSON over HTTPS.
+
+================================================================================
+  2. TECH STACK & DEPENDENCIES
+================================================================================
+
+CORE FRAMEWORK
+  - React 18.3.x
+  - TypeScript 5.x
+  - Vite (recommended for SPA) OR Next.js 15 (for SSR/PWA needs)
+
+ROUTING
+  - react-router-dom v6 (if Vite/SPA)
+  - Next.js App Router (if staying with Next.js)
+
+STATE MANAGEMENT
+  - zustand (with persist middleware for localStorage)
+  - @tanstack/react-query v5 (server state, caching, loading states)
+
+FORMS & VALIDATION
+  - react-hook-form
+  - zod (schema validation)
+  - @hookform/resolvers/zod
+
+UI COMPONENTS
+  - shadcn/ui (Radix UI-based, copy components into codebase)
+  - tailwindcss
+  - lucide-react (icons)
+  - framer-motion (animations)
+  - embla-carousel-react (carousels, if needed)
+  - recharts (charts/analytics)
+
+MAPS & LOCATION
+  - @react-google-maps/api
+  - use-places-autocomplete
+
+PAYMENT
+  - react-paystack
+
+UTILITIES
+  - date-fns (date formatting)
+  - uuid (client-side ID generation)
+  - clsx + tailwind-merge (cn() utility)
+  - error-boundary
+
+NOTIFICATIONS / PWA
+  - firebase (Firebase Messaging for push notifications)
+  - next-pwa (if using Next.js) OR vite-plugin-pwa (if using Vite)
+
+AI (OPTIONAL — not critical for rebuild)
+  - @genkit-ai/googleai
+  - genkit
+
+DEVELOPMENT
+  - eslint
+  - prettier
+  - @types/node, @types/react, @types/react-dom
+
+package.json key scripts:
+  "dev": "vite" (or "next dev --turbopack --port 9002")
+  "build": "vite build" (or "next build")
+  "preview": "vite preview"
+
+================================================================================
+  3. ENVIRONMENT VARIABLES
+================================================================================
+
+Create a .env file at the project root with these keys:
+
+  VITE_BASE_URL=https://doorstep-backend-gzqk.onrender.com/api
+  VITE_PAYSTACK_PUBLIC_KEY=pk_test_b9ab6a9325026300920e75388fedbca2c0bbbe10
+  VITE_GOOGLE_MAPS_API_KEY=AIzaSyDW0dPIsfWlq5gf55LC1EnofUi77wSroaU
+  VITE_VAPID_PUBLIC_KEY=BB7-F_m2aKabYBuvjyl56Fw0TDvCHb7JHwDM0QwPc4QPRF5uLBXkptcw2ZijJhAi5lysBSJjANb8kYSjiYSLYOM
+
+If using Next.js replace VITE_ prefix with NEXT_PUBLIC_.
+
+Note: These are TEST keys. Replace with production keys before going live.
+
+================================================================================
+  4. PROJECT STRUCTURE (RECOMMENDED)
+================================================================================
+
+src/
+  app/           (if Next.js) or pages/ (if Vite + react-router)
+  components/
+    auth/
+      LoginForm.tsx
+      SignupForm.tsx
+      VerifyOtpForm.tsx
+      PartnerLoginForm.tsx
+      PartnerSignupForm.tsx
+      LogoutButton.tsx
+      WhatsappOnboarding.tsx
+    checkout/
+      CheckoutModal.tsx
+      AddToCartModal.tsx
+    dashboard/
+      CustomerOrderTimeline.tsx
+      OrderStatus.tsx
+      VendorItemManagement.tsx
+      VendorRiderManagement.tsx
+      AdminStats.tsx
+      AdminUsersTable.tsx
+    layout/
+      ClientHeader.tsx
+      BottomNavigation.tsx
+      CustomerLayout.tsx
+      VendorLayout.tsx
+      RiderLayout.tsx
+      AdminLayout.tsx
+    location/
+      AddressSelectionModal.tsx
+    payouts/
+      PayoutManagement.tsx
+    profile/
+      AddressManagement.tsx
+    reviews/
+      PostOrderReviewModal.tsx
+    rider/
+      OtpSubmissionModal.tsx
+      RiderOrderActions.tsx
+    vendor/
+      CategoryManagement.tsx
+      OptionManagement.tsx
+      PickupConfirmationModal.tsx
+      VendorAddressModal.tsx
+    pwa/
+      PushInitializer.tsx
+      PWAInstallPrompt.tsx
+    ui/                  ← shadcn/ui components go here
+  hooks/
+    use-addresses.ts
+    use-mobile.tsx
+    use-notification-listener.ts
+    use-push-manager.ts
+    use-rider-location-socket.ts
+    use-refresh-cooldown.ts
+    use-toast.ts
+  lib/
+    api.ts               ← base fetcher
+    auth-api.ts          ← auth endpoints
+    types/
+      index.ts           ← all TypeScript interfaces
+    utils.ts             ← cn(), haversineDistance()
+    banks.ts             ← Nigerian banks array
+    data.ts              ← static/mock data
+  pages/ (or app/)
+    (public)
+      LoginPage.tsx
+      SignupPage.tsx
+      VerifyOtpPage.tsx
+      PartnerLoginPage.tsx
+      MenuPage.tsx
+      RestaurantDetailPage.tsx
+    customer/
+      DashboardPage.tsx
+      OrdersPage.tsx
+      OrderDetailPage.tsx
+      ProfilePage.tsx
+      SearchPage.tsx
+    vendor/
+      DashboardPage.tsx
+      OrdersPage.tsx
+      AnalyticsPage.tsx
+      ConfigPage.tsx
+      PayoutsPage.tsx
+      ProfilePage.tsx
+    rider/
+      DashboardPage.tsx
+      OrdersPage.tsx
+      PayoutsPage.tsx
+      ProfilePage.tsx
+      SignupPage.tsx
+    admin/
+      DashboardPage.tsx
+      OrdersPage.tsx
+      AnalyticsPage.tsx
+      VendorsPage.tsx
+      RidersPage.tsx
+      ConfigPage.tsx
+  stores/
+    useAuthStore.ts
+    useCartStore.ts
+    useUIStore.ts
+  providers.tsx          ← wraps app with QueryClient, etc.
+
+================================================================================
+  5. AUTHENTICATION
+================================================================================
+
+TWO AUTH FLOWS EXIST:
+
+─── A. Customer Auth (Phone + OTP via WhatsApp) ─────────────────────────────
+
+Step 1 — Signup (new customers):
+  POST /auth/signup/customer/
+  Body: { full_name, email, phone_number, birthday?, referral_code? }
+  Response: { message: "OTP sent" }
+
+Step 2 — Send OTP (existing or new):
+  POST /auth/customer/send-otp/
+  Body: { phone_number }
+  Response: { message: "OTP sent via WhatsApp" }
+
+Step 3 — Verify OTP:
+  POST /auth/customer/login-otp/
+  Body: { phone_number, otp_code }  ← otp_code is a 6-digit string
+  Response: { tokens: { access: "jwt_token" }, user_role: "customer", user: {...} }
+
+Step 4 — Store session:
+  localStorage.setItem("accessToken", response.tokens.access)
+  localStorage.setItem("user", JSON.stringify(response.user))
+
+Step 5 — Redirect:
+  Navigate to /customer/dashboard
+
+Resend OTP:
+  POST /auth/regenerate-otp/
+  Body: { phone_number }
+
+WhatsApp Onboarding Gate:
+  Before showing the OTP entry form, show a prompt asking the user to message
+  the Doorstep WhatsApp bot first. User taps "I've sent the message" to proceed.
+  This is a UI-only gate, not enforced server-side.
+
+─── B. Partner Auth (Email + Password) ──────────────────────────────────────
+
+Step 1 — Login:
+  POST /auth/login/
+  Body: { email, password }
+  Response: { access: "jwt_token", user: { id, full_name, email, role, ... } }
+
+Step 2 — Store session:
+  localStorage.setItem("accessToken", response.access)
+  localStorage.setItem("user", JSON.stringify(response.user))
+
+Step 3 — Redirect based on user.role:
+  "restaurant" → /vendor/dashboard
+  "driver"     → /rider/dashboard
+  "admin"      → /admin/dashboard
+
+─── C. Session Management ────────────────────────────────────────────────────
+
+Get logged-in user:
+  GET /auth/users/me/
+  Headers: { Authorization: "Bearer {accessToken}" }
+
+Update profile:
+  PATCH /auth/users/me/update/
+  Headers: { Authorization: "Bearer {accessToken}" }
+  Body: { full_name?, phone_number?, avatar? (FormData) }
+
+Logout:
+  localStorage.removeItem("accessToken")
+  localStorage.removeItem("user")
+  Navigate to /
+
+Auto-logout on 401:
+  In the base fetcher, if response.status === 401:
+    Clear localStorage
+    window.location.href = "/?session_expired=true"
+
+Login page behavior:
+  If user is already authenticated (accessToken in localStorage):
+    Redirect immediately based on user.role (don't show login page)
+
+─── D. Partner Signup ────────────────────────────────────────────────────────
+
+  There is a /signup partner page that collects an email address and shows a
+  message saying the team will review the application. No direct API call from
+  this page (or just collects email and contacts backend via a simple POST).
+  Riders have a separate signup page at /rider/signup with a full registration
+  form.
+
+================================================================================
+  6. ROLE SYSTEM
+================================================================================
+
+Four roles exist. The role is stored in the user object returned from the API.
+
+  user.role = "customer"    → Customer dashboard (/customer/*)
+  user.role = "restaurant"  → Vendor dashboard (/vendor/*)
+  user.role = "driver"      → Rider dashboard (/rider/*)
+  user.role = "admin"       → Admin dashboard (/admin/*)
+
+Access control is BACKEND-ENFORCED. The frontend does not need middleware
+guards — if the API returns 401/403, the auto-logout mechanism fires.
+However, layouts are role-specific, so each set of pages has its own layout.
+
+user.status field:
+  "Pending"   → Account created but not yet approved (e.g., new vendor)
+  "Active"    → Fully operational
+  "Suspended" → Blocked by admin
+
+================================================================================
+  7. ROUTING ARCHITECTURE
+================================================================================
+
+PUBLIC ROUTES (no auth required):
+  /                                      → Login page (customer)
+  /signup                                → Customer signup
+  /verify-otp                            → OTP verification
+  /secret/non-accessible/to/customers/login  → Partner login
+  /menu                                  → Public restaurant/menu browsing
+  /restaurants/:restaurantId             → Restaurant detail + menu
+
+CUSTOMER ROUTES (role: customer):
+  /customer/dashboard                    → Restaurant catalog
+  /customer/orders                       → Order list (ongoing + past)
+  /customer/orders/:orderId/details      → Order tracking detail
+  /customer/profile                      → Profile + address management
+  /customer/restaurants/:restaurantId    → Menu browsing for logged-in customer
+  /customer/search                       → Search restaurants + menu items
+
+VENDOR ROUTES (role: restaurant):
+  /vendor/dashboard                      → Order overview + KPIs
+  /vendor/orders                         → Full order management table
+  /vendor/analytics                      → Revenue charts + top items
+  /vendor/config                         → Menu / category / option management
+  /vendor/payouts                        → Wallet + bank account + withdrawals
+  /vendor/profile                        → Restaurant info + logo upload
+
+RIDER ROUTES (role: driver):
+  /rider/dashboard                       → Available delivery batches
+  /rider/orders                          → Ongoing + completed deliveries
+  /rider/payouts                         → Earnings + withdrawal
+  /rider/profile                         → Driver profile
+  /rider/signup                          → Rider registration form
+
+ADMIN ROUTES (role: admin):
+  /admin/dashboard                       → Platform stats + recent orders
+  /admin/orders                          → All orders table
+  /admin/analytics                       → Platform-wide analytics charts
+  /admin/vendors                         → Restaurant management table
+  /admin/riders                          → Driver management table
+  /admin/config                          → Platform settings
+
+LAYOUT WRAPPERS:
+  Each role has a shared layout component that renders:
+  - Sidebar (desktop) — role-specific nav links
+  - Bottom navigation bar (mobile, ≤768px) — key pages only
+  - Page content area
+  - Push notification initializer (on mount, requests push permission)
+
+SIDEBAR NAV ITEMS BY ROLE:
+
+  Customer:
+    - Home (/customer/dashboard)
+    - Orders (/customer/orders)
+    - Search (/customer/search)
+    - Profile (/customer/profile)
+
+  Vendor:
+    - Dashboard (/vendor/dashboard)
+    - Orders (/vendor/orders)
+    - Analytics (/vendor/analytics)
+    - Menu Config (/vendor/config)
+    - Payouts (/vendor/payouts)
+    - Profile (/vendor/profile)
+
+  Rider:
+    - Dashboard (/rider/dashboard)
+    - My Orders (/rider/orders)
+    - Payouts (/rider/payouts)
+    - Profile (/rider/profile)
+
+  Admin:
+    - Dashboard (/admin/dashboard)
+    - Orders (/admin/orders)
+    - Analytics (/admin/analytics)
+    - Vendors (/admin/vendors)
+    - Riders (/admin/riders)
+    - Config (/admin/config)
+
+================================================================================
+  8. STATE MANAGEMENT
+================================================================================
+
+Three Zustand stores. All use the `persist` middleware to sync to localStorage
+where noted.
+
+─── A. useAuthStore ──────────────────────────────────────────────────────────
+
+interface AuthState {
+  phoneNumber: string | null;
+  setPhoneNumber: (phone: string | null) => void;
+}
+
+Persisted: yes (key: "auth-store")
+Purpose: Holds phone number during OTP flow (user enters phone on one page,
+verifies OTP on the next — store bridges the gap).
+
+─── B. useCartStore ──────────────────────────────────────────────────────────
+
+interface CartState {
+  orders: Order[];
+  addOrUpdateItem: (
+    item: MenuItem,
+    quantity: number,
+    selectedOptions: OptionChoice[]
+  ) => Order;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  increaseOrderItemQuantity: (orderId: string, cartItemId: string) => void;
+  decreaseOrderItemQuantity: (orderId: string, cartItemId: string) => void;
+  removeOrderItem: (orderId: string, cartItemId: string) => void;
+  removeUnsubmittedOrder: (orderId: string) => void;
+  clearUserOrders: () => void;
+}
+
+Persisted: YES — but only orders where status === "unsubmitted"
+  (submitted/placed orders do not need to persist in the cart store)
+
+Key behaviors:
+  - Only ONE unsubmitted order per restaurant at a time
+  - When user adds item from a DIFFERENT restaurant, all other unsubmitted
+    orders are cleared (because cart can only hold one restaurant at a time)
+  - Items are deduplicated: if the exact same menuItem + exact same option set
+    already exists in the cart, increment quantity rather than add a new item
+  - cartItemId is a UUID generated client-side at time of adding to cart
+  - totalPrice per OrderItem = (menuItem.price + sum(options.price_adjustment))
+                               × quantity
+  - Order.total = sum of all item totalPrices
+
+─── C. useUIStore ────────────────────────────────────────────────────────────
+
+interface UIState {
+  viewedRestaurant: Restaurant | null;
+  selectedAddress: Address | null;
+  setViewedRestaurant: (restaurant: Restaurant | null) => void;
+  setSelectedAddress: (address: Address | null) => void;
+  clearUIState: () => void;
+}
+
+Persisted: yes (key: "ui-store")
+Purpose:
+  - viewedRestaurant: tracks the restaurant the customer is currently browsing
+    (used in checkout modal to know which restaurant to place order for)
+  - selectedAddress: the delivery address selected for checkout
+    (auto-populated with user's default address on page load)
+
+─── D. React Query (TanStack Query v5) ───────────────────────────────────────
+
+  Set up a QueryClient with default options:
+    staleTime: 60_000 (1 minute)
+    retry: 1
+
+  Wrap app root in <QueryClientProvider client={queryClient}>
+  Optionally include <ReactQueryDevtools /> in development.
+
+  All server data (restaurants, orders, addresses, menu items, etc.) is fetched
+  via useQuery() and mutated via useMutation(). DO NOT use useEffect + fetch
+  for data fetching.
+
+================================================================================
+  9. API LAYER
+================================================================================
+
+─── Base Fetcher: src/lib/api.ts ─────────────────────────────────────────────
+
+const BASE_URL = import.meta.env.VITE_BASE_URL;  // or process.env.NEXT_PUBLIC_BASE_URL
+
+async function fetcher<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const token = localStorage.getItem("accessToken");
+  const headers: HeadersInit = {};
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  // Only set Content-Type for JSON (not FormData — let browser set boundary)
+  if (!(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers: { ...headers, ...options.headers },
+  });
+
+  if (response.status === 401) {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
+    window.location.href = "/?session_expired=true";
+    throw new Error("Unauthorized");
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw data;  // Throw the error object so the caller can display messages
+  }
+
+  return data as T;
+}
+
+─── Auth API: src/lib/auth-api.ts ───────────────────────────────────────────
+
+export const sendLoginOTP = (phone: string) =>
+  fetcher("/auth/customer/send-otp/", { method: "POST", body: JSON.stringify({ phone_number: phone }) });
+
+export const verifyLoginOTP = (data: { phone_number: string; otp_code: string }) =>
+  fetcher<LoginResponse>("/auth/customer/login-otp/", { method: "POST", body: JSON.stringify(data) });
+
+export const signupCustomer = (data: CustomerSignupPayload) =>
+  fetcher("/auth/signup/customer/", { method: "POST", body: JSON.stringify(data) });
+
+export const loginUser = (data: { email: string; password: string }) =>
+  fetcher<PartnerLoginResponse>("/auth/login/", { method: "POST", body: JSON.stringify(data) });
+
+export const regenerateOTP = (phone: string) =>
+  fetcher("/auth/regenerate-otp/", { method: "POST", body: JSON.stringify({ phone_number: phone }) });
+
+export const getMe = () => fetcher<User>("/auth/users/me/");
+
+export const updateProfile = (data: FormData | Partial<User>) =>
+  fetcher<User>("/auth/users/me/update/", { method: "PATCH", body: data instanceof FormData ? data : JSON.stringify(data) });
+
+─── Full Endpoint Reference ─────────────────────────────────────────────────
+
+RESTAURANTS & MENU:
+  GET    /restaurants/                         List all restaurants (paginated)
+  GET    /restaurants/{id}/                    Restaurant details
+  GET    /restaurants/{id}/menu/               Menu items for a restaurant
+  GET    /restaurants/me/                      Vendor's own restaurant
+  PATCH  /restaurants/me/                      Update vendor's restaurant info (FormData for logo)
+  POST   /restaurants/me/toggle-open/          Toggle is_active (open/closed)
+
+MENU MANAGEMENT (vendor):
+  GET    /restaurants/me/menu/                 Vendor's menu items
+  POST   /restaurants/me/menu/                 Create menu item (FormData for image)
+  PATCH  /restaurants/me/menu/{id}/            Update menu item
+  DELETE /restaurants/me/menu/{id}/            Delete menu item
+  PUT    /restaurants/me/menu/{id}/availability/  Toggle item availability
+  POST   /menu-items/{id}/upload-image/        Upload image for item (FormData)
+
+CATEGORIES (vendor):
+  GET    /restaurants/me/menu/categories/      List categories
+  POST   /restaurants/me/menu/categories/      Create category { name }
+  PUT    /restaurants/me/menu/categories/{id}/ Update category
+  DELETE /restaurants/me/menu/categories/{id}/ Delete category
+
+OPTIONS (vendor):
+  GET    /restaurants/me/options/              List options
+  POST   /restaurants/me/options/              Create option { name, type, price_adjustment, menu_item }
+  PATCH  /restaurants/me/options/{id}/         Update option
+  DELETE /restaurants/me/options/{id}/         Delete option
+
+ORDERS (customer):
+  POST   /orders/                              Place order
+  GET    /orders/{id}/                         Order details
+  GET    /get-customer-order                   Customer's own orders
+  POST   /customer/me/order/{id}/delivered/    Confirm delivery (with OTP)
+  PUT    /orders/{id}/pickup-status/           Confirm pickup (with OTP)
+
+ORDERS (vendor):
+  GET    /restaurants/me/orders/               Vendor's orders
+  POST   /restaurants/me/orders/{id}/accept/   Accept order
+  POST   /restaurants/me/orders/{id}/reject/   Reject order
+  POST   /restaurants/me/orders/{id}/preparing/ Mark as Preparing
+  POST   /restaurants/me/orders/{id}/ready/    Mark as Ready (body: { driver_type })
+  POST   /restaurants/me/orders/{id}/ongoing/  Assign in-house rider (body: { driver_name })
+
+ORDERS (rider):
+  GET    /drivers/orders/available             Available batches (grouped by restaurant)
+  GET    /drivers/orders/                      Rider's own orders
+  POST   /drivers/orders/{id}/accept/          Accept delivery
+  POST   /drivers/orders/{id}/reject/          Reject delivery
+  POST   /drivers/orders/{id}/arrive/          Mark arrived at restaurant
+  POST   /drivers/orders/{id}/pickup/          Mark order picked up
+  POST   /drivers/orders/{id}/deliver/         Mark as delivered (with OTP)
+
+RIDER MANAGEMENT (vendor):
+  GET    /restaurants/me/drivers/              List in-house riders
+  POST   /restaurants/me/drivers/              Add rider { name, phone }
+  PUT    /restaurants/me/drivers/              Update rider
+  DELETE /restaurants/me/drivers/              Delete rider
+
+ADDRESSES:
+  GET    /addresses/                           User's saved addresses
+  POST   /addresses/                           Add address
+  PUT    /addresses/{id}/                      Update address
+  DELETE /addresses/{id}/                      Delete address
+
+PAYMENT:
+  POST   /initialize/                          Initialize Paystack payment { amount }
+  POST   /subscribe/                           Register push notification subscription
+
+PAYOUTS:
+  GET    /wallet/                              Wallet balance
+  GET    /payout/recipients/                   Saved bank accounts
+  POST   /payout/recipient/create/             Add bank account
+  POST   /payout/initiate/                     Request withdrawal
+  DELETE /recipients/{recipient_code}/delete/  Remove bank account
+
+REVIEWS:
+  POST   /reviews/restaurant/{id}/             Submit restaurant review { rating, comment }
+
+DISCOUNTS:
+  GET    /discounts/lookup/?code=X&restaurant_id=Y   Validate + get discount
+
+SEARCH:
+  GET    /search/?query=X                      Global search (items + restaurants)
+
+ANALYTICS (vendor):
+  GET    /restaurant/me/analytics              Vendor revenue + order analytics
+
+PUSH NOTIFICATIONS:
+  POST   /subscribe/                           Register device for push notifications
+
+================================================================================
+  10. DATA TYPES / TYPESCRIPT INTERFACES
+================================================================================
+
+Place all in src/lib/types/index.ts
+
+─── Users & Auth ─────────────────────────────────────────────────────────────
+
+interface User {
+  id: string;
+  full_name: string;
+  email: string;
+  phone_number: string | null;
+  role: "customer" | "restaurant" | "admin" | "driver";
+  status: "Pending" | "Active" | "Suspended";
+  avatar_url: string | null;
+  created_at: string;
+  login_count: number;
+}
+
+interface LoginResponse {
+  tokens: { access: string };
+  user_role: "customer";
+  user: User;
+}
+
+interface PartnerLoginResponse {
+  access: string;
+  user: User;
+}
+
+interface CustomerSignupPayload {
+  full_name: string;
+  email: string;
+  phone_number: string;
+  birthday?: string;       // "YYYY-MM-DD"
+  referral_code?: string;
+}
+
+─── Restaurants ──────────────────────────────────────────────────────────────
+
+interface RestaurantAddress {
+  street: string;
+  city: string;
+  latitude: string;
+  longitude: string;
+}
+
+interface Owner {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
+interface Restaurant {
+  id: string;
+  owner: Owner;
+  name: string;
+  description: string | null;
+  address: RestaurantAddress | null;
+  image_url: string | null;
+  rating: string;        // e.g. "4.5"
+  is_active: boolean;    // open/closed, controlled by backend
+  created_at: string;
+  updated_at: string;
+}
+
+─── Menu ─────────────────────────────────────────────────────────────────────
+
+interface MenuCategory {
+  id: string;
+  name: string;
+  restaurant: string;  // Restaurant ID
+}
+
+interface OptionChoice {
+  id: string;
+  menu_item: string;   // MenuItem ID
+  name: string;
+  type: "protein" | "side" | "drink" | "packaging" | "extra" | "other";
+  price_adjustment: string;  // e.g. "200.00"
+  is_available: boolean;
+}
+
+interface MenuItem {
+  id: string;
+  restaurant: string;
+  name: string;
+  description: string | null;
+  price: string;         // e.g. "1500.00"
+  image_url: string | null;
+  is_available: boolean;
+  category: MenuCategory | null;
+  options: Record<string, OptionChoice[]>;  // Keyed by OptionChoice.type
+  item_type: "single" | "combo";
+  created_at: string;
+  updated_at: string;
+}
+
+─── Cart (client-side only) ─────────────────────────────────────────────────
+
+type OrderStatus =
+  | "unsubmitted"
+  | "Order Placed"
+  | "Vendor Accepted"
+  | "Preparing"
+  | "Order Ready"
+  | "Rider Assigned"
+  | "Rider on the Way"
+  | "Delivered"
+  | "Cancelled"
+  | "Rejected"
+  | "Pending"
+  | "Accepted"
+  | "Ready for Pickup"
+  | "On the Way"
+  | "Arrived at Restaurant"
+  | "pickedup"
+  | "Arrived at Destination"
+  | "Picked Up by Customer"
+  | "Driver Assigned"
+  | "Completed";
+
+interface OrderItem {
+  cartItemId: string;        // UUID, client-generated
+  menuItem: MenuItem;
+  quantity: number;
+  options: OptionChoice[];
+  totalPrice: number;        // calculated: (price + sum(options.price_adjustment)) × quantity
+}
+
+interface Order {
+  id: string;                // UUID, client-generated
+  restaurantId: string;
+  items: OrderItem[];
+  status: OrderStatus;
+  total: number;             // sum of item totalPrices
+}
+
+─── Orders (backend responses) ──────────────────────────────────────────────
+
+interface OrderDetailAddress {
+  street_address: string;
+  city: string;
+  latitude?: string;
+  longitude?: string;
+}
+
+interface CustomerOrder {
+  id: string;
+  restaurant_id: string;
+  restaurant_name: string;
+  total_amount: string;
+  status: OrderStatus;
+  created_at: string;
+  delivery_address: OrderDetailAddress;
+  order_type: "delivery" | "pickup";
+  delivery_fee?: string;
+  items?: OrderItem[];
+}
+
+interface OrderPayload {
+  restaurant_id: string;
+  delivery_address_id?: string;
+  items: {
+    menu_item_id: string;
+    quantity: number;
+    selected_options: string[];  // OptionChoice IDs
+  }[];
+  payment_method: "card" | "cash";
+  order_type: "delivery" | "pickup";
+  delivery_fee?: number;
+  discount_code?: string;
+}
+
+─── Addresses ────────────────────────────────────────────────────────────────
+
+interface Address {
+  id: string;
+  user: string;
+  street_address: string | null;
+  city: string | null;
+  nearest_landmark: string | null;
+  address_nickname: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  is_default: boolean;
+}
+
+─── Discounts ────────────────────────────────────────────────────────────────
+
+interface Discount {
+  id: string;
+  code?: string;
+  description?: string;
+  discount_type: "percentage" | "fixed_amount";
+  value: number;
+  min_order_value: number;
+  max_discount_amount?: number;
+  start_date: string;    // ISO date string
+  end_date: string;      // ISO date string
+  is_active: boolean;
+  scope_type: "order" | "delivery" | "service_fee" | "item" | "category" | "all_menu_items";
+  restaurant?: string;   // null = platform-wide discount
+  menu_items: string[];  // MenuItem IDs (if scope = 'item')
+  categories: string[];  // Category IDs (if scope = 'category')
+  funded_by: "restaurant" | "doorstep";
+  is_first_order_only: boolean;
+  usage_limit_per_user?: number;
+  total_usage_limit?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+─── Payouts ──────────────────────────────────────────────────────────────────
+
+interface WalletBalance {
+  balance: number;
+  withdrawable_balance: number;
+}
+
+interface PayoutRecipient {
+  id: number;
+  name: string;
+  account_number: string;
+  bank_code: string;
+  recipient_code: string;  // Paystack recipient code used for payout
+}
+
+─── Rider ────────────────────────────────────────────────────────────────────
+
+interface InHouseRider {
+  id: string;
+  name: string;
+  phone: string;
+  restaurant: string;
+}
+
+interface AvailableDeliveryBatch {
+  restaurant_id: string;
+  restaurant_name: string;
+  restaurant_location: string;
+  orders: CustomerOrder[];
+}
+
+─── Analytics ────────────────────────────────────────────────────────────────
+
+interface VendorAnalytics {
+  total_revenue: number;
+  total_orders: number;
+  delivered_orders: number;
+  cancelled_orders: number;
+  top_items: { name: string; count: number }[];
+  revenue_by_day: { date: string; revenue: number }[];
+}
+
+─── Pagination ───────────────────────────────────────────────────────────────
+
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+================================================================================
+  11. VALIDATION SCHEMAS (ZOD)
+================================================================================
+
+Place in each form file or in src/lib/schemas.ts
+
+import { z } from "zod";
+
+// Customer login — Nigerian phone: starts with 0 or +234, 11 digits local
+export const loginSchema = z.object({
+  phone_number: z.string()
+    .regex(/^(\+234|0)[789]\d{9}$/, "Enter a valid Nigerian phone number"),
+});
+
+// Partner login
+export const partnerLoginSchema = z.object({
+  email: z.string().email("Enter a valid email"),
+  password: z.string().min(1, "Password is required"),
+});
+
+// Customer signup
+export const customerSignupSchema = z.object({
+  full_name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Enter a valid email"),
+  phone_number: z.string().regex(/^(\+234|0)[789]\d{9}$/, "Enter a valid Nigerian phone number"),
+  birthday: z.string().optional(),
+  referral_code: z.string().optional(),
+});
+
+// OTP verification (6-digit)
+export const otpVerificationSchema = z.object({
+  otp_code: z.string().length(6, "OTP must be exactly 6 digits").regex(/^\d+$/, "OTP must be numbers only"),
+});
+
+// Profile update
+export const profileSchema = z.object({
+  full_name: z.string().min(2),
+  phone_number: z.string().regex(/^(\+234|0)[789]\d{9}$/).optional(),
+});
+
+// Address (at least one of: street OR lat+lng must be provided)
+export const addressSchema = z.object({
+  street_address: z.string().optional(),
+  city: z.string().optional(),
+  nearest_landmark: z.string().optional(),
+  address_nickname: z.string().optional(),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
+  is_default: z.boolean().default(false),
+}).refine(
+  (data) => data.street_address || (data.latitude && data.longitude),
+  { message: "Provide a street address or GPS coordinates" }
+);
+
+// Menu category
+export const categorySchema = z.object({
+  name: z.string().min(1, "Category name required"),
+});
+
+// Menu option
+export const optionSchema = z.object({
+  name: z.string().min(1, "Option name required"),
+  type: z.enum(["protein", "side", "drink", "packaging", "extra", "other"]),
+  price_adjustment: z.string().regex(/^\d+(\.\d{1,2})?$/, "Enter a valid price"),
+  menu_item: z.string().uuid(),
+});
+
+// Payout recipient (bank account)
+export const createRecipientSchema = z.object({
+  name: z.string().min(2, "Account owner name required"),
+  account_number: z.string().length(10, "Account number must be 10 digits").regex(/^\d+$/),
+  bank_code: z.string().min(1, "Select a bank"),
+});
+
+// Request payout withdrawal
+export const requestPayoutSchema = z.object({
+  amount: z.number().min(1000, "Minimum withdrawal is ₦1,000"),
+  recipient_code: z.string().min(1, "Select a recipient account"),
+});
+
+// In-house rider
+export const riderSchema = z.object({
+  name: z.string().min(2, "Rider name required"),
+  phone: z.string().regex(/^(\+234|0)[789]\d{9}$/, "Enter a valid phone number"),
+});
+
+================================================================================
+  12. CUSTOMER FEATURES
+================================================================================
+
+─── Dashboard (/customer/dashboard) ─────────────────────────────────────────
+
+  - Fetch all restaurants: GET /restaurants/?page=1
+  - Display as a grid of cards (image, name, rating, open/closed badge)
+  - Show "Closed" overlay on restaurant cards where is_active = false
+  - Tapping a restaurant navigates to /customer/restaurants/:restaurantId
+  - Search bar links to /customer/search
+  - Floating notification bell (if push notifications supported)
+
+─── Restaurant Menu (/customer/restaurants/:restaurantId) ───────────────────
+
+  - Fetch restaurant details: GET /restaurants/:id/
+  - Fetch menu: GET /restaurants/:id/menu/
+  - Display menu items grouped by category
+  - Items with is_available = false are greyed out with an "Unavailable" label
+  - Clicking an available item opens AddToCartModal
+  - Floating "View Order" button shows at bottom when cart has items
+    → Tapping opens CheckoutModal (see Section 16)
+
+─── Search (/customer/search) ───────────────────────────────────────────────
+
+  - Search input with debounce (~300ms)
+  - GET /search/?query={text}
+  - Returns two arrays: restaurants[] and menu_items[]
+  - Display as two tabbed sections or a unified list
+  - Clicking a result navigates to the relevant restaurant/item
+
+─── Orders (/customer/orders) ───────────────────────────────────────────────
+
+  - Tabs: "Ongoing" | "Past"
+  - Fetch: GET /get-customer-order
+  - Ongoing statuses: Pending, Accepted, Preparing, Ready for Pickup, On the Way
+  - Past statuses: Delivered, Completed, Cancelled, Rejected
+  - Each order row is expandable → shows CustomerOrderTimeline
+  - Timeline shows the order's progress through relevant statuses
+  - Refresh button with cooldown (use-refresh-cooldown hook, ~30s cooldown)
+
+  Confirm Delivery (delivery orders, status = "Delivered"):
+    - Shows "Confirm Delivery" button + 4-digit OTP input
+    - POST /customer/me/order/{id}/delivered/ with { otp }
+    - Toast on success
+
+  Confirm Pickup (pickup orders, status = "Ready for Pickup"):
+    - Shows "Confirm Pickup" button + 4-digit OTP input
+    - PUT /orders/{id}/pickup-status/ with { otp }
+
+─── Profile (/customer/profile) ─────────────────────────────────────────────
+
+  - Display user's name, email, phone
+  - Edit name + phone: PATCH /auth/users/me/update/
+  - Address management section:
+    - List saved addresses
+    - Add new address (modal with Google Places autocomplete)
+    - Delete address
+    - Set address as default
+  - Logout button
+
+================================================================================
+  13. VENDOR / RESTAURANT FEATURES
+================================================================================
+
+─── Dashboard (/vendor/dashboard) ───────────────────────────────────────────
+
+  - GET /restaurants/me/ — show restaurant info + open/closed toggle
+  - Show last 5 orders from GET /restaurants/me/orders/
+  - KPI cards:
+    - Total Revenue (sum of delivered order amounts)
+    - Active Orders (count of ongoing statuses)
+    - Delivered Orders (count)
+    - Cancelled Orders (count)
+  - Restaurant open/closed toggle → POST /restaurants/me/toggle-open/
+
+─── Orders (/vendor/orders) ─────────────────────────────────────────────────
+
+  - GET /restaurants/me/orders/
+  - Tabbed view: New | Preparing | Ready | Delivery | Past
+  - Table with columns: Order ID, Customer name, Date, Status, Total, Actions
+  - Pagination: 5 rows per page
+  - Action buttons per status:
+
+    New (status = "Pending"):
+      - "Accept" → POST /restaurants/me/orders/{id}/accept/
+      - "Reject" → POST /restaurants/me/orders/{id}/reject/
+
+    Preparing (status = "Vendor Accepted"):
+      - "Mark Preparing" → POST /restaurants/me/orders/{id}/preparing/
+
+    Ready (status = "Preparing"):
+      - "Mark Ready" button → opens a dialog:
+        "How will this order be delivered?"
+        Option A: "Use Doorstep Driver" → POST /restaurants/me/orders/{id}/ready/ with { driver_type: "doorstep" }
+        Option B: "Use In-House Rider" → shows dropdown of vendor's riders
+          → SELECT rider → POST /restaurants/me/orders/{id}/ready/ with { driver_type: "in_house" }
+          → THEN POST /restaurants/me/orders/{id}/ongoing/ with { driver_name }
+
+    Delivery (status = "Order Ready" / "Driver Assigned"):
+      - Shows who is handling delivery (Doorstep or rider name)
+      - Read-only
+
+    Past (status = "Delivered" / "Completed" / "Rejected" / "Cancelled"):
+      - Read-only table
+
+─── Menu Config (/vendor/config) ────────────────────────────────────────────
+
+  Three tabs: Menu Items | Categories | Options
+
+  Menu Items:
+    - List all items from GET /restaurants/me/menu/
+    - Each item: image, name, category, price, availability toggle, edit/delete
+    - Add Item form: name, description, price, category (select), image upload, item_type
+      → POST /restaurants/me/menu/ (FormData)
+    - Edit Item → PATCH /restaurants/me/menu/{id}/
+    - Delete Item → DELETE /restaurants/me/menu/{id}/
+    - Toggle availability → PUT /restaurants/me/menu/{id}/availability/
+
+  Categories:
+    - List from GET /restaurants/me/menu/categories/
+    - Add: POST /restaurants/me/menu/categories/ with { name }
+    - Edit: PUT /restaurants/me/menu/categories/{id}/
+    - Delete: DELETE /restaurants/me/menu/categories/{id}/
+
+  Options (add-ons/customizations):
+    - List from GET /restaurants/me/options/
+    - Each option shows: name, type, price adjustment, linked menu item
+    - Add: POST /restaurants/me/options/ with { name, type, price_adjustment, menu_item }
+    - Edit: PATCH /restaurants/me/options/{id}/
+    - Delete: DELETE /restaurants/me/options/{id}/
+
+─── In-House Riders (sub-section of Config or separate page) ────────────────
+
+  - List from GET /restaurants/me/drivers/
+  - Add rider: POST /restaurants/me/drivers/ with { name, phone }
+  - Edit: PUT /restaurants/me/drivers/
+  - Delete: DELETE /restaurants/me/drivers/
+
+─── Analytics (/vendor/analytics) ───────────────────────────────────────────
+
+  - GET /restaurant/me/analytics
+  - Display:
+    - Revenue over time (line chart using Recharts)
+    - Top selling items (bar chart or ranked list)
+    - Order counts by status (pie or donut chart)
+    - KPI summary cards (total revenue, total orders, avg order value)
+  - Date range filter (optional)
+
+─── Payouts (/vendor/payouts) ───────────────────────────────────────────────
+
+  See Section 20 — same component as rider payouts.
+
+─── Profile (/vendor/profile) ───────────────────────────────────────────────
+
+  - GET /restaurants/me/ — display restaurant info
+  - Edit: PATCH /restaurants/me/ (FormData for logo)
+  - Fields: name, description, address, logo image
+  - Address change uses VendorAddressModal with Google Places autocomplete
+
+================================================================================
+  14. RIDER / DRIVER FEATURES
+================================================================================
+
+─── Dashboard (/rider/dashboard) ────────────────────────────────────────────
+
+  - GET /drivers/orders/available
+  - Response: array of AvailableDeliveryBatch (grouped by restaurant)
+  - Display each batch as an accordion/expandable card:
+    - Restaurant name + location
+    - Number of orders in batch
+    - Expand to see individual orders with: customer name, delivery address, distance
+  - "Accept" / "Reject" buttons on each batch
+  - Rider location is tracked and sent to backend every 3 minutes
+    (use-rider-location-socket hook — calls updateRiderLocation(lat, lng))
+
+─── Orders (/rider/orders) ──────────────────────────────────────────────────
+
+  - GET /drivers/orders/
+  - Tabs: "Ongoing" | "Past"
+  - For each ongoing order, show:
+    - Order ID, customer name, customer phone (tap to call)
+    - Restaurant address (with icon)
+    - Delivery address (with icon)
+    - Order timeline showing current step
+  - Action buttons by status:
+    - Driver Assigned → "Arrive at Restaurant" → POST /drivers/orders/{id}/arrive/
+    - Arrived at Restaurant → "Pick Up Order" → POST /drivers/orders/{id}/pickup/
+    - pickedup → "Complete Delivery" → OtpSubmissionModal (rider provides 4-digit OTP to customer)
+      → POST /drivers/orders/{id}/deliver/ with { otp }
+  - "Get Directions in Maps" button:
+    Opens Google Maps with waypoints:
+    origin: rider's current location
+    waypoint: restaurant address
+    destination: customer delivery address
+    URL format: https://www.google.com/maps/dir/?api=1&origin=...&destination=...&waypoints=...
+
+─── Payouts (/rider/payouts) ────────────────────────────────────────────────
+
+  See Section 20.
+
+─── Rider Signup (/rider/signup) ────────────────────────────────────────────
+
+  - Form fields: full_name, email, phone_number, vehicle_type (dropdown)
+  - Submits to backend (exact endpoint TBD from backend)
+  - Shows success message after submission
+
+================================================================================
+  15. ADMIN FEATURES
+================================================================================
+
+─── Dashboard (/admin/dashboard) ────────────────────────────────────────────
+
+  - Platform-wide stats cards:
+    - Total orders, total revenue, total customers, total vendors, total riders
+  - Recent orders table (last 10-20 orders across all restaurants)
+  - Quick links to vendors/riders pages
+
+─── Orders (/admin/orders) ──────────────────────────────────────────────────
+
+  - All orders across all restaurants (paginated table)
+  - Columns: Order ID, Restaurant, Customer, Status, Amount, Date
+  - Filterable by status, date range
+
+─── Vendors (/admin/vendors) ────────────────────────────────────────────────
+
+  - AdminUsersTable component
+  - List all restaurants with their owner info + status
+  - Actions: View, Block/Unblock vendor
+
+─── Riders (/admin/riders) ──────────────────────────────────────────────────
+
+  - List all drivers with status
+  - Actions: View, Block/Unblock rider
+
+─── Analytics (/admin/analytics) ────────────────────────────────────────────
+
+  - Platform-wide revenue, orders, new users over time
+  - Charts using Recharts
+
+================================================================================
+  16. CART & CHECKOUT FLOW
+================================================================================
+
+─── AddToCartModal ───────────────────────────────────────────────────────────
+
+  Triggered when customer taps a menu item card.
+
+  Displays:
+    - Item image + name + description
+    - Options grouped by type (protein, side, drink, packaging, extra, other)
+      - Each group rendered as a section with checkboxes
+      - Option name + price adjustment shown per checkbox
+    - Quantity selector (+ / -)
+    - Total price (live updated as options + quantity change)
+    - "Add to Cart" button
+
+  On "Add to Cart":
+    - Calls useCartStore.addOrUpdateItem(menuItem, quantity, selectedOptions)
+    - If item from different restaurant: shows confirmation dialog
+      "Adding this item will clear your current cart. Continue?"
+    - Closes modal on success, shows toast
+
+─── CheckoutModal ────────────────────────────────────────────────────────────
+
+  Opens when customer taps floating "View Order" button.
+
+  Sections:
+
+  1. Order Items
+     - List items with quantity +/- buttons and remove (×) button
+     - Updates cart store in real time
+
+  2. Order Type Toggle
+     - "Delivery" | "Pickup"
+     - If Pickup: no address required, no delivery fee
+
+  3. Delivery Address (Delivery orders only)
+     - Shows currently selected address from useUIStore.selectedAddress
+     - "Change Address" → opens AddressSelectionModal
+
+  4. Price Summary
+     - Subtotal: sum of item totalPrices
+     - Delivery fee: calculated from haversineDistance (see Section 27)
+       → Only shown when order_type = "delivery" AND restaurant + delivery address
+          coordinates are available
+     - Tax: 5% of subtotal, capped at ₦500
+     - Discount: shown in green if discount applied (see Section 18)
+     - Total: subtotal + delivery fee + tax - discount
+
+  5. Discount Code
+     - Text input + "Apply" button
+     - GET /discounts/lookup/?code=X&restaurant_id=Y
+     - Shows green badge with discount details if valid
+     - Shows error message if invalid
+
+  6. Payment Method
+     - Radio: "Card (Paystack)" | "Cash on Delivery"
+
+  7. "Place Order" / "Pay Now" button
+     - If card: initialize Paystack → open Paystack modal → on success placeOrder()
+     - If cash: direct placeOrder()
+
+─── Address Selection Modal ─────────────────────────────────────────────────
+
+  Shows:
+    - List of user's saved addresses (GET /addresses/)
+    - "Use Current Location" button (browser geolocation)
+    - "Add New Address" form with Google Places autocomplete
+      → Saves to backend: POST /addresses/
+      → Sets as selected in useUIStore
+    - Each saved address: nickname/label + street address
+    - Tap to select (updates useUIStore.selectedAddress)
+
+================================================================================
+  17. ORDER LIFECYCLE
+================================================================================
+
+Full list of statuses and transitions:
+
+  UNSUBMITTED      (local cart only, never sent to backend)
+        ↓  Customer places order
+  ORDER PLACED     (backend receives order)
+        ↓  Vendor accepts
+  VENDOR ACCEPTED
+        ↓  Vendor marks preparing
+  PREPARING
+        ↓  Vendor marks ready + assigns driver type
+  ORDER READY
+        ↓  Rider accepts (if Doorstep) OR vendor assigns (if in-house)
+  DRIVER ASSIGNED / RIDER ASSIGNED
+        ↓  Rider arrives at restaurant
+  ARRIVED AT RESTAURANT
+        ↓  Rider picks up order (OTP given to rider by vendor)
+  PICKEDUP / ON THE WAY
+        ↓  Rider arrives at customer
+  ARRIVED AT DESTINATION
+        ↓  Customer confirms delivery with OTP
+  DELIVERED / COMPLETED
+
+Terminal statuses (no further transitions):
+  CANCELLED    - Customer or system cancelled
+  REJECTED     - Vendor rejected the order
+
+PICKUP ORDERS (no rider involved):
+  ORDER PLACED → VENDOR ACCEPTED → PREPARING → READY FOR PICKUP
+        ↓  Customer arrives + provides OTP
+  PICKED UP BY CUSTOMER
+
+Order timelines for each type are displayed as a visual step-by-step
+progress component (CustomerOrderTimeline) that highlights the current step
+and shows completed steps.
+
+================================================================================
+  18. DISCOUNT / COUPON SYSTEM
+================================================================================
+
+─── Discount Lookup ─────────────────────────────────────────────────────────
+
+  GET /discounts/lookup/?code={code}&restaurant_id={id}
+  Returns: Discount object OR error
+
+─── Discount Calculation Logic ──────────────────────────────────────────────
+
+  Run this logic in the checkout modal when computing the price summary.
+  Input variables: discount (Discount), subtotal, deliveryFee, tax, cartItems
+
+  let discountAmount = 0;
+
+  switch (discount.scope_type) {
+
+    case "order":
+    case "all_menu_items":
+      if (subtotal < discount.min_order_value) {
+        // Show: "Minimum order ₦{min_order_value} required"
+        break;
+      }
+      if (discount.discount_type === "percentage") {
+        discountAmount = subtotal * (discount.value / 100);
+        if (discount.max_discount_amount) {
+          discountAmount = Math.min(discountAmount, discount.max_discount_amount);
+        }
+      } else {
+        discountAmount = discount.value;
+      }
+      break;
+
+    case "delivery":
+      // Only applies to delivery orders
+      if (orderType !== "delivery") break;
+      if (discount.discount_type === "percentage") {
+        discountAmount = deliveryFee * (discount.value / 100);
+        if (discount.max_discount_amount) {
+          discountAmount = Math.min(discountAmount, discount.max_discount_amount);
+        }
+      } else {
+        discountAmount = Math.min(discount.value, deliveryFee);
+      }
+      break;
+
+    case "service_fee":
+      if (discount.discount_type === "percentage") {
+        discountAmount = tax * (discount.value / 100);
+      } else {
+        discountAmount = Math.min(discount.value, tax);
+      }
+      break;
+
+    case "item":
+      // Apply to specific items by menu_items ID list
+      // (Filter cartItems where menuItem.id in discount.menu_items, sum eligible amount)
+      break;
+
+    case "category":
+      // Apply to items in specific categories
+      break;
+  }
+
+  Send discount.code in the order payload when placing the order.
+
+================================================================================
+  19. PAYMENT INTEGRATION (PAYSTACK)
+================================================================================
+
+─── Setup ────────────────────────────────────────────────────────────────────
+
+  Install: npm install react-paystack
+
+  Public key from env: VITE_PAYSTACK_PUBLIC_KEY
+
+─── Flow ─────────────────────────────────────────────────────────────────────
+
+  Step 1: Initialize payment on backend
+    POST /initialize/
+    Body: { amount: totalInKobo }      // ← total × 100, Paystack requires Kobo
+    Response: { reference: "REF_XYZ" }
+
+  Step 2: Configure Paystack hook
+    const config = {
+      publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
+      email: user.email,                // required by Paystack
+      amount: totalInKobo,
+      reference: paymentReference,      // from Step 1
+    };
+    const initializePayment = usePaystackPayment(config);
+
+  Step 3: On "Pay Now" button click
+    initializePayment({
+      onSuccess: (transaction) => {
+        // transaction.status should be "success"
+        // transaction.reference is the Paystack reference
+        placeOrder(orderPayload);
+      },
+      onClose: () => {
+        // User closed the Paystack modal without completing
+        // Show toast: "Payment was cancelled"
+      }
+    });
+
+  Step 4: On payment success
+    - Call placeOrder(orderPayload) as normal
+    - Backend independently verifies the payment via Paystack webhook
+    - Show success toast
+    - Clear cart
+    - Navigate to /customer/orders
+
+─── Test Cards (for development) ────────────────────────────────────────────
+
+  Card number: 4084084084084081
+  CVV: 408
+  Expiry: any future date
+  PIN: 0000
+  OTP: 123456
+
+================================================================================
+  20. PAYOUT & WITHDRAWAL SYSTEM
+================================================================================
+
+Used by both Vendors and Riders (same PayoutManagement component).
+
+─── Wallet Balance ────────────────────────────────────────────────────────────
+
+  GET /wallet/
+  Returns: { balance: 50000, withdrawable_balance: 45000 }
+  Display both values as ₦ formatted amounts.
+
+─── Bank Account Management ──────────────────────────────────────────────────
+
+  List recipients:
+    GET /payout/recipients/
+    Returns: PayoutRecipient[]
+
+  Add recipient:
+    POST /payout/recipient/create/
+    Body: { name, account_number, bank_code }
+    Returns: PayoutRecipient (includes recipient_code from Paystack)
+
+  Delete recipient:
+    DELETE /recipients/{recipient_code}/delete/
+
+─── Initiate Payout ───────────────────────────────────────────────────────────
+
+  POST /payout/initiate/
+  Body: { amount, recipient_code }   // amount in Naira
+  Minimum: ₦1,000
+
+─── Bank Selection Dropdown ──────────────────────────────────────────────────
+
+  See Section 28 for the full list of 27 Nigerian banks with codes.
+
+================================================================================
+  21. ADDRESS & MAP INTEGRATION
+================================================================================
+
+─── Google Maps Setup ─────────────────────────────────────────────────────────
+
+  Wrap the app (or the component tree that needs maps) with:
+    <LoadScript googleMapsApiKey={VITE_GOOGLE_MAPS_API_KEY} libraries={["places"]}>
+
+─── Google Places Autocomplete ───────────────────────────────────────────────
+
+  Use the use-places-autocomplete hook for address input fields.
+  When user selects a suggestion:
+    - Get geocoded coordinates via the Google Geocoding API or
+      use the place_id to get lat/lng
+    - Store: { street_address, city, latitude, longitude }
+
+─── Rider Location Tracking ──────────────────────────────────────────────────
+
+  Hook: use-rider-location-socket.ts
+
+  Logic:
+    - Request geolocation permission on mount
+    - Get current position with navigator.geolocation.getCurrentPosition()
+    - POST to backend: updateRiderLocation(lat, lng)
+    - Repeat every 3 minutes using setInterval
+    - Expose: { status: "connecting" | "connected" | "disconnected" | "error" }
+    - Clean up interval on unmount
+
+  Endpoint for location update:
+    POST /drivers/me/location/   (inferred — verify exact endpoint)
+    Body: { latitude, longitude }
+
+─── Google Maps Directions (Rider) ───────────────────────────────────────────
+
+  "Get Directions" button builds this URL and opens in new tab:
+  https://www.google.com/maps/dir/?api=1
+    &origin={riderLat},{riderLng}
+    &waypoints={restaurantLat},{restaurantLng}
+    &destination={customerLat},{customerLng}
+    &travelmode=driving
+
+================================================================================
+  22. REVIEWS SYSTEM
+================================================================================
+
+  Triggered after an order is delivered/completed.
+  "Leave a Review" button appears on past orders.
+
+  PostOrderReviewModal:
+    - Star rating (1–5, click to select)
+    - Optional comment text area
+    - "Submit Review" button
+
+  API:
+    POST /reviews/restaurant/{restaurantId}/
+    Body: { rating: number, comment?: string }
+
+================================================================================
+  23. ANALYTICS
+================================================================================
+
+Vendor analytics page uses Recharts.
+
+Components to build:
+  - Revenue line chart (x-axis: date, y-axis: ₦ amount)
+  - Top items bar chart (x-axis: item name, y-axis: order count)
+  - Order status distribution (pie chart)
+  - KPI summary cards (total revenue, orders, avg order value)
+
+Data from: GET /restaurant/me/analytics
+
+Admin analytics is similar but platform-wide (exact endpoints TBD from backend).
+
+================================================================================
+  24. PUSH NOTIFICATIONS & PWA
+================================================================================
+
+─── PWA Setup ────────────────────────────────────────────────────────────────
+
+  If using Next.js: configure next-pwa in next.config.ts
+  If using Vite: configure vite-plugin-pwa
+
+  Create public/manifest.json:
+    {
+      "name": "Doorstep",
+      "short_name": "Doorstep",
+      "theme_color": "#000000",
+      "background_color": "#ffffff",
+      "display": "standalone",
+      "start_url": "/",
+      "icons": [ ... ]
+    }
+
+─── Push Notifications ────────────────────────────────────────────────────────
+
+  VAPID public key from env: VITE_VAPID_PUBLIC_KEY
+
+  PushInitializer component (mounted in every layout):
+    1. Check if browser supports push: 'serviceWorker' in navigator && 'PushManager' in window
+    2. Request notification permission: await Notification.requestPermission()
+    3. Subscribe to push: await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: vapidKey })
+    4. Send subscription to backend: POST /subscribe/ with subscription object
+    5. On incoming push message: show toast notification
+
+  Firebase Messaging:
+    Initialize Firebase app with config
+    Use getMessaging() for foreground messages
+    onMessage() handler: show toast
+
+─── Install Prompt (PWAInstallPrompt) ────────────────────────────────────────
+
+  - Listen for beforeinstallprompt event
+  - Show a custom "Install App" banner
+  - On click: prompt.prompt()
+  - Handle prompt outcome
+
+================================================================================
+  25. UI COMPONENT LIBRARY
+================================================================================
+
+All UI components come from shadcn/ui. Install as needed:
+  npx shadcn-ui@latest init
+  npx shadcn-ui@latest add [component]
+
+Components used in this project:
+  accordion, alert, alert-dialog, avatar, badge, button, calendar,
+  card, carousel, chart, checkbox, collapsible, command, context-menu,
+  dialog, drawer, dropdown-menu, form, hover-card, input, label,
+  menubar, navigation-menu, pagination, popover, progress, radio-group,
+  resizable, scroll-area, select, separator, sheet, sidebar, skeleton,
+  slider, sonner (toasts), switch, table, tabs, textarea, toggle,
+  toggle-group, tooltip
+
+STYLING APPROACH:
+  - TailwindCSS with CSS custom properties (HSL variables) for theming
+  - Supports light and dark mode via `dark:` variant
+  - Custom fonts:
+    - Body: Inter (import from Google Fonts)
+    - Headlines: Poppins (import from Google Fonts)
+  - Mobile-first, responsive breakpoints: sm(640) md(768) lg(1024) xl(1280) 2xl(1536)
+
+LAYOUT PATTERNS:
+  - Desktop: fixed sidebar on left, main content scrollable area on right
+  - Mobile: sidebar hidden, bottom navigation bar fixed at bottom
+  - Bottom nav shows 4 key items per role
+
+IMAGE HANDLING:
+  - Support Cloudinary URLs and placeholder images
+  - Use standard <img> with TailwindCSS classes, or Next.js <Image> for optimization
+  - Allowed remote image patterns: Cloudinary (res.cloudinary.com), placehold.co
+
+LOADING STATES:
+  - Skeleton components (shimmer effect) for all data-fetching views
+  - Never show empty state until loading is confirmed false
+
+ERROR STATES:
+  - React ErrorBoundary at the app root level
+  - Fallback UI: simple "Something went wrong. Refresh the page." message
+  - API errors: extract message from thrown error object, display in toast
+
+TOAST NOTIFICATIONS:
+  - Use sonner (from shadcn/ui)
+  - Success: green, shown after order placed / action completed
+  - Error: red, shown on API failure
+  - Info: neutral, shown for informational events
+
+ANIMATION:
+  - Framer Motion for modal open/close, page transitions
+  - CSS transitions for hover states
+
+================================================================================
+  26. CUSTOM HOOKS
+================================================================================
+
+─── use-addresses.ts ─────────────────────────────────────────────────────────
+
+  Purpose: Fetches and manages the user's saved addresses.
+
+  const useAddresses = () => {
+    const { data: addresses, isLoading, refetch } = useQuery({
+      queryKey: ["addresses"],
+      queryFn: () => fetcher<Address[]>("/addresses/"),
+    });
+
+    // Auto-select default address on mount
+    useEffect(() => {
+      const defaultAddress = addresses?.find(a => a.is_default);
+      if (defaultAddress) {
+        setSelectedAddress(defaultAddress);  // useUIStore
+      }
+    }, [addresses]);
+
+    return { addresses, isLoading, refetch };
+  };
+
+─── use-mobile.tsx ────────────────────────────────────────────────────────────
+
+  const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+      const check = () => setIsMobile(window.innerWidth < 768);
+      check();
+      window.addEventListener("resize", check);
+      return () => window.removeEventListener("resize", check);
+    }, []);
+    return isMobile;
+  };
+
+─── use-refresh-cooldown.ts ──────────────────────────────────────────────────
+
+  Prevents user from spamming refresh button on order lists.
+
+  const useRefreshCooldown = (cooldownSeconds = 30) => {
+    const [remaining, setRemaining] = useState(0);
+
+    const startCooldown = () => {
+      setRemaining(cooldownSeconds);
+    };
+
+    useEffect(() => {
+      if (remaining <= 0) return;
+      const interval = setInterval(() => setRemaining(r => r - 1), 1000);
+      return () => clearInterval(interval);
+    }, [remaining]);
+
+    return { canRefresh: remaining === 0, remaining, startCooldown };
+  };
+
+─── use-rider-location-socket.ts ─────────────────────────────────────────────
+
+  type LocationStatus = "connecting" | "connected" | "disconnected" | "error";
+
+  const useRiderLocationSocket = () => {
+    const [status, setStatus] = useState<LocationStatus>("disconnected");
+
+    useEffect(() => {
+      setStatus("connecting");
+
+      const updateLocation = () => {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            await updateRiderLocation(position.coords.latitude, position.coords.longitude);
+            setStatus("connected");
+          },
+          () => setStatus("error"),
+          { enableHighAccuracy: true }
+        );
+      };
+
+      updateLocation();
+      const interval = setInterval(updateLocation, 3 * 60 * 1000);
+      return () => clearInterval(interval);
+    }, []);
+
+    return { status };
+  };
+
+─── use-notification-listener.ts ─────────────────────────────────────────────
+
+  Called in each role's layout to listen for incoming push notifications.
+  When a notification arrives, display it as a toast.
+
+================================================================================
+  27. BUSINESS LOGIC & CALCULATIONS
+================================================================================
+
+─── Haversine Distance ────────────────────────────────────────────────────────
+
+  Calculates great-circle distance between two lat/lng pairs in kilometers.
+
+  function haversineDistance(
+    lat1: number, lon1: number,
+    lat2: number, lon2: number
+  ): number {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+─── Delivery Fee Calculation ──────────────────────────────────────────────────
+
+  Input: distance in km (from haversineDistance)
+  Output: fee in Naira
+
+  function calculateDeliveryFee(distanceKm: number): number {
+    if (distanceKm <= 2) return 500;
+    return 500 + Math.ceil(distanceKm - 2) * 300;
+  }
+
+─── Tax Calculation ───────────────────────────────────────────────────────────
+
+  function calculateTax(subtotal: number): number {
+    return Math.min(subtotal * 0.05, 500);  // 5% of subtotal, max ₦500
+  }
+
+─── Option Deduplication (Cart) ──────────────────────────────────────────────
+
+  Two cart items are considered identical (same item, same configuration) if:
+    - menuItem.id is the same
+    - The set of selected option IDs is identical (order-insensitive)
+
+  When adding to cart, compare sorted option ID arrays as strings:
+    const optionKey = selectedOptions.map(o => o.id).sort().join(",");
+
+─── Order Total Calculation ──────────────────────────────────────────────────
+
+  itemTotal = (parseFloat(menuItem.price)
+             + sum(parseFloat(option.price_adjustment) for each option))
+             × quantity
+
+  subtotal = sum(itemTotal for all cart items)
+  deliveryFee = calculateDeliveryFee(distance)  // 0 for pickup
+  tax = calculateTax(subtotal)
+  discount = calculateDiscount(discount, subtotal, deliveryFee, tax)
+  total = subtotal + deliveryFee + tax - discount
+
+─── Kobo Conversion (Paystack) ────────────────────────────────────────────────
+
+  const amountInKobo = Math.round(total * 100);
+
+─── Pagination ────────────────────────────────────────────────────────────────
+
+  Standard pagination from backend: { count, next, previous, results }
+  Frontend uses page state + query param: ?page=1
+  5 items per page for order tables.
+
+================================================================================
+  28. NIGERIAN BANKS REFERENCE LIST
+================================================================================
+
+Used in payout recipient creation form.
+
+const nigerianBanks = [
+  { code: "044", name: "Access Bank" },
+  { code: "023", name: "Citibank Nigeria" },
+  { code: "050", name: "EcoBank Nigeria" },
+  { code: "070", name: "Fidelity Bank" },
+  { code: "011", name: "First Bank of Nigeria" },
+  { code: "214", name: "First City Monument Bank (FCMB)" },
+  { code: "058", name: "Guaranty Trust Bank (GTBank)" },
+  { code: "030", name: "Heritage Bank" },
+  { code: "301", name: "Jaiz Bank" },
+  { code: "082", name: "Keystone Bank" },
+  { code: "526", name: "Kuda Bank" },
+  { code: "076", name: "Polaris Bank" },
+  { code: "101", name: "Providus Bank" },
+  { code: "221", name: "Stanbic IBTC Bank" },
+  { code: "068", name: "Standard Chartered Bank" },
+  { code: "232", name: "Sterling Bank" },
+  { code: "100", name: "Suntrust Bank" },
+  { code: "032", name: "Union Bank of Nigeria" },
+  { code: "033", name: "United Bank for Africa (UBA)" },
+  { code: "215", name: "Unity Bank" },
+  { code: "035", name: "Wema Bank" },
+  { code: "057", name: "Zenith Bank" },
+  { code: "999992", name: "Opay" },
+  { code: "999991", name: "PalmPay" },
+  { code: "50515", name: "Moniepoint MFB" },
+  { code: "090405", name: "Eyowo" },
+  { code: "000026", name: "TAJ Bank" },
+];
+
+================================================================================
+  29. SECURITY CONSIDERATIONS
+================================================================================
+
+CURRENT IMPLEMENTATION (prototype-level):
+  - Token stored in plain localStorage (XSS risk)
+  - No CSRF protection
+  - No refresh token rotation (single access token, long-lived)
+  - Frontend role checks (no real access control on frontend)
+  - Backend is the only true access enforcer
+
+RECOMMENDED IMPROVEMENTS FOR PRODUCTION:
+  - Use httpOnly cookies for token storage (prevents XSS token theft)
+  - Implement CSRF double-submit cookie pattern
+  - Add refresh token rotation (short-lived access tokens + long-lived refresh)
+  - Add rate limiting on OTP endpoints
+  - Implement Content Security Policy headers
+  - Use signed Cloudinary URLs for private images
+  - Add input sanitization for all user-provided strings
+  - Never log tokens or sensitive user data to console
+
+COMMON PITFALLS:
+  - Do not pass total in Naira to Paystack — always convert to Kobo (×100)
+  - Do not render HTML from API responses without sanitization
+  - Do not expose GOOGLE_MAPS_API_KEY on the backend (keep it frontend-only with domain restriction)
+
+================================================================================
+  30. REBUILD CHECKLIST
+================================================================================
+
+Use this checklist to track progress when rebuilding:
+
+SETUP
+  [ ] Initialize Vite (or Next.js) project with TypeScript template
+  [ ] Install all dependencies from Section 2
+  [ ] Configure TailwindCSS + shadcn/ui
+  [ ] Set up path aliases (@/* → ./src/*)
+  [ ] Create .env file with all keys from Section 3
+  [ ] Set up folder structure from Section 4
+  [ ] Configure QueryClient + provider in providers.tsx
+  [ ] Set up Zustand stores (auth, cart, ui) with persist middleware
+  [ ] Create base fetcher (src/lib/api.ts) with auto-logout on 401
+  [ ] Define all TypeScript interfaces (src/lib/types/index.ts)
+  [ ] Define all Zod schemas
+
+AUTH
+  [ ] Customer login page (phone input)
+  [ ] WhatsApp onboarding gate
+  [ ] OTP verification page (6-digit input)
+  [ ] Customer signup page
+  [ ] Partner login page (email + password)
+  [ ] Auto-redirect on existing session
+  [ ] Auto-logout on 401
+
+CUSTOMER
+  [ ] Customer layout (sidebar + bottom nav)
+  [ ] Restaurant catalog (dashboard)
+  [ ] Restaurant menu page + AddToCartModal
+  [ ] CheckoutModal (items, address, pricing, discount, payment)
+  [ ] AddressSelectionModal (Google Places)
+  [ ] Orders page (ongoing + past tabs)
+  [ ] CustomerOrderTimeline component
+  [ ] Confirm delivery/pickup with OTP
+  [ ] PostOrderReviewModal
+  [ ] Profile page + address management
+  [ ] Search page
+
+VENDOR
+  [ ] Vendor layout
+  [ ] Dashboard (KPIs + last 5 orders)
+  [ ] Orders page (tabbed, paginated, action buttons)
+  [ ] Ready order dialog (Doorstep vs in-house rider)
+  [ ] Menu Config (items + categories + options tabs)
+  [ ] Image upload for menu items
+  [ ] In-house rider management
+  [ ] Analytics page (Recharts)
+  [ ] Payouts page (PayoutManagement)
+  [ ] Profile page
+
+RIDER
+  [ ] Rider layout
+  [ ] Dashboard (available batches grouped by restaurant)
+  [ ] Orders page (ongoing + past with action buttons)
+  [ ] Rider location tracking (every 3 min)
+  [ ] OTP submission modal
+  [ ] Google Maps directions link
+  [ ] Payouts page
+  [ ] Rider signup form
+
+ADMIN
+  [ ] Admin layout
+  [ ] Dashboard (platform stats)
+  [ ] All orders table
+  [ ] Analytics charts
+  [ ] Vendors management table
+  [ ] Riders management table
+
+PAYMENT & PAYOUTS
+  [ ] Paystack initialization + usePaystackPayment hook
+  [ ] Cash on delivery flow
+  [ ] PayoutManagement component (wallet, bank accounts, withdraw)
+  [ ] Bank account creation form with 27-bank dropdown
+
+MAPS & LOCATION
+  [ ] Google Places autocomplete in address forms
+  [ ] Haversine delivery fee calculation
+  [ ] Rider location update every 3 minutes
+  [ ] Get Directions button (Google Maps URL)
+
+PWA & NOTIFICATIONS
+  [ ] Web app manifest
+  [ ] Service worker (next-pwa or vite-plugin-pwa)
+  [ ] PWA install prompt
+  [ ] Push notification subscription (VAPID)
+  [ ] Firebase messaging integration
+  [ ] PushInitializer in each layout
+
+POLISH
+  [ ] Loading skeletons for all data-fetching views
+  [ ] Empty state components
+  [ ] Error boundary at app root
+  [ ] Toast notifications (sonner)
+  [ ] Framer Motion animations for modals
+  [ ] Dark mode support
+  [ ] Responsive mobile layout (bottom nav, sidebar collapse)
+  [ ] Session expired redirect + message on login page
+
+================================================================================
+  END OF REQUIREMENTS
+================================================================================
