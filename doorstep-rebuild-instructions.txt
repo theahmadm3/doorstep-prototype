@@ -54,7 +54,7 @@ depend on earlier ones being complete.
 
   Run this to scaffold the Vite + React + TypeScript project:
 
-    npm create vite@latest doorstep -- --template react-ts
+    npm create vite@6 doorstep -- --template react-ts
     cd doorstep
 
   Confirm the generated tsconfig.json targets ES2020 or later.
