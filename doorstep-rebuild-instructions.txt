@@ -1,0 +1,2642 @@
+================================================================================
+  DOORSTEP — FULL REBUILD INSTRUCTIONS
+  Stack: React 18 + TypeScript + Vite + Redux Toolkit + Tailwind CSS +
+         Framer Motion + Shadcn UI + TanStack Query
+================================================================================
+Generated: 2026-05-19
+Source repo: doorstep-prototype (Next.js 15)
+Target: brand-new Vite + React + TypeScript repository
+
+This is a step-by-step guide to rebuilding the entire Doorstep platform from
+scratch. Follow each section in order. Do not skip setup steps — later sections
+depend on earlier ones being complete.
+
+================================================================================
+  TABLE OF CONTENTS
+================================================================================
+
+  1.  Create the Project
+  2.  Install All Dependencies
+  3.  Configure TypeScript
+  4.  Configure Tailwind CSS
+  5.  Configure Path Aliases
+  6.  Global CSS & Theming
+  7.  Environment Variables
+  8.  Project Folder Structure
+  9.  TypeScript Types (copy verbatim)
+  10. Utility Functions
+  11. API Layer (fetcher + all endpoints)
+  12. Auth API
+  13. Redux Store Setup (replaces Zustand)
+      a. store.ts
+      b. authSlice (phone number)
+      c. cartSlice (full cart logic)
+      d. uiSlice (viewedRestaurant, selectedAddress)
+  14. React Query Setup
+  15. Shadcn UI Setup
+  16. Routing (React Router v6)
+  17. Providers Wrapper
+  18. Auth Pages
+  19. Customer Pages & Components
+  20. Vendor Pages & Components
+  21. Rider Pages & Components
+  22. Admin Pages & Components
+  23. Shared Components (Checkout, Payouts, Reviews)
+  24. Custom Hooks
+  25. PWA & Push Notifications
+  26. Framer Motion Usage Patterns
+  27. Nigerian Banks Data
+  28. Build & Run
+
+================================================================================
+  1. CREATE THE PROJECT
+================================================================================
+
+  Run this to scaffold the Vite + React + TypeScript project:
+
+    npm create vite@latest doorstep -- --template react-ts
+    cd doorstep
+
+  Confirm the generated tsconfig.json targets ES2020 or later.
+
+================================================================================
+  2. INSTALL ALL DEPENDENCIES
+================================================================================
+
+  Run all at once:
+
+    npm install \
+      react-router-dom \
+      @reduxjs/toolkit \
+      react-redux \
+      @tanstack/react-query \
+      @hookform/resolvers \
+      react-hook-form \
+      zod \
+      framer-motion \
+      tailwindcss-animate \
+      class-variance-authority \
+      clsx \
+      tailwind-merge \
+      lucide-react \
+      @radix-ui/react-accordion \
+      @radix-ui/react-alert-dialog \
+      @radix-ui/react-avatar \
+      @radix-ui/react-checkbox \
+      @radix-ui/react-collapsible \
+      @radix-ui/react-dialog \
+      @radix-ui/react-dropdown-menu \
+      @radix-ui/react-label \
+      @radix-ui/react-popover \
+      @radix-ui/react-progress \
+      @radix-ui/react-radio-group \
+      @radix-ui/react-scroll-area \
+      @radix-ui/react-select \
+      @radix-ui/react-separator \
+      @radix-ui/react-slider \
+      @radix-ui/react-slot \
+      @radix-ui/react-switch \
+      @radix-ui/react-tabs \
+      @radix-ui/react-toast \
+      @radix-ui/react-tooltip \
+      @react-google-maps/api \
+      use-places-autocomplete \
+      react-paystack \
+      recharts \
+      embla-carousel-react \
+      firebase \
+      date-fns \
+      uuid \
+      react-error-boundary \
+      sonner
+
+  Dev dependencies:
+
+    npm install -D \
+      tailwindcss \
+      postcss \
+      autoprefixer \
+      @types/node \
+      @types/uuid \
+      @tanstack/react-query-devtools \
+      vite-plugin-pwa
+
+  Initialize Tailwind:
+
+    npx tailwindcss init -p
+
+================================================================================
+  3. CONFIGURE TYPESCRIPT
+================================================================================
+
+  Replace tsconfig.json with:
+
+    {
+      "compilerOptions": {
+        "target": "ES2020",
+        "useDefineForClassFields": true,
+        "lib": ["ES2020", "DOM", "DOM.Iterable"],
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "strict": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "noFallthroughCasesInSwitch": true,
+        "baseUrl": ".",
+        "paths": {
+          "@/*": ["./src/*"]
+        }
+      },
+      "include": ["src"],
+      "references": [{ "path": "./tsconfig.node.json" }]
+    }
+
+================================================================================
+  4. CONFIGURE TAILWIND CSS
+================================================================================
+
+  Replace tailwind.config.js with:
+
+    /** @type {import('tailwindcss').Config} */
+    module.exports = {
+      darkMode: ["class"],
+      content: [
+        "./index.html",
+        "./src/**/*.{ts,tsx}",
+      ],
+      theme: {
+        container: {
+          center: true,
+          padding: "2rem",
+          screens: { "2xl": "1400px" },
+        },
+        extend: {
+          colors: {
+            border: "hsl(var(--border))",
+            input: "hsl(var(--input))",
+            ring: "hsl(var(--ring))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: {
+              DEFAULT: "hsl(var(--primary))",
+              foreground: "hsl(var(--primary-foreground))",
+            },
+            secondary: {
+              DEFAULT: "hsl(var(--secondary))",
+              foreground: "hsl(var(--secondary-foreground))",
+            },
+            destructive: {
+              DEFAULT: "hsl(var(--destructive))",
+              foreground: "hsl(var(--destructive-foreground))",
+            },
+            muted: {
+              DEFAULT: "hsl(var(--muted))",
+              foreground: "hsl(var(--muted-foreground))",
+            },
+            accent: {
+              DEFAULT: "hsl(var(--accent))",
+              foreground: "hsl(var(--accent-foreground))",
+            },
+            popover: {
+              DEFAULT: "hsl(var(--popover))",
+              foreground: "hsl(var(--popover-foreground))",
+            },
+            card: {
+              DEFAULT: "hsl(var(--card))",
+              foreground: "hsl(var(--card-foreground))",
+            },
+            sidebar: {
+              background: "hsl(var(--sidebar-background))",
+              foreground: "hsl(var(--sidebar-foreground))",
+              primary: "hsl(var(--sidebar-primary))",
+              "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+              accent: "hsl(var(--sidebar-accent))",
+              "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+              border: "hsl(var(--sidebar-border))",
+              ring: "hsl(var(--sidebar-ring))",
+            },
+          },
+          borderRadius: {
+            lg: "var(--radius)",
+            md: "calc(var(--radius) - 2px)",
+            sm: "calc(var(--radius) - 4px)",
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            heading: ["Poppins", "sans-serif"],
+          },
+          keyframes: {
+            "accordion-down": {
+              from: { height: "0" },
+              to: { height: "var(--radix-accordion-content-height)" },
+            },
+            "accordion-up": {
+              from: { height: "var(--radix-accordion-content-height)" },
+              to: { height: "0" },
+            },
+          },
+          animation: {
+            "accordion-down": "accordion-down 0.2s ease-out",
+            "accordion-up": "accordion-up 0.2s ease-out",
+          },
+        },
+      },
+      plugins: [require("tailwindcss-animate")],
+    };
+
+================================================================================
+  5. CONFIGURE PATH ALIASES
+================================================================================
+
+  Update vite.config.ts:
+
+    import { defineConfig } from 'vite';
+    import react from '@vitejs/plugin-react';
+    import path from 'path';
+    import { VitePWA } from 'vite-plugin-pwa';
+
+    export default defineConfig({
+      plugins: [
+        react(),
+        VitePWA({
+          registerType: 'autoUpdate',
+          manifest: {
+            name: 'Doorstep',
+            short_name: 'Doorstep',
+            theme_color: '#005f80',
+            background_color: '#ffffff',
+            display: 'standalone',
+            start_url: '/',
+            icons: [
+              { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+              { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+            ],
+          },
+        }),
+      ],
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, './src'),
+        },
+      },
+    });
+
+================================================================================
+  6. GLOBAL CSS & THEMING
+================================================================================
+
+  Replace src/index.css with the following (exact CSS custom properties used
+  across the app — these map to Tailwind's hsl() color tokens):
+
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap');
+
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
+    @layer base {
+      :root {
+        --background: 0 0% 95.3%;
+        --foreground: 210 11% 24%;
+        --card: 0 0% 100%;
+        --card-foreground: 210 11% 24%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 210 11% 24%;
+        --primary: 201 100% 25%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 0 0% 96.1%;
+        --secondary-foreground: 0 0% 9%;
+        --muted: 0 0% 96.1%;
+        --muted-foreground: 0 0% 45.1%;
+        --accent: 201 100% 95%;
+        --accent-foreground: 201 100% 25%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 89.8%;
+        --input: 0 0% 89.8%;
+        --ring: 201 100% 25%;
+        --chart-1: 201 100% 25%;
+        --chart-2: 201 80% 45%;
+        --chart-3: 201 60% 65%;
+        --chart-4: 201 40% 75%;
+        --chart-5: 201 20% 85%;
+        --radius: 0.5rem;
+        --sidebar-background: 0 0% 98%;
+        --sidebar-foreground: 240 5.3% 26.1%;
+        --sidebar-primary: 240 5.9% 10%;
+        --sidebar-primary-foreground: 0 0% 98%;
+        --sidebar-accent: 240 4.8% 95.9%;
+        --sidebar-accent-foreground: 240 5.9% 10%;
+        --sidebar-border: 220 13% 91%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+      }
+
+      .dark {
+        --background: 210 11% 15%;
+        --foreground: 0 0% 95.3%;
+        --card: 210 11% 18%;
+        --card-foreground: 0 0% 95.3%;
+        --popover: 210 11% 15%;
+        --popover-foreground: 0 0% 95.3%;
+        --primary: 201 100% 55%;
+        --primary-foreground: 0 0% 98%;
+        --secondary: 0 0% 14.9%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 0 0% 14.9%;
+        --muted-foreground: 0 0% 63.9%;
+        --accent: 201 100% 20%;
+        --accent-foreground: 0 0% 98%;
+        --destructive: 0 62.8% 30.6%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 24.9%;
+        --input: 0 0% 24.9%;
+        --ring: 201 100% 55%;
+        --sidebar-background: 240 5.9% 10%;
+        --sidebar-foreground: 240 4.8% 95.9%;
+        --sidebar-primary: 224.3 76.3% 48%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 240 3.7% 15.9%;
+        --sidebar-accent-foreground: 240 4.8% 95.9%;
+        --sidebar-border: 240 3.7% 15.9%;
+        --sidebar-ring: 217.2 91.2% 59.8%;
+      }
+    }
+
+    @layer base {
+      * { @apply border-border; }
+      body {
+        @apply bg-background text-foreground;
+        font-family: 'Inter', sans-serif;
+      }
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Poppins', sans-serif;
+      }
+    }
+
+  In main.tsx import this file instead of App.css:
+
+    import './index.css';
+
+================================================================================
+  7. ENVIRONMENT VARIABLES
+================================================================================
+
+  Create .env at the project root:
+
+    VITE_BASE_URL=https://doorstep-backend-gzqk.onrender.com/api
+    VITE_PAYSTACK_PUBLIC_KEY=pk_test_b9ab6a9325026300920e75388fedbca2c0bbbe10
+    VITE_GOOGLE_MAPS_API_KEY=AIzaSyDW0dPIsfWlq5gf55LC1EnofUi77wSroaU
+    VITE_VAPID_PUBLIC_KEY=BB7-F_m2aKabYBuvjyl56Fw0TDvCHb7JHwDM0QwPc4QPRF5uLBXkptcw2ZijJhAi5lysBSJjANb8kYSjiYSLYOM
+
+  Access in code:
+    const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+  NOTE: These are test/prototype keys. Replace with production keys before going
+  live. Never commit production secrets to git.
+
+================================================================================
+  8. PROJECT FOLDER STRUCTURE
+================================================================================
+
+  Create this exact structure under src/:
+
+    src/
+      app/                    ← route page components
+        auth/
+          LoginPage.tsx
+          SignupPage.tsx
+          VerifyOtpPage.tsx
+          PartnerLoginPage.tsx
+        customer/
+          DashboardPage.tsx
+          RestaurantMenuPage.tsx
+          OrdersPage.tsx
+          SearchPage.tsx
+          ProfilePage.tsx
+        vendor/
+          DashboardPage.tsx
+          OrdersPage.tsx
+          AnalyticsPage.tsx
+          ConfigPage.tsx
+          PayoutsPage.tsx
+          ProfilePage.tsx
+        rider/
+          DashboardPage.tsx
+          OrdersPage.tsx
+          PayoutsPage.tsx
+          ProfilePage.tsx
+          SignupPage.tsx
+        admin/
+          DashboardPage.tsx
+          OrdersPage.tsx
+          AnalyticsPage.tsx
+          VendorsPage.tsx
+          RidersPage.tsx
+          ConfigPage.tsx
+      components/
+        auth/
+          LoginForm.tsx
+          SignupForm.tsx
+          VerifyOtpForm.tsx
+          PartnerLoginForm.tsx
+          LogoutButton.tsx
+          WhatsappOnboarding.tsx
+        checkout/
+          CheckoutModal.tsx
+          AddToCartModal.tsx
+        dashboard/
+          CustomerOrderTimeline.tsx
+          OrderStatus.tsx
+          VendorItemManagement.tsx
+          VendorRiderManagement.tsx
+          AdminStats.tsx
+          AdminUsersTable.tsx
+        layout/
+          CustomerLayout.tsx
+          VendorLayout.tsx
+          RiderLayout.tsx
+          AdminLayout.tsx
+          BottomNavigation.tsx
+          ClientHeader.tsx
+          ProtectedRoute.tsx
+        location/
+          AddressSelectionModal.tsx
+        payouts/
+          PayoutManagement.tsx
+        profile/
+          AddressManagement.tsx
+        reviews/
+          PostOrderReviewModal.tsx
+        rider/
+          OtpSubmissionModal.tsx
+          RiderOrderActions.tsx
+        vendor/
+          CategoryManagement.tsx
+          OptionManagement.tsx
+          PickupConfirmationModal.tsx
+          VendorAddressModal.tsx
+        pwa/
+          PushInitializer.tsx
+          PwaInstallPrompt.tsx
+        ui/                   ← shadcn/ui components (generated by CLI)
+      hooks/
+        use-addresses.ts
+        use-mobile.tsx
+        use-notification-listener.ts
+        use-push-manager.ts
+        use-refresh-cooldown.ts
+        use-rider-location-socket.ts
+        use-toast.ts
+      lib/
+        api.ts
+        auth-api.ts
+        banks.ts
+        utils.ts
+        types/
+          index.ts
+          paystack.ts
+      store/
+        index.ts              ← configureStore + RootState + AppDispatch
+        authSlice.ts
+        cartSlice.ts
+        uiSlice.ts
+      providers.tsx           ← wraps app with Redux, QueryClient, Router
+      main.tsx
+      App.tsx                 ← route definitions
+
+================================================================================
+  9. TYPESCRIPT TYPES (src/lib/types/index.ts)
+================================================================================
+
+  Copy this file verbatim. All interfaces used across the app:
+
+  ─── Users & Auth ──────────────────────────────────────────────────────────────
+
+    export interface User {
+      id: string;
+      full_name: string;
+      email: string;
+      phone_number: string | null;
+      role: "customer" | "restaurant" | "admin" | "driver";
+      status: "Pending" | "Active" | "Suspended";
+      avatar_url: string | null;
+      created_at: string;
+      login_count: number;
+    }
+
+    export interface LoginResponse {
+      tokens: { access: string };
+      user_role: "customer";
+      user: User;
+    }
+
+    export interface PartnerLoginResponse {
+      access: string;
+      user: User;
+    }
+
+    export interface CustomerSignupPayload {
+      full_name: string;
+      email: string;
+      phone_number: string;
+      birthday?: string;
+      referral_code?: string;
+    }
+
+  ─── Restaurants ───────────────────────────────────────────────────────────────
+
+    export interface RestaurantAddress {
+      street: string;
+      city: string;
+      latitude: string;
+      longitude: string;
+    }
+
+    export interface Owner {
+      id: string;
+      full_name: string;
+      email: string;
+    }
+
+    export interface Restaurant {
+      id: string;
+      owner: Owner;
+      name: string;
+      description: string | null;
+      address: RestaurantAddress | null;
+      image_url: string | null;
+      rating: string;
+      is_active: boolean;
+      created_at: string;
+      updated_at: string;
+    }
+
+    export interface VendorProfile {
+      id: string;
+      name: string;
+      description: string | null;
+      address: RestaurantAddress | null;
+      image_url: string | null;
+      is_active: boolean;
+    }
+
+    export interface VendorProfileUpdatePayload {
+      name?: string;
+      description?: string;
+    }
+
+  ─── Menu ──────────────────────────────────────────────────────────────────────
+
+    export interface MenuCategory {
+      id: string;
+      name: string;
+      restaurant: string;
+    }
+
+    export interface CategoryPayload {
+      name: string;
+    }
+
+    export interface OptionChoice {
+      id: string;
+      menu_item: string;
+      name: string;
+      type: "protein" | "side" | "drink" | "packaging" | "extra" | "other";
+      price_adjustment: string;
+      is_available: boolean;
+    }
+
+    export interface OptionPayload {
+      name: string;
+      type: "protein" | "side" | "drink" | "packaging" | "extra" | "other";
+      price_adjustment: string;
+      menu_item: string;
+    }
+
+    export interface MenuItem {
+      id: string;
+      restaurant: string;
+      name: string;
+      description: string | null;
+      price: string;
+      image_url: string | null;
+      is_available: boolean;
+      category: MenuCategory | null;
+      options: Record<string, OptionChoice[]>;
+      item_type: "single" | "combo";
+      created_at: string;
+      updated_at: string;
+    }
+
+    export interface MenuItemPayload {
+      name: string;
+      description?: string;
+      price: string;
+      category?: string;
+      item_type?: "single" | "combo";
+      is_available?: boolean;
+    }
+
+  ─── Cart (client-side) ────────────────────────────────────────────────────────
+
+    export type OrderStatus =
+      | "unsubmitted"
+      | "Order Placed"
+      | "Vendor Accepted"
+      | "Preparing"
+      | "Order Ready"
+      | "Rider Assigned"
+      | "Rider on the Way"
+      | "Delivered"
+      | "Cancelled"
+      | "Rejected"
+      | "Pending"
+      | "Accepted"
+      | "Ready for Pickup"
+      | "On the Way"
+      | "Arrived at Restaurant"
+      | "pickedup"
+      | "Arrived at Destination"
+      | "Picked Up by Customer"
+      | "Driver Assigned"
+      | "Completed";
+
+    export interface OrderItem {
+      cartItemId: string;
+      menuItem: MenuItem;
+      quantity: number;
+      options: OptionChoice[];
+      totalPrice: number;
+    }
+
+    export interface Order {
+      id: string;
+      restaurantId: string;
+      items: OrderItem[];
+      status: OrderStatus;
+      total: number;
+    }
+
+  ─── Orders (backend) ──────────────────────────────────────────────────────────
+
+    export interface OrderDetailAddress {
+      street_address: string;
+      city: string;
+      latitude?: string;
+      longitude?: string;
+    }
+
+    export interface CustomerOrder {
+      id: string;
+      restaurant_id: string;
+      restaurant_name: string;
+      total_amount: string;
+      status: OrderStatus;
+      created_at: string;
+      delivery_address: OrderDetailAddress;
+      order_type: "delivery" | "pickup";
+      delivery_fee?: string;
+    }
+
+    export interface OrderItemDetail {
+      id: string;
+      menu_item_name: string;
+      quantity: number;
+      unit_price: string;
+      total_price: string;
+    }
+
+    export interface OrderDetail extends CustomerOrder {
+      items: OrderItemDetail[];
+    }
+
+    export interface OrderPayload {
+      restaurant_id: string;
+      delivery_address_id?: string;
+      items: {
+        menu_item_id: string;
+        quantity: number;
+        selected_options: string[];
+      }[];
+      payment_method: "card" | "cash";
+      order_type: "delivery" | "pickup";
+      delivery_fee?: number;
+      discount_code?: string;
+    }
+
+    export interface VendorOrder {
+      id: string;
+      customer_name: string;
+      total_amount: string;
+      status: OrderStatus;
+      created_at: string;
+      order_type: "delivery" | "pickup";
+      items: OrderItemDetail[];
+    }
+
+    export interface AdminOrder {
+      id: string;
+      restaurant_name: string;
+      customer_name: string;
+      total_amount: string;
+      status: OrderStatus;
+      created_at: string;
+    }
+
+    export interface AdminUser {
+      id: string;
+      full_name: string;
+      email: string;
+      role: string;
+      status: string;
+      created_at: string;
+    }
+
+    export interface PickupConfirmationPayload {
+      status: string;
+      otp: string;
+    }
+
+  ─── Addresses ─────────────────────────────────────────────────────────────────
+
+    export interface Address {
+      id: string;
+      user: string;
+      street_address: string | null;
+      city: string | null;
+      nearest_landmark: string | null;
+      address_nickname: string | null;
+      latitude: string | null;
+      longitude: string | null;
+      is_default: boolean;
+    }
+
+    export interface AddressPostData {
+      street_address: string;
+      city: string;
+      nearest_landmark?: string;
+      address_nickname?: string;
+      latitude?: string;
+      longitude?: string;
+      is_default?: boolean;
+    }
+
+    export interface AddressFormData {
+      street_address?: string;
+      city?: string;
+      nearest_landmark?: string;
+      address_nickname?: string;
+      latitude?: string;
+      longitude?: string;
+      is_default?: boolean;
+    }
+
+  ─── Discounts ─────────────────────────────────────────────────────────────────
+
+    export interface Discount {
+      id: string;
+      code?: string;
+      description?: string;
+      discount_type: "percentage" | "fixed_amount";
+      value: number;
+      min_order_value: number;
+      max_discount_amount?: number;
+      start_date: string;
+      end_date: string;
+      is_active: boolean;
+      scope_type: "order" | "delivery" | "service_fee" | "item" | "category" | "all_menu_items";
+      restaurant?: string;
+      menu_items: string[];
+      categories: string[];
+      funded_by: "restaurant" | "doorstep";
+      is_first_order_only: boolean;
+      usage_limit_per_user?: number;
+      total_usage_limit?: number;
+      created_at: string;
+      updated_at: string;
+    }
+
+  ─── Payouts ───────────────────────────────────────────────────────────────────
+
+    export interface WalletBalance {
+      balance: number;
+      withdrawable_balance: number;
+    }
+
+    export interface PayoutRecipient {
+      id: number;
+      name: string;
+      account_number: string;
+      bank_code: string;
+      recipient_code: string;
+    }
+
+    export interface CreateRecipientPayload {
+      name: string;
+      account_number: string;
+      bank_code: string;
+    }
+
+    export interface InitiatePayoutPayload {
+      amount: number;
+      recipient_code: string;
+    }
+
+  ─── Riders ────────────────────────────────────────────────────────────────────
+
+    export interface Rider {
+      id: string;
+      name: string;
+      phone: string;
+      restaurant: string;
+    }
+
+    export interface RiderPayload {
+      name: string;
+      phone: string;
+    }
+
+    export interface RiderListResponse {
+      drivers: Rider[];
+    }
+
+    export interface RiderOrder {
+      id: string;
+      status: OrderStatus;
+      customer_name: string;
+      customer_phone?: string;
+      restaurant_name: string;
+      restaurant_location?: string;
+      delivery_address: OrderDetailAddress;
+      created_at: string;
+    }
+
+    export interface RiderOrderBatch {
+      restaurant_id: string;
+      restaurant_name: string;
+      restaurant_location: string;
+      orders: RiderOrder[];
+    }
+
+    export interface RiderOrderResponse {
+      data: RiderOrder[];
+    }
+
+  ─── Analytics ─────────────────────────────────────────────────────────────────
+
+    export interface VendorAnalyticsData {
+      total_revenue: number;
+      total_orders: number;
+      delivered_orders: number;
+      cancelled_orders: number;
+      top_items: { name: string; count: number }[];
+      revenue_by_day: { date: string; revenue: number }[];
+    }
+
+  ─── Search ────────────────────────────────────────────────────────────────────
+
+    export interface SearchResult {
+      type: "restaurant" | "menu_item";
+      id: string;
+      name: string;
+      image_url: string | null;
+      restaurant_id?: string;
+      restaurant_name?: string;
+    }
+
+  ─── Reviews ───────────────────────────────────────────────────────────────────
+
+    export interface ReviewPayload {
+      rating: number;
+      comment?: string;
+    }
+
+  ─── Pagination ────────────────────────────────────────────────────────────────
+
+    export interface PaginatedResponse<T> {
+      count: number;
+      next: string | null;
+      previous: string | null;
+      results: T[];
+    }
+
+  ─── Paystack (src/lib/types/paystack.ts) ──────────────────────────────────────
+
+    export interface InitializePaymentPayload {
+      amount: number;   // in Kobo
+    }
+
+    export interface InitializePaymentResponse {
+      reference: string;
+      authorization_url?: string;
+    }
+
+================================================================================
+  10. UTILITY FUNCTIONS (src/lib/utils.ts)
+================================================================================
+
+  import { clsx, type ClassValue } from 'clsx';
+  import { twMerge } from 'tailwind-merge';
+
+  export function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+  }
+
+  export function haversineDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c * 10) / 10;
+  }
+
+  export function calculateDeliveryFee(distanceKm: number): number {
+    if (distanceKm <= 2) return 500;
+    return 500 + Math.ceil(distanceKm - 2) * 300;
+  }
+
+  export function calculateTax(subtotal: number): number {
+    return Math.min(subtotal * 0.05, 500);
+  }
+
+  export function formatNaira(amount: number): string {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  }
+
+================================================================================
+  11. API LAYER (src/lib/api.ts)
+================================================================================
+
+  The base fetcher handles auth headers, 401 auto-logout, FormData detection,
+  and 204 empty responses. All API functions are named exports.
+
+  import { format } from 'date-fns';
+  import type {
+    PaginatedResponse, Restaurant, MenuItem, Address, AddressPostData,
+    OrderPayload, CustomerOrder, OrderDetail, AdminUser, MenuItemPayload,
+    VendorOrder, AdminOrder, Rider, RiderPayload, RiderListResponse,
+    VendorAnalyticsData, VendorProfile, VendorProfileUpdatePayload,
+    RiderOrderBatch, RiderOrderResponse, RiderOrder, WalletBalance,
+    PayoutRecipient, CreateRecipientPayload, InitiatePayoutPayload,
+    MenuCategory, CategoryPayload, OptionChoice, OptionPayload,
+    SearchResult, ReviewPayload, Discount, PickupConfirmationPayload,
+  } from './types';
+  import type {
+    InitializePaymentPayload,
+    InitializePaymentResponse,
+  } from './types/paystack';
+
+  const BASE_URL = import.meta.env.VITE_BASE_URL as string;
+
+  async function fetcher<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = localStorage.getItem('accessToken');
+    const isFormData = options.body instanceof FormData;
+    const headers = new Headers(options.headers);
+
+    if (!isFormData) headers.set('Content-Type', 'application/json');
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+
+    options.headers = headers;
+
+    const res = await fetch(`${BASE_URL}${endpoint}`, options);
+
+    if (res.status === 401) {
+      localStorage.clear();
+      window.location.href = '/?session_expired=true';
+      throw new Error('Session expired');
+    }
+
+    if (res.status === 204) return undefined as T;
+
+    const contentType = res.headers.get('content-type');
+    const isJson = contentType?.includes('application/json');
+
+    if (!res.ok) {
+      const body = isJson ? await res.json() : await res.text();
+      throw typeof body === 'object' ? body : new Error(String(body));
+    }
+
+    return isJson ? res.json() : (undefined as T);
+  }
+
+  // ── Restaurants ──────────────────────────────────────────────────────────────
+  export const getRestaurants = async (): Promise<Restaurant[]> => {
+    const data = await fetcher<PaginatedResponse<Restaurant>>('/restaurants/');
+    return data.results;
+  };
+
+  export const getRestaurantDetails = (id: string): Promise<Restaurant> =>
+    fetcher<Restaurant>(`/restaurants/${id}/`);
+
+  export const getRestaurantMenu = async (id: string): Promise<MenuItem[]> => {
+    const data = await fetcher<PaginatedResponse<MenuItem>>(`/restaurants/${id}/menu/`);
+    return data.results;
+  };
+
+  // ── Addresses ────────────────────────────────────────────────────────────────
+  export const getAddresses = async (): Promise<Address[]> => {
+    const data = await fetcher<PaginatedResponse<Address>>('/addresses/');
+    return data.results;
+  };
+
+  export const addAddress = (data: Partial<AddressPostData>): Promise<Address> =>
+    fetcher<Address>('/addresses/', { method: 'POST', body: JSON.stringify(data) });
+
+  export const updateAddress = (id: string, data: Partial<AddressPostData>): Promise<Address> =>
+    fetcher<Address>(`/addresses/${id}/`, { method: 'PUT', body: JSON.stringify(data) });
+
+  export const deleteAddress = (id: string): Promise<void> =>
+    fetcher<void>(`/addresses/${id}/`, { method: 'DELETE' });
+
+  // ── Orders (Customer) ────────────────────────────────────────────────────────
+  export const placeOrder = (data: OrderPayload): Promise<unknown> =>
+    fetcher('/orders/', { method: 'POST', body: JSON.stringify(data) });
+
+  export const getCustomerOrders = async (): Promise<CustomerOrder[]> => {
+    const res = await fetcher<PaginatedResponse<CustomerOrder>>('/get-customer-order');
+    return res.results.map(o => ({
+      ...o,
+      created_at: format(new Date(o.created_at), 'dd MMM yyyy, hh:mm a'),
+    }));
+  };
+
+  export const getOrderDetails = async (id: string): Promise<OrderDetail> => {
+    const order = await fetcher<OrderDetail>(`/orders/${id}/`);
+    return { ...order, created_at: format(new Date(order.created_at), 'dd MMMM yyyy, h:mm:ss a') };
+  };
+
+  export const confirmOrderDelivery = (id: string): Promise<void> =>
+    fetcher<void>(`/customer/me/order/${id}/delivered/`, { method: 'POST' });
+
+  export const confirmPickupByCustomer = (id: string, otp: string): Promise<void> => {
+    const payload: PickupConfirmationPayload = { status: 'Picked Up by Customer', otp };
+    return fetcher<void>(`/orders/${id}/pickup-status/`, { method: 'PUT', body: JSON.stringify(payload) });
+  };
+
+  // ── Orders (Vendor) ──────────────────────────────────────────────────────────
+  export const getVendorOrders = async (): Promise<VendorOrder[]> => {
+    const data = await fetcher<PaginatedResponse<VendorOrder>>('/restaurants/me/orders/');
+    return data.results.map(o => ({
+      ...o,
+      created_at: format(new Date(o.created_at), 'dd MMM yyyy, hh:mm a'),
+    }));
+  };
+
+  export const updateVendorOrderStatus = (
+    orderId: string,
+    action: 'accept' | 'reject' | 'preparing' | 'ready',
+    driverType?: 'doorstep' | 'inhouse'
+  ): Promise<void> => {
+    const body = action === 'ready' && driverType ? { driver_type: driverType } : {};
+    return fetcher<void>(`/restaurants/me/orders/${orderId}/${action}/`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  };
+
+  export const assignRiderToOrder = (orderId: string, driverName: string): Promise<void> =>
+    fetcher<void>(`/restaurants/me/orders/${orderId}/ongoing/`, {
+      method: 'POST',
+      body: JSON.stringify({ driver_name: driverName }),
+    });
+
+  // ── Menu (Vendor) ────────────────────────────────────────────────────────────
+  export const getVendorMenuItems = async (): Promise<MenuItem[]> => {
+    const data = await fetcher<PaginatedResponse<MenuItem>>('/restaurants/me/menu/');
+    return data.results;
+  };
+
+  export const createVendorMenuItem = (data: MenuItemPayload): Promise<MenuItem> =>
+    fetcher<MenuItem>('/restaurants/me/menu/', { method: 'POST', body: JSON.stringify(data) });
+
+  export const uploadMenuItemImage = (itemId: string, image: File): Promise<MenuItem> => {
+    const formData = new FormData();
+    formData.append('image', image);
+    return fetcher<MenuItem>(`/menu-items/${itemId}/upload-image/`, { method: 'POST', body: formData });
+  };
+
+  export const updateVendorMenuItem = (id: string, data: Partial<MenuItemPayload>): Promise<MenuItem> =>
+    fetcher<MenuItem>(`/restaurants/me/menu/${id}/`, { method: 'PATCH', body: JSON.stringify(data) });
+
+  export const deleteVendorMenuItem = (id: string): Promise<void> =>
+    fetcher<void>(`/restaurants/me/menu/${id}/`, { method: 'DELETE' });
+
+  export const updateMenuItemAvailability = (id: string, is_available: boolean): Promise<MenuItem> =>
+    fetcher<MenuItem>(`/restaurants/me/menu/${id}/availability/`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_available }),
+    });
+
+  // ── Categories (Vendor) ──────────────────────────────────────────────────────
+  export const getMenuCategories = async (): Promise<MenuCategory[]> => {
+    const res = await fetcher<PaginatedResponse<MenuCategory>>('/restaurants/me/menu/categories/');
+    return res.results;
+  };
+
+  export const createMenuCategory = (payload: CategoryPayload): Promise<MenuCategory> =>
+    fetcher<MenuCategory>('/restaurants/me/menu/categories/', { method: 'POST', body: JSON.stringify(payload) });
+
+  export const updateMenuCategory = (id: string, payload: CategoryPayload): Promise<MenuCategory> =>
+    fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}/`, { method: 'PUT', body: JSON.stringify(payload) });
+
+  export const deleteMenuCategory = (id: string): Promise<void> =>
+    fetcher<void>(`/restaurants/me/menu/categories/${id}/`, { method: 'DELETE' });
+
+  // ── Options (Vendor) ─────────────────────────────────────────────────────────
+  export const getMenuOptions = async (): Promise<OptionChoice[]> => {
+    const res = await fetcher<PaginatedResponse<OptionChoice>>('/restaurants/me/options/');
+    return res.results;
+  };
+
+  export const createMenuOption = (payload: OptionPayload): Promise<OptionChoice> =>
+    fetcher<OptionChoice>('/restaurants/me/options/', { method: 'POST', body: JSON.stringify(payload) });
+
+  export const updateMenuOption = (id: string, payload: Partial<OptionPayload>): Promise<OptionChoice> =>
+    fetcher<OptionChoice>(`/restaurants/me/options/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) });
+
+  export const deleteMenuOption = (id: string): Promise<void> =>
+    fetcher<void>(`/restaurants/me/options/${id}/`, { method: 'DELETE' });
+
+  // ── Riders (Vendor) ──────────────────────────────────────────────────────────
+  export const getVendorRiders = async (): Promise<Rider[]> => {
+    const res = await fetcher<RiderListResponse>('/restaurants/me/drivers/');
+    return res.drivers;
+  };
+
+  export const createVendorRider = (data: RiderPayload): Promise<Rider> =>
+    fetcher<Rider>('/restaurants/me/drivers/', { method: 'POST', body: JSON.stringify(data) });
+
+  export const updateVendorRider = (data: RiderPayload): Promise<Rider> =>
+    fetcher<Rider>('/restaurants/me/drivers/', { method: 'PUT', body: JSON.stringify(data) });
+
+  export const deleteVendorRider = (name: string): Promise<void> =>
+    fetcher<void>('/restaurants/me/drivers/', { method: 'DELETE', body: JSON.stringify({ name }) });
+
+  // ── Vendor Profile ───────────────────────────────────────────────────────────
+  export const getRestaurantProfile = (): Promise<VendorProfile> =>
+    fetcher<VendorProfile>('/restaurants/me/');
+
+  export const updateRestaurantProfile = (payload: VendorProfileUpdatePayload): Promise<VendorProfile> =>
+    fetcher<VendorProfile>('/restaurants/me/', { method: 'PATCH', body: JSON.stringify(payload) });
+
+  export const uploadRestaurantProfileImage = (image: File): Promise<VendorProfile> => {
+    const formData = new FormData();
+    formData.append('image', image);
+    return fetcher<VendorProfile>('/upload_restaurant_profile_pic/', { method: 'POST', body: formData });
+  };
+
+  export const toggleRestaurantOpenStatus = (): Promise<VendorProfile> =>
+    fetcher<VendorProfile>('/restaurants/me/toggle-open/', { method: 'PATCH' });
+
+  // ── Analytics ────────────────────────────────────────────────────────────────
+  export const getVendorAnalytics = (): Promise<VendorAnalyticsData> =>
+    fetcher<VendorAnalyticsData>('/restaurant/me/analytics');
+
+  // ── Rider ────────────────────────────────────────────────────────────────────
+  export const getAvailableRiderOrders = (): Promise<PaginatedResponse<RiderOrderBatch>> =>
+    fetcher<PaginatedResponse<RiderOrderBatch>>('/drivers/orders/available');
+
+  export const getRiderOrders = async (): Promise<RiderOrder[]> => {
+    const res = await fetcher<RiderOrderResponse>('/drivers/orders/');
+    return res.data;
+  };
+
+  export const performRiderAction = async (
+    orderId: string,
+    action: string,
+    payload?: object
+  ): Promise<RiderOrder> => {
+    const res = await fetcher<{ data: RiderOrder }>(`/drivers/orders/${orderId}/${action}/`, {
+      method: 'POST',
+      body: payload ? JSON.stringify(payload) : undefined,
+    });
+    return res.data;
+  };
+
+  export const updateRiderLocation = (lat: number, lng: number): Promise<void> =>
+    fetcher<void>('/drivers/me/location', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        current_latitude: lat.toFixed(6),
+        current_longitude: lng.toFixed(6),
+      }),
+    });
+
+  // ── Admin ────────────────────────────────────────────────────────────────────
+  export const getAdminUsers = (page = 1): Promise<PaginatedResponse<AdminUser>> =>
+    fetcher<PaginatedResponse<AdminUser>>(`/admin/users/?page=${page}`);
+
+  export const getAdminOrders = async (): Promise<AdminOrder[]> => {
+    const res = await fetcher<PaginatedResponse<AdminOrder>>('/admin/orders/');
+    return res.results.map(o => ({
+      ...o,
+      created_at: format(new Date(o.created_at), 'dd MMM yyyy, hh:mm a'),
+    }));
+  };
+
+  // ── Payment ──────────────────────────────────────────────────────────────────
+  export const initializePayment = (payload: InitializePaymentPayload): Promise<InitializePaymentResponse> =>
+    fetcher<InitializePaymentResponse>('/initialize/', { method: 'POST', body: JSON.stringify(payload) });
+
+  // ── Payouts ──────────────────────────────────────────────────────────────────
+  export const getWalletBalance = (): Promise<WalletBalance> =>
+    fetcher<WalletBalance>('/wallet/');
+
+  export const getPayoutRecipients = (): Promise<PayoutRecipient[]> =>
+    fetcher<PayoutRecipient[]>('/payout/recipients/');
+
+  export const createPayoutRecipient = (payload: CreateRecipientPayload): Promise<PayoutRecipient> =>
+    fetcher<PayoutRecipient>('/payout/recipient/create/', { method: 'POST', body: JSON.stringify(payload) });
+
+  export const initiatePayout = (payload: InitiatePayoutPayload): Promise<{ message: string }> =>
+    fetcher<{ message: string }>('/payout/initiate/', { method: 'POST', body: JSON.stringify(payload) });
+
+  export const deletePayoutRecipient = (recipientCode: string): Promise<void> =>
+    fetcher<void>(`/recipients/${recipientCode}/delete/`, { method: 'DELETE' });
+
+  // ── Reviews ──────────────────────────────────────────────────────────────────
+  export const submitRestaurantReview = (restaurantId: string, payload: ReviewPayload): Promise<void> =>
+    fetcher<void>(`/reviews/restaurant/${restaurantId}/`, { method: 'POST', body: JSON.stringify(payload) });
+
+  // ── Discounts ────────────────────────────────────────────────────────────────
+  export const applyDiscountCode = (code: string, restaurantId: string): Promise<Discount> =>
+    fetcher<Discount>(`/discounts/lookup/?code=${code}&restaurant_id=${restaurantId}`);
+
+  // ── Search ───────────────────────────────────────────────────────────────────
+  export const searchItemsAndRestaurants = (query: string): Promise<PaginatedResponse<SearchResult>> => {
+    if (!query) return Promise.resolve({ count: 0, next: null, previous: null, results: [] });
+    return fetcher<PaginatedResponse<SearchResult>>(`/search/?query=${encodeURIComponent(query)}`);
+  };
+
+  // ── Push Notifications ───────────────────────────────────────────────────────
+  export const subscribeToNotifications = (subscription: PushSubscription): Promise<void> =>
+    fetcher<void>('/subscribe/', { method: 'POST', body: JSON.stringify(subscription.toJSON()) });
+
+================================================================================
+  12. AUTH API (src/lib/auth-api.ts)
+================================================================================
+
+  import { fetcher } from './api'; // or re-export fetcher from api.ts
+  import type { LoginResponse, PartnerLoginResponse, CustomerSignupPayload, User } from './types';
+
+  // Expose fetcher if needed, or duplicate the fetcher here for auth endpoints.
+  // These endpoints do NOT require an auth token.
+
+  export const sendLoginOTP = (phone: string) =>
+    fetcher<{ message: string }>('/auth/customer/send-otp/', {
+      method: 'POST',
+      body: JSON.stringify({ phone_number: phone }),
+    });
+
+  export const verifyLoginOTP = (data: { phone_number: string; otp_code: string }) =>
+    fetcher<LoginResponse>('/auth/customer/login-otp/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+  export const signupCustomer = (data: CustomerSignupPayload) =>
+    fetcher<{ message: string }>('/auth/signup/customer/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+  export const loginUser = (data: { email: string; password: string }) =>
+    fetcher<PartnerLoginResponse>('/auth/login/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+
+  export const regenerateOTP = (phone: string) =>
+    fetcher<{ message: string }>('/auth/regenerate-otp/', {
+      method: 'POST',
+      body: JSON.stringify({ phone_number: phone }),
+    });
+
+  export const getMe = (): Promise<User> =>
+    fetcher<User>('/auth/users/me/');
+
+  export const updateProfile = (data: FormData | Record<string, unknown>) =>
+    fetcher<User>('/auth/users/me/update/', {
+      method: 'PATCH',
+      body: data instanceof FormData ? data : JSON.stringify(data),
+    });
+
+  NOTE: Make the fetcher function importable from api.ts, or duplicate a
+  lightweight version without the token logic for the login/signup calls
+  (they intentionally have no Bearer token).
+
+================================================================================
+  13. REDUX STORE SETUP
+================================================================================
+
+  This replaces the three Zustand stores (useAuthStore, useCartStore,
+  useUIStore) with Redux Toolkit slices. The behavior is identical — just
+  different state management syntax.
+
+  ─── A. src/store/index.ts ───────────────────────────────────────────────────
+
+    import { configureStore } from '@reduxjs/toolkit';
+    import { authReducer } from './authSlice';
+    import { cartReducer } from './cartSlice';
+    import { uiReducer } from './uiSlice';
+
+    export const store = configureStore({
+      reducer: {
+        auth: authReducer,
+        cart: cartReducer,
+        ui: uiReducer,
+      },
+    });
+
+    export type RootState = ReturnType<typeof store.getState>;
+    export type AppDispatch = typeof store.dispatch;
+
+    // Typed hooks — use these everywhere instead of plain useSelector/useDispatch
+    import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux';
+    export const useAppDispatch = () => useDispatch<AppDispatch>();
+    export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+
+  ─── B. src/store/authSlice.ts ───────────────────────────────────────────────
+
+    Purpose: Holds phone number during the OTP flow (bridges LoginPage →
+    VerifyOtpPage). Persisted to localStorage.
+
+    import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+
+    interface AuthState {
+      phoneNumber: string | null;
+    }
+
+    const STORAGE_KEY = 'doorstep-auth-storage';
+
+    const loadState = (): AuthState => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : { phoneNumber: null };
+      } catch {
+        return { phoneNumber: null };
+      }
+    };
+
+    const saveState = (state: AuthState) => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    };
+
+    const authSlice = createSlice({
+      name: 'auth',
+      initialState: loadState(),
+      reducers: {
+        setPhoneNumber(state, action: PayloadAction<string | null>) {
+          state.phoneNumber = action.payload;
+          saveState(state);
+        },
+      },
+    });
+
+    export const { setPhoneNumber } = authSlice.actions;
+    export const authReducer = authSlice.reducer;
+
+  ─── C. src/store/cartSlice.ts ───────────────────────────────────────────────
+
+    Purpose: Cart state. Mirrors useCartStore exactly. Only "unsubmitted"
+    orders are persisted to localStorage.
+
+    import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+    import { v4 as uuidv4 } from 'uuid';
+    import type { MenuItem, Order, OrderItem, OrderStatus, OptionChoice } from '@/lib/types';
+
+    interface CartState {
+      orders: Order[];
+    }
+
+    const STORAGE_KEY = 'doorstep-cart-storage';
+
+    function loadCart(): CartState {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : { orders: [] };
+      } catch {
+        return { orders: [] };
+      }
+    }
+
+    function saveCart(state: CartState) {
+      const persisted = { orders: state.orders.filter(o => o.status === 'unsubmitted') };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
+    }
+
+    function calcTotal(items: OrderItem[]): number {
+      return items.reduce((acc, item) => acc + item.totalPrice, 0);
+    }
+
+    function sameOptions(a: OptionChoice[], b: OptionChoice[]): boolean {
+      if (a.length !== b.length) return false;
+      const aIds = a.map(o => o.id).sort();
+      const bIds = b.map(o => o.id).sort();
+      return aIds.every((id, i) => id === bIds[i]);
+    }
+
+    const cartSlice = createSlice({
+      name: 'cart',
+      initialState: loadCart(),
+      reducers: {
+        addOrUpdateItem(
+          state,
+          action: PayloadAction<{
+            menuItem: MenuItem;
+            quantity: number;
+            selectedOptions: OptionChoice[];
+          }>
+        ) {
+          const { menuItem, quantity, selectedOptions } = action.payload;
+          const optionsPrice = selectedOptions.reduce(
+            (acc, opt) => acc + parseFloat(opt.price_adjustment),
+            0
+          );
+          const singlePrice = parseFloat(menuItem.price) + optionsPrice;
+          const totalItemPrice = singlePrice * quantity;
+
+          const existingOrderIdx = state.orders.findIndex(
+            o => o.restaurantId === menuItem.restaurant && o.status === 'unsubmitted'
+          );
+
+          if (existingOrderIdx >= 0) {
+            const order = state.orders[existingOrderIdx];
+            const existingItemIdx = order.items.findIndex(
+              item =>
+                item.menuItem.id === menuItem.id &&
+                sameOptions(item.options, selectedOptions)
+            );
+
+            if (existingItemIdx >= 0) {
+              const item = order.items[existingItemIdx];
+              const newQty = item.quantity + quantity;
+              item.quantity = newQty;
+              item.totalPrice = singlePrice * newQty;
+            } else {
+              order.items.push({
+                cartItemId: uuidv4(),
+                menuItem,
+                quantity,
+                options: selectedOptions,
+                totalPrice: totalItemPrice,
+              });
+            }
+            order.total = calcTotal(order.items);
+          } else {
+            // Clear other unsubmitted orders (different restaurant)
+            state.orders = state.orders.filter(o => o.status !== 'unsubmitted');
+            state.orders.push({
+              id: uuidv4(),
+              restaurantId: menuItem.restaurant,
+              items: [{
+                cartItemId: uuidv4(),
+                menuItem,
+                quantity,
+                options: selectedOptions,
+                totalPrice: totalItemPrice,
+              }],
+              status: 'unsubmitted',
+              total: totalItemPrice,
+            });
+          }
+          saveCart(state);
+        },
+
+        updateOrderStatus(
+          state,
+          action: PayloadAction<{ orderId: string; status: OrderStatus }>
+        ) {
+          const order = state.orders.find(o => o.id === action.payload.orderId);
+          if (order) order.status = action.payload.status;
+          saveCart(state);
+        },
+
+        increaseOrderItemQuantity(
+          state,
+          action: PayloadAction<{ orderId: string; cartItemId: string }>
+        ) {
+          const order = state.orders.find(o => o.id === action.payload.orderId);
+          if (!order) return;
+          const item = order.items.find(i => i.cartItemId === action.payload.cartItemId);
+          if (!item) return;
+          const singlePrice = item.totalPrice / item.quantity;
+          item.quantity += 1;
+          item.totalPrice = singlePrice * item.quantity;
+          order.total = calcTotal(order.items);
+          saveCart(state);
+        },
+
+        decreaseOrderItemQuantity(
+          state,
+          action: PayloadAction<{ orderId: string; cartItemId: string }>
+        ) {
+          const orderIdx = state.orders.findIndex(o => o.id === action.payload.orderId);
+          if (orderIdx < 0) return;
+          const order = state.orders[orderIdx];
+          const itemIdx = order.items.findIndex(i => i.cartItemId === action.payload.cartItemId);
+          if (itemIdx < 0) return;
+          const item = order.items[itemIdx];
+          if (item.quantity <= 1) {
+            order.items.splice(itemIdx, 1);
+          } else {
+            const singlePrice = item.totalPrice / item.quantity;
+            item.quantity -= 1;
+            item.totalPrice = singlePrice * item.quantity;
+          }
+          if (order.items.length === 0) {
+            state.orders.splice(orderIdx, 1);
+          } else {
+            order.total = calcTotal(order.items);
+          }
+          saveCart(state);
+        },
+
+        removeOrderItem(
+          state,
+          action: PayloadAction<{ orderId: string; cartItemId: string }>
+        ) {
+          const orderIdx = state.orders.findIndex(o => o.id === action.payload.orderId);
+          if (orderIdx < 0) return;
+          const order = state.orders[orderIdx];
+          order.items = order.items.filter(i => i.cartItemId !== action.payload.cartItemId);
+          if (order.items.length === 0) {
+            state.orders.splice(orderIdx, 1);
+          } else {
+            order.total = calcTotal(order.items);
+          }
+          saveCart(state);
+        },
+
+        removeUnsubmittedOrder(state, action: PayloadAction<string>) {
+          state.orders = state.orders.filter(o => o.id !== action.payload);
+          saveCart(state);
+        },
+
+        clearUserOrders(state) {
+          state.orders = [];
+          saveCart(state);
+        },
+      },
+    });
+
+    export const {
+      addOrUpdateItem,
+      updateOrderStatus,
+      increaseOrderItemQuantity,
+      decreaseOrderItemQuantity,
+      removeOrderItem,
+      removeUnsubmittedOrder,
+      clearUserOrders,
+    } = cartSlice.actions;
+
+    export const cartReducer = cartSlice.reducer;
+
+  ─── D. src/store/uiSlice.ts ─────────────────────────────────────────────────
+
+    Purpose: Tracks the restaurant being browsed and the selected delivery
+    address. Persisted to localStorage.
+
+    import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+    import type { Restaurant, Address } from '@/lib/types';
+
+    interface UIState {
+      viewedRestaurant: Restaurant | null;
+      selectedAddress: Address | null;
+    }
+
+    const STORAGE_KEY = 'doorstep-ui-storage';
+
+    function load(): UIState {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : { viewedRestaurant: null, selectedAddress: null };
+      } catch {
+        return { viewedRestaurant: null, selectedAddress: null };
+      }
+    }
+
+    function save(state: UIState) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    const uiSlice = createSlice({
+      name: 'ui',
+      initialState: load(),
+      reducers: {
+        setViewedRestaurant(state, action: PayloadAction<Restaurant | null>) {
+          state.viewedRestaurant = action.payload;
+          save(state);
+        },
+        setSelectedAddress(state, action: PayloadAction<Address | null>) {
+          state.selectedAddress = action.payload;
+          save(state);
+        },
+        clearUIState(state) {
+          state.viewedRestaurant = null;
+          state.selectedAddress = null;
+          save(state);
+        },
+      },
+    });
+
+    export const { setViewedRestaurant, setSelectedAddress, clearUIState } = uiSlice.actions;
+    export const uiReducer = uiSlice.reducer;
+
+  ─── Using the store in components ───────────────────────────────────────────
+
+    // Read state:
+    const orders = useAppSelector(state => state.cart.orders);
+    const phoneNumber = useAppSelector(state => state.auth.phoneNumber);
+    const selectedAddress = useAppSelector(state => state.ui.selectedAddress);
+
+    // Dispatch actions:
+    const dispatch = useAppDispatch();
+    dispatch(addOrUpdateItem({ menuItem, quantity, selectedOptions }));
+    dispatch(setPhoneNumber('+2348012345678'));
+    dispatch(setSelectedAddress(address));
+
+================================================================================
+  14. REACT QUERY SETUP
+================================================================================
+
+  In src/providers.tsx, set up TanStack Query:
+
+    import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+    import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 60_000,
+          retry: 1,
+        },
+      },
+    });
+
+  Wrap your app:
+
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+
+  Usage pattern in components — ALWAYS use useQuery/useMutation, never
+  useEffect + fetch for server data:
+
+    const { data: restaurants, isLoading } = useQuery({
+      queryKey: ['restaurants'],
+      queryFn: getRestaurants,
+    });
+
+    const { mutate: placeOrderMutation, isPending } = useMutation({
+      mutationFn: placeOrder,
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['customer-orders'] });
+        toast.success('Order placed!');
+      },
+      onError: (err: Error) => toast.error(err.message),
+    });
+
+  Vendor/rider dashboards should poll every 60 seconds:
+
+    useQuery({
+      queryKey: ['vendor-orders'],
+      queryFn: getVendorOrders,
+      refetchInterval: 60_000,
+    });
+
+================================================================================
+  15. SHADCN UI SETUP
+================================================================================
+
+  Initialize shadcn/ui:
+
+    npx shadcn-ui@latest init
+
+  When prompted:
+    - Style: Default
+    - Base color: Slate
+    - CSS variables: Yes
+    - Tailwind config: tailwind.config.js
+    - Components directory: src/components/ui
+    - Import alias: @/components/ui
+
+  Then add all components used in this project:
+
+    npx shadcn-ui@latest add accordion alert alert-dialog avatar badge button
+    npx shadcn-ui@latest add calendar card carousel checkbox collapsible
+    npx shadcn-ui@latest add dialog dropdown-menu form input label popover
+    npx shadcn-ui@latest add progress radio-group scroll-area select separator
+    npx shadcn-ui@latest add sheet skeleton slider switch table tabs textarea
+    npx shadcn-ui@latest add toast tooltip
+
+  IMPORTANT: After init, replace the generated src/index.css variables with the
+  exact values from Section 6. Shadcn generates generic defaults — the Doorstep
+  theme uses --primary: 201 100% 25% (deep teal/blue), not shadcn's default
+  purple.
+
+  For toast notifications, use `sonner` (already installed) instead of the
+  shadcn toast. Add <Toaster /> from sonner in providers.tsx and call toast()
+  directly.
+
+================================================================================
+  16. ROUTING (src/App.tsx)
+================================================================================
+
+  import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+  Structure:
+
+    <BrowserRouter>
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/verify-otp" element={<VerifyOtpPage />} />
+        <Route path="/secret/non-accessible/to/customers/login" element={<PartnerLoginPage />} />
+        <Route path="/menu" element={<PublicMenuPage />} />
+        <Route path="/restaurants/:restaurantId" element={<PublicRestaurantPage />} />
+        <Route path="/signup/rider" element={<RiderSignupPage />} />
+        <Route path="/signup/vendor" element={<VendorSignupPage />} />
+
+        {/* Customer */}
+        <Route path="/customer" element={<CustomerLayout />}>
+          <Route path="dashboard" element={<CustomerDashboardPage />} />
+          <Route path="restaurants/:restaurantId" element={<RestaurantMenuPage />} />
+          <Route path="orders" element={<CustomerOrdersPage />} />
+          <Route path="search" element={<SearchPage />} />
+          <Route path="profile" element={<CustomerProfilePage />} />
+        </Route>
+
+        {/* Vendor */}
+        <Route path="/vendor" element={<VendorLayout />}>
+          <Route path="dashboard" element={<VendorDashboardPage />} />
+          <Route path="orders" element={<VendorOrdersPage />} />
+          <Route path="analytics" element={<VendorAnalyticsPage />} />
+          <Route path="config" element={<VendorConfigPage />} />
+          <Route path="payouts" element={<VendorPayoutsPage />} />
+          <Route path="profile" element={<VendorProfilePage />} />
+        </Route>
+
+        {/* Rider */}
+        <Route path="/rider" element={<RiderLayout />}>
+          <Route path="dashboard" element={<RiderDashboardPage />} />
+          <Route path="orders" element={<RiderOrdersPage />} />
+          <Route path="payouts" element={<RiderPayoutsPage />} />
+          <Route path="profile" element={<RiderProfilePage />} />
+        </Route>
+
+        {/* Admin */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="analytics" element={<AdminAnalyticsPage />} />
+          <Route path="vendors" element={<AdminVendorsPage />} />
+          <Route path="riders" element={<AdminRidersPage />} />
+          <Route path="config" element={<AdminConfigPage />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+
+  ─── ProtectedRoute / Layout guard ───────────────────────────────────────────
+
+    Each layout (CustomerLayout, VendorLayout, etc.) should check auth on mount.
+    Pattern for CustomerLayout:
+
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (!user || !localStorage.getItem('accessToken')) {
+        return <Navigate to="/" replace />;
+      }
+      if (user.role !== 'customer') {
+        return <Navigate to="/" replace />;
+      }
+      return <Outlet />;   // renders child routes
+
+  ─── Login page redirect ─────────────────────────────────────────────────────
+
+    On LoginPage mount, check if already authenticated:
+
+      useEffect(() => {
+        const token = localStorage.getItem('accessToken');
+        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        if (token && user) {
+          const redirectMap = {
+            customer: '/customer/dashboard',
+            restaurant: '/vendor/dashboard',
+            driver: '/rider/dashboard',
+            admin: '/admin/dashboard',
+          };
+          navigate(redirectMap[user.role] ?? '/');
+        }
+      }, []);
+
+================================================================================
+  17. PROVIDERS WRAPPER (src/providers.tsx)
+================================================================================
+
+    import { Provider as ReduxProvider } from 'react-redux';
+    import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+    import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+    import { Toaster } from 'sonner';
+    import { store } from '@/store';
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { staleTime: 60_000, retry: 1 } },
+    });
+
+    export function Providers({ children }: { children: React.ReactNode }) {
+      return (
+        <ReduxProvider store={store}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+            <Toaster richColors position="top-right" />
+            <ReactQueryDevtools initialIsOpen={false} />
+          </QueryClientProvider>
+        </ReduxProvider>
+      );
+    }
+
+  In main.tsx:
+
+    import { Providers } from './providers';
+    import App from './App';
+    createRoot(document.getElementById('root')!).render(
+      <Providers>
+        <App />
+      </Providers>
+    );
+
+================================================================================
+  18. AUTH PAGES
+================================================================================
+
+  ─── LoginPage (/src/app/auth/LoginPage.tsx) ──────────────────────────────────
+
+    - Phone number input with Nigerian format validation
+    - On submit: call sendLoginOTP(phone), store phone in Redux via setPhoneNumber()
+    - Navigate to /verify-otp on success
+    - Show WhatsappOnboarding gate before the OTP input (UI-only, not enforced)
+    - On mount: if already authenticated, redirect based on user.role
+    - Show "?session_expired=true" banner if that query param is present
+
+  ─── VerifyOtpPage (/src/app/auth/VerifyOtpPage.tsx) ─────────────────────────
+
+    - Read phone from Redux: useAppSelector(state => state.auth.phoneNumber)
+    - If null, redirect back to /
+    - 6-digit OTP input (single input or 6 individual boxes)
+    - On submit: call verifyLoginOTP({ phone_number, otp_code })
+    - On success: store token + user in localStorage, dispatch clearPhoneNumber,
+      navigate to /customer/dashboard
+    - Resend OTP button with 30s cooldown (use-refresh-cooldown hook)
+
+  ─── SignupPage (/src/app/auth/SignupPage.tsx) ────────────────────────────────
+
+    - Fields: full_name, email, phone_number, birthday (optional), referral_code (optional)
+    - On submit: call signupCustomer(payload)
+    - On success: dispatch setPhoneNumber(phone), navigate to /verify-otp
+
+  ─── PartnerLoginPage (/src/app/auth/PartnerLoginPage.tsx) ───────────────────
+
+    Route: /secret/non-accessible/to/customers/login
+
+    - Email + password fields
+    - On submit: call loginUser({ email, password })
+    - Store token + user in localStorage
+    - Redirect based on user.role:
+        "restaurant" → /vendor/dashboard
+        "driver"     → /rider/dashboard
+        "admin"      → /admin/dashboard
+
+  ─── Zod validation schemas ───────────────────────────────────────────────────
+
+    Place these in src/lib/schemas.ts and import in each form:
+
+    export const loginSchema = z.object({
+      phone_number: z.string().regex(/^(\+234|0)[789]\d{9}$/, 'Enter a valid Nigerian phone number'),
+    });
+
+    export const otpSchema = z.object({
+      otp_code: z.string().length(6, 'OTP must be exactly 6 digits').regex(/^\d+$/),
+    });
+
+    export const signupSchema = z.object({
+      full_name: z.string().min(2),
+      email: z.string().email(),
+      phone_number: z.string().regex(/^(\+234|0)[789]\d{9}$/),
+      birthday: z.string().optional(),
+      referral_code: z.string().optional(),
+    });
+
+    export const partnerLoginSchema = z.object({
+      email: z.string().email(),
+      password: z.string().min(1, 'Password is required'),
+    });
+
+================================================================================
+  19. CUSTOMER PAGES & COMPONENTS
+================================================================================
+
+  ─── CustomerLayout ───────────────────────────────────────────────────────────
+
+    - Fixed sidebar (desktop) with nav links: Home, Orders, Search, Profile
+    - Fixed bottom navigation (mobile ≤768px): same 4 links
+    - Auth guard: redirect to / if no token or role !== 'customer'
+    - Mount <PushInitializer /> on load
+    - <Outlet /> for child pages
+
+  ─── CustomerDashboardPage (/customer/dashboard) ──────────────────────────────
+
+    useQuery({ queryKey: ['restaurants'], queryFn: getRestaurants })
+
+    - Restaurant grid cards: image, name, rating (⭐), is_active badge
+    - "Closed" overlay on cards where is_active = false
+    - Clicking a card: dispatch setViewedRestaurant(r), navigate to
+      /customer/restaurants/:id
+    - Search bar → navigate to /customer/search
+
+  ─── RestaurantMenuPage (/customer/restaurants/:restaurantId) ─────────────────
+
+    - Fetch restaurant + menu (two parallel useQuery calls)
+    - dispatch setViewedRestaurant(restaurant) on load
+    - Group menu items by category (items with category = null go in "Other")
+    - Unavailable items: greyed out + "Unavailable" badge, not clickable
+    - Clicking available item → open AddToCartModal
+    - Floating "View Order" button when cart has items for this restaurant
+      → opens CheckoutModal
+
+  ─── AddToCartModal ───────────────────────────────────────────────────────────
+
+    Props: menuItem, onClose
+
+    - Display item image, name, description
+    - Options grouped by type (protein, side, drink, packaging, extra, other)
+      Each group = section with checkboxes + label + price_adjustment
+    - Quantity selector (+ / − buttons, min 1)
+    - Live total price: (item.price + sum(selected options price_adjustment)) × qty
+    - "Add to Cart" button:
+        If item from different restaurant: show confirmation alert
+        Call dispatch(addOrUpdateItem({ menuItem, quantity, selectedOptions }))
+        Close modal, show toast
+
+  ─── CheckoutModal ────────────────────────────────────────────────────────────
+
+    This is the most complex component. Full spec:
+
+    State: orderType ('delivery'|'pickup'), paymentMethod ('card'|'cash'),
+           discountCode, appliedDiscount, isPaystackLoading
+
+    Read from Redux:
+      const orders = useAppSelector(state => state.cart.orders)
+      const restaurant = useAppSelector(state => state.ui.viewedRestaurant)
+      const address = useAppSelector(state => state.ui.selectedAddress)
+
+    1. Item list with quantity +/- and remove (×) buttons
+       → dispatch increaseOrderItemQuantity / decreaseOrderItemQuantity / removeOrderItem
+
+    2. Order type toggle: "Delivery" | "Pickup"
+
+    3. Address section (Delivery only):
+       - Show selectedAddress from Redux
+       - "Change Address" → open AddressSelectionModal
+
+    4. Price summary:
+       subtotal = sum of item.totalPrice in current unsubmitted order
+       deliveryFee: if Delivery AND restaurant.address AND selectedAddress both
+                    have lat/lng → calculateDeliveryFee(haversineDistance(...))
+                    else → 0 (show "Address needed" hint)
+       tax = calculateTax(subtotal)  // 5% capped at ₦500
+       discount = calculateDiscount(appliedDiscount, subtotal, deliveryFee, tax)
+       total = subtotal + deliveryFee + tax - discount
+
+    5. Discount code input + "Apply" button
+       → call applyDiscountCode(code, restaurant.id)
+       → on success: setAppliedDiscount(data), show green badge
+       → on error: show red error message
+
+       Discount calculation logic (run in component):
+
+         let discountAmount = 0;
+         switch (discount.scope_type) {
+           case 'order':
+           case 'all_menu_items':
+             if (subtotal < discount.min_order_value) break;
+             discountAmount = discount.discount_type === 'percentage'
+               ? Math.min(subtotal * (discount.value / 100), discount.max_discount_amount ?? Infinity)
+               : discount.value;
+             break;
+           case 'delivery':
+             if (orderType !== 'delivery') break;
+             discountAmount = discount.discount_type === 'percentage'
+               ? Math.min(deliveryFee * (discount.value / 100), discount.max_discount_amount ?? Infinity)
+               : Math.min(discount.value, deliveryFee);
+             break;
+           case 'service_fee':
+             discountAmount = discount.discount_type === 'percentage'
+               ? tax * (discount.value / 100)
+               : Math.min(discount.value, tax);
+             break;
+         }
+
+    6. Payment method radio: "Card (Paystack)" | "Cash on Delivery"
+
+    7. "Place Order" button:
+       If card:
+         a. POST /initialize/ with { amount: Math.round(total * 100) }
+            → get reference
+         b. Call usePaystackPayment({ publicKey, email, amount, reference })
+            initializePayment({
+              onSuccess: () => placeOrderOnBackend(),
+              onClose: () => toast.error('Payment cancelled'),
+            })
+       If cash:
+         → placeOrderOnBackend() directly
+
+       placeOrderOnBackend():
+         const payload: OrderPayload = {
+           restaurant_id: restaurant.id,
+           delivery_address_id: orderType === 'delivery' ? address?.id : undefined,
+           items: currentOrder.items.map(i => ({
+             menu_item_id: i.menuItem.id,
+             quantity: i.quantity,
+             selected_options: i.options.map(o => o.id),
+           })),
+           payment_method: paymentMethod,
+           order_type: orderType,
+           delivery_fee: orderType === 'delivery' ? deliveryFee : undefined,
+           discount_code: appliedDiscount?.code,
+         };
+         await placeOrder(payload);
+         dispatch(updateOrderStatus({ orderId: currentOrder.id, status: 'Order Placed' }));
+         toast.success('Order placed!');
+         navigate('/customer/orders');
+
+    IMPORTANT: For orders with subtotal < ₦2000, show a prominent warning
+    banner inside the modal: "Minimum order for delivery is ₦2,000."
+
+  ─── CustomerOrdersPage (/customer/orders) ────────────────────────────────────
+
+    - Tabs: "Ongoing" | "Past"
+    - useQuery({ queryKey: ['customer-orders'], queryFn: getCustomerOrders,
+                 refetchInterval: 60_000 })
+    - Ongoing statuses: Pending, Accepted, Preparing, Ready for Pickup, On the Way
+    - Past statuses: Delivered, Completed, Cancelled, Rejected
+    - Each order card is expandable → shows CustomerOrderTimeline
+    - Refresh button with use-refresh-cooldown (30s)
+    - Confirm Delivery button (status = 'Delivered', order_type = 'delivery'):
+        4-digit OTP input + button → POST /customer/me/order/{id}/delivered/
+    - Confirm Pickup button (status = 'Ready for Pickup', order_type = 'pickup'):
+        4-digit OTP input + button → PUT /orders/{id}/pickup-status/
+
+  ─── CustomerOrderTimeline ────────────────────────────────────────────────────
+
+    A visual step-by-step progress component. Show each status stage as a
+    circle/dot with a line connecting them. Current step is highlighted,
+    completed steps are filled.
+
+    Delivery timeline steps:
+      Order Placed → Vendor Accepted → Preparing → Order Ready →
+      Driver Assigned → On the Way → Delivered
+
+    Pickup timeline steps:
+      Order Placed → Vendor Accepted → Preparing → Ready for Pickup →
+      Picked Up by Customer
+
+  ─── SearchPage (/customer/search) ───────────────────────────────────────────
+
+    - Debounced search input (300ms)
+    - useQuery with enabled: query.length > 0
+    - queryFn: searchItemsAndRestaurants(query)
+    - Display results in two tabs or sections: Restaurants | Menu Items
+    - Clicking result navigates to the restaurant page
+
+  ─── CustomerProfilePage (/customer/profile) ──────────────────────────────────
+
+    - Display user info from localStorage user object
+    - Edit form: full_name, phone_number → PATCH /auth/users/me/update/
+    - Address management (use AddressManagement component):
+        List addresses, add, delete, set as default
+    - Logout button: localStorage.clear(), dispatch clearUserOrders(),
+      dispatch clearUIState(), navigate to /
+
+  ─── AddressSelectionModal ────────────────────────────────────────────────────
+
+    - List saved addresses (useQuery addresses)
+    - "Use Current Location" → navigator.geolocation → reverse geocode
+    - "Add New Address" form with use-places-autocomplete
+    - On select: dispatch setSelectedAddress(address), close modal
+
+================================================================================
+  20. VENDOR PAGES & COMPONENTS
+================================================================================
+
+  ─── VendorLayout ─────────────────────────────────────────────────────────────
+
+    Auth guard: role must be 'restaurant'. Sidebar nav + bottom nav (mobile).
+    Nav items: Dashboard, Orders, Analytics, Menu Config, Payouts, Profile
+
+  ─── VendorDashboardPage (/vendor/dashboard) ──────────────────────────────────
+
+    - GET /restaurants/me/ → show restaurant name, status, open/closed toggle
+    - GET /restaurants/me/orders/ → show last 5 orders
+    - KPI cards: Total Revenue, Active Orders, Delivered, Cancelled
+    - Open/Closed toggle → POST /restaurants/me/toggle-open/
+
+  ─── VendorOrdersPage (/vendor/orders) ────────────────────────────────────────
+
+    Poll every 60s. Tabs: New | Preparing | Ready | Delivery | Past
+
+    Status → tab mapping:
+      "Pending"          → New
+      "Vendor Accepted"  → Preparing
+      "Preparing"        → Ready
+      "Order Ready" / "Driver Assigned" → Delivery
+      "Delivered" / "Completed" / "Cancelled" / "Rejected" → Past
+
+    Action buttons by tab:
+      New:       Accept → /accept/, Reject → /reject/
+      Preparing: Mark Preparing → /preparing/
+      Ready:     Mark Ready → dialog:
+                   "Use Doorstep Driver" → /ready/ { driver_type: 'doorstep' }
+                   "Use In-House Rider" → show rider dropdown
+                     → /ready/ { driver_type: 'inhouse' }
+                     → /ongoing/ { driver_name }
+
+    Table columns: Order ID, Customer, Date, Status, Total, Actions
+    Pagination: 5 rows per page
+
+  ─── VendorConfigPage (/vendor/config) ────────────────────────────────────────
+
+    Three tabs: Menu Items | Categories | Options
+
+    Menu Items:
+      - List (VendorItemManagement component)
+      - Add form (name, description, price, category, item_type)
+      - Image upload via uploadMenuItemImage()
+      - Toggle availability switch
+
+    Categories:
+      - CategoryManagement component
+      - Add/edit/delete
+
+    Options:
+      - OptionManagement component
+      - Each option linked to a menu item
+
+    In-House Riders:
+      - VendorRiderManagement component
+      - Add (name, phone), delete
+
+  ─── VendorAnalyticsPage (/vendor/analytics) ──────────────────────────────────
+
+    useQuery({ queryKey: ['vendor-analytics'], queryFn: getVendorAnalytics })
+
+    Recharts components:
+      - LineChart: revenue_by_day (x=date, y=revenue)
+      - BarChart: top_items (x=name, y=count)
+      - PieChart: order status distribution
+      - KPI cards: total_revenue, total_orders, delivered_orders, cancelled_orders
+
+  ─── VendorPayoutsPage / RiderPayoutsPage ─────────────────────────────────────
+
+    Shared PayoutManagement component.
+
+    Sections:
+      1. Wallet balance (GET /wallet/)
+         - Show balance + withdrawable_balance as ₦ formatted
+      2. Bank accounts (GET /payout/recipients/)
+         - List saved accounts
+         - Add account form: name, account_number, bank_code (dropdown of 27 banks)
+           → POST /payout/recipient/create/
+         - Delete account → DELETE /recipients/{recipient_code}/delete/
+      3. Request withdrawal form:
+         - Amount input (min ₦1,000)
+         - Recipient dropdown (from saved accounts)
+         → POST /payout/initiate/
+
+  ─── VendorProfilePage (/vendor/profile) ──────────────────────────────────────
+
+    - GET /restaurants/me/
+    - Edit: name, description → PATCH /restaurants/me/
+    - Logo upload → POST /upload_restaurant_profile_pic/ (FormData)
+    - Address change via VendorAddressModal (Google Places autocomplete)
+
+================================================================================
+  21. RIDER PAGES & COMPONENTS
+================================================================================
+
+  ─── RiderLayout ──────────────────────────────────────────────────────────────
+
+    Auth guard: role must be 'driver'. Nav: Dashboard, My Orders, Payouts, Profile
+
+  ─── RiderDashboardPage (/rider/dashboard) ────────────────────────────────────
+
+    - GET /drivers/orders/available (poll every 60s)
+    - Grouped by restaurant as accordion/expandable cards
+    - Each batch: restaurant name + location, order count
+    - Expand → individual orders: customer name, delivery address, distance
+    - Accept/Reject buttons → performRiderAction(orderId, 'accept'|'reject')
+    - useRiderLocationSocket hook mounted here
+
+  ─── RiderOrdersPage (/rider/orders) ─────────────────────────────────────────
+
+    - GET /drivers/orders/ (poll every 60s)
+    - Tabs: Ongoing | Past
+    - For each ongoing order:
+        - Customer name, phone (click to call tel: link)
+        - Restaurant address
+        - Delivery address
+        - Order timeline (step progress)
+    - Action buttons by status (use RiderOrderActions component):
+        "Driver Assigned"        → "Arrive at Restaurant" → /arrive/
+        "Arrived at Restaurant"  → "Pick Up Order" → /pickup/
+        "pickedup"               → OtpSubmissionModal → /deliver/ with { otp }
+    - "Get Directions" button:
+        Opens new tab to:
+        https://www.google.com/maps/dir/?api=1
+          &origin={riderLat},{riderLng}
+          &waypoints={restaurantLat},{restaurantLng}
+          &destination={customerLat},{customerLng}
+          &travelmode=driving
+
+  ─── OtpSubmissionModal ──────────────────────────────────────────────────────
+
+    - Rider generates and shows a 4-digit OTP to the customer
+    - Customer reads it back to the rider (verbal confirmation)
+    - Input: rider types the 4-digit OTP the customer confirmed
+    - Submit → POST /drivers/orders/{id}/deliver/ with { otp }
+
+  ─── Rider Signup (/signup/rider or /rider/signup) ───────────────────────────
+
+    Fields: full_name, email, phone_number, vehicle_type (dropdown)
+    Shows success message after submission.
+
+================================================================================
+  22. ADMIN PAGES & COMPONENTS
+================================================================================
+
+  ─── AdminLayout ──────────────────────────────────────────────────────────────
+
+    Auth guard: role must be 'admin'. Full sidebar nav.
+
+  ─── AdminDashboardPage (/admin/dashboard) ────────────────────────────────────
+
+    - Platform stats (AdminStats component):
+        Total orders, revenue, customers, vendors, riders
+    - Recent orders table (last 10–20 across all restaurants)
+    - Quick nav links
+
+  ─── AdminOrdersPage (/admin/orders) ─────────────────────────────────────────
+
+    - GET /admin/orders/
+    - Paginated table: Order ID, Restaurant, Customer, Status, Amount, Date
+    - Filter by status, date range
+
+  ─── AdminVendorsPage / AdminRidersPage ──────────────────────────────────────
+
+    AdminUsersTable component:
+    - GET /admin/users/?page=N
+    - Paginated table: name, email, role, status, created_at
+    - Block/Unblock action
+
+================================================================================
+  23. SHARED COMPONENTS
+================================================================================
+
+  ─── PostOrderReviewModal ─────────────────────────────────────────────────────
+
+    Trigger: "Leave a Review" button on past completed/delivered orders.
+
+    - Star rating 1–5 (click to select, hover preview)
+    - Optional comment textarea
+    - Submit → POST /reviews/restaurant/{restaurantId}/ { rating, comment }
+    - Toast on success, close modal
+
+  ─── LogoutButton ─────────────────────────────────────────────────────────────
+
+    On click:
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      dispatch(clearUserOrders());
+      dispatch(clearUIState());
+      navigate('/');
+
+================================================================================
+  24. CUSTOM HOOKS
+================================================================================
+
+  ─── src/hooks/use-addresses.ts ───────────────────────────────────────────────
+
+    import { useQuery } from '@tanstack/react-query';
+    import { useEffect } from 'react';
+    import { getAddresses } from '@/lib/api';
+    import { setSelectedAddress } from '@/store/uiSlice';
+    import { useAppDispatch, useAppSelector } from '@/store';
+
+    export function useAddresses() {
+      const dispatch = useAppDispatch();
+      const selectedAddress = useAppSelector(s => s.ui.selectedAddress);
+
+      const query = useQuery({
+        queryKey: ['addresses'],
+        queryFn: getAddresses,
+      });
+
+      useEffect(() => {
+        if (query.data && !selectedAddress) {
+          const def = query.data.find(a => a.is_default);
+          if (def) dispatch(setSelectedAddress(def));
+        }
+      }, [query.data]);
+
+      return query;
+    }
+
+  ─── src/hooks/use-mobile.tsx ─────────────────────────────────────────────────
+
+    import { useState, useEffect } from 'react';
+
+    export function useIsMobile(breakpoint = 768) {
+      const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
+      useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < breakpoint);
+        window.addEventListener('resize', check);
+        return () => window.removeEventListener('resize', check);
+      }, [breakpoint]);
+      return isMobile;
+    }
+
+  ─── src/hooks/use-refresh-cooldown.ts ────────────────────────────────────────
+
+    import { useState, useEffect } from 'react';
+
+    export function useRefreshCooldown(cooldownSeconds = 30) {
+      const [remaining, setRemaining] = useState(0);
+
+      const startCooldown = () => setRemaining(cooldownSeconds);
+
+      useEffect(() => {
+        if (remaining <= 0) return;
+        const interval = setInterval(() => setRemaining(r => r - 1), 1000);
+        return () => clearInterval(interval);
+      }, [remaining]);
+
+      return { canRefresh: remaining === 0, remaining, startCooldown };
+    }
+
+  ─── src/hooks/use-rider-location-socket.ts ───────────────────────────────────
+
+    import { useState, useEffect } from 'react';
+    import { updateRiderLocation } from '@/lib/api';
+
+    type Status = 'connecting' | 'connected' | 'disconnected' | 'error';
+
+    export function useRiderLocationSocket() {
+      const [status, setStatus] = useState<Status>('disconnected');
+
+      useEffect(() => {
+        setStatus('connecting');
+
+        const update = () => {
+          navigator.geolocation.getCurrentPosition(
+            async pos => {
+              await updateRiderLocation(pos.coords.latitude, pos.coords.longitude);
+              setStatus('connected');
+            },
+            () => setStatus('error'),
+            { enableHighAccuracy: true }
+          );
+        };
+
+        update();
+        const interval = setInterval(update, 3 * 60 * 1000);
+        return () => clearInterval(interval);
+      }, []);
+
+      return { status };
+    }
+
+================================================================================
+  25. PWA & PUSH NOTIFICATIONS
+================================================================================
+
+  ─── vite-plugin-pwa (already configured in vite.config.ts above) ─────────────
+
+  ─── src/components/pwa/PushInitializer.tsx ──────────────────────────────────
+
+    Mount this component inside each role layout (CustomerLayout, VendorLayout,
+    RiderLayout, AdminLayout). It runs once on mount and requests push permission.
+
+    import { useEffect } from 'react';
+    import { subscribeToNotifications } from '@/lib/api';
+
+    const VAPID_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+
+    function urlBase64ToUint8Array(base64String: string) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+    }
+
+    export function PushInitializer() {
+      useEffect(() => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+        (async () => {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') return;
+
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_KEY),
+          });
+
+          await subscribeToNotifications(subscription);
+        })();
+      }, []);
+
+      return null;
+    }
+
+  ─── Firebase Messaging (foreground notifications) ───────────────────────────
+
+    Initialize Firebase in src/lib/firebase.ts:
+
+      import { initializeApp } from 'firebase/app';
+      import { getMessaging, onMessage } from 'firebase/messaging';
+      import { toast } from 'sonner';
+
+      const firebaseConfig = { /* get from Firebase console */ };
+      const app = initializeApp(firebaseConfig);
+      const messaging = getMessaging(app);
+
+      export function initForegroundMessages() {
+        onMessage(messaging, payload => {
+          toast(payload.notification?.title ?? 'New notification', {
+            description: payload.notification?.body,
+          });
+        });
+      }
+
+    Call initForegroundMessages() inside PushInitializer or providers.tsx.
+
+================================================================================
+  26. FRAMER MOTION USAGE PATTERNS
+================================================================================
+
+  The original prototype uses Framer Motion for modal animations and page
+  transitions. Replicate these patterns:
+
+  ─── Modal (Framer Motion + AnimatePresence) ──────────────────────────────────
+
+    import { motion, AnimatePresence } from 'framer-motion';
+
+    // Wrap conditionally shown modals with AnimatePresence:
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
+        >
+          <motion.div
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 max-h-[90vh] overflow-y-auto"
+          >
+            {/* modal content */}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+  ─── Page transitions ─────────────────────────────────────────────────────────
+
+    Wrap each page component in:
+
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      {/* page content */}
+    </motion.div>
+
+  ─── List item stagger ────────────────────────────────────────────────────────
+
+    const container = {
+      hidden: { opacity: 0 },
+      show: { opacity: 1, transition: { staggerChildren: 0.05 } },
+    };
+    const item = {
+      hidden: { opacity: 0, y: 10 },
+      show: { opacity: 1, y: 0 },
+    };
+
+    <motion.ul variants={container} initial="hidden" animate="show">
+      {restaurants.map(r => (
+        <motion.li key={r.id} variants={item}>
+          <RestaurantCard restaurant={r} />
+        </motion.li>
+      ))}
+    </motion.ul>
+
+================================================================================
+  27. NIGERIAN BANKS DATA (src/lib/banks.ts)
+================================================================================
+
+  export const nigerianBanks = [
+    { code: '044', name: 'Access Bank' },
+    { code: '023', name: 'Citibank Nigeria' },
+    { code: '050', name: 'EcoBank Nigeria' },
+    { code: '070', name: 'Fidelity Bank' },
+    { code: '011', name: 'First Bank of Nigeria' },
+    { code: '214', name: 'First City Monument Bank (FCMB)' },
+    { code: '058', name: 'Guaranty Trust Bank (GTBank)' },
+    { code: '030', name: 'Heritage Bank' },
+    { code: '301', name: 'Jaiz Bank' },
+    { code: '082', name: 'Keystone Bank' },
+    { code: '526', name: 'Kuda Bank' },
+    { code: '076', name: 'Polaris Bank' },
+    { code: '101', name: 'Providus Bank' },
+    { code: '221', name: 'Stanbic IBTC Bank' },
+    { code: '068', name: 'Standard Chartered Bank' },
+    { code: '232', name: 'Sterling Bank' },
+    { code: '100', name: 'Suntrust Bank' },
+    { code: '032', name: 'Union Bank of Nigeria' },
+    { code: '033', name: 'United Bank for Africa (UBA)' },
+    { code: '215', name: 'Unity Bank' },
+    { code: '035', name: 'Wema Bank' },
+    { code: '057', name: 'Zenith Bank' },
+    { code: '999992', name: 'Opay' },
+    { code: '999991', name: 'PalmPay' },
+    { code: '50515', name: 'Moniepoint MFB' },
+    { code: '090405', name: 'Eyowo' },
+    { code: '000026', name: 'TAJ Bank' },
+  ];
+
+================================================================================
+  28. BUILD & RUN
+================================================================================
+
+  Development:
+    npm run dev
+    → App runs at http://localhost:5173
+
+  Type check:
+    npx tsc --noEmit
+
+  Production build:
+    npm run build
+    npm run preview
+
+  ─── Environment check ────────────────────────────────────────────────────────
+
+  Before running, confirm .env has all four variables set. The app will throw
+  on any missing variable if you add guards to the api.ts fetcher.
+
+  ─── Paystack test cards ──────────────────────────────────────────────────────
+
+    Card number : 4084 0840 8408 4081
+    CVV         : 408
+    Expiry      : any future date
+    PIN         : 0000
+    OTP         : 123456
+
+  ─── CORS ────────────────────────────────────────────────────────────────────
+
+  The backend at doorstep-backend-gzqk.onrender.com already allows the current
+  prototype domain. When using a new domain (e.g., localhost:5173), the backend
+  may need a CORS update. Contact the backend team if you hit CORS errors.
+
+================================================================================
+  END OF REBUILD INSTRUCTIONS
+================================================================================
