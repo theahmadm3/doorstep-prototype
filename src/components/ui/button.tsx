@@ -49,7 +49,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <MuiButton
         ref={ref}
-        className={cn(className)}
+        variant="text"
+        disableElevation
+        className={cn(buttonVariants({ variant, size, className }))}
         {...(props as React.ComponentProps<typeof MuiButton>)}
       />
     );
