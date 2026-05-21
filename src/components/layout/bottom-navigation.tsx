@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, type LucideIcon } from "lucide-react";
@@ -141,7 +141,7 @@ export default function BottomNavigation({ links }: BottomNavigationProps) {
 							return (
 								<Link
 									key={href}
-									href={href}
+									to={href}
 									className={cn(
 										"group relative inline-flex flex-col items-center justify-center px-3 py-1 rounded-2xl transition-all duration-300 flex-1",
 										isActive && "text-primary",

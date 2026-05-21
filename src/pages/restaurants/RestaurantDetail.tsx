@@ -10,7 +10,7 @@ import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ArrowLeft } from "lucide-react";
 import { notFound, useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -107,7 +107,7 @@ export default function RestaurantMenuPage() {
         <div className="container py-12">
             <div className="mb-8">
                 <Button asChild variant="outline">
-                    <Link href="/menu">
+                    <Link to="/menu">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to Restaurants
                     </Link>

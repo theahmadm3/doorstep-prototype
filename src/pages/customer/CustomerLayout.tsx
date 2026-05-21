@@ -13,7 +13,6 @@ import {
 	SidebarContent,
 } from "@/components/ui/sidebar";
 import { Home, Package, User, Utensils, Search } from "lucide-react";
-import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ClientHeader from "@/components/layout/client-header";
 import LogoutButton from "@/components/auth/logout-button";
@@ -25,7 +24,7 @@ import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { usePathname } from "next/navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
@@ -93,7 +92,7 @@ export default function CustomerLayout() {
 							{customerNavLinks.map((link) => (
 								<SidebarMenuItem key={link.label}>
 									<SidebarMenuButton asChild>
-										<Link href={link.href}>
+										<Link to={link.href}>
 											<link.icon />
 											{link.label}
 										</Link>

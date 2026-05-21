@@ -19,7 +19,6 @@ import {
   Utensils,
   CreditCard,
 } from 'lucide-react';
-import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LogoutButton from '@/components/auth/logout-button';
 import { useEffect, useState, createContext, useContext } from 'react';
@@ -27,7 +26,7 @@ import type { User as UserType } from '@/lib/types';
 import BottomNavigation from '@/components/layout/bottom-navigation';
 import { useRiderLocation as useRiderLocationData, LocationStatus } from '@/hooks/use-rider-location-socket';
 import { useNotificationListener } from '@/hooks/use-notification-listener';
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 
 const riderNavLinks = [
   { href: "/rider/dashboard", label: "Dashboard", icon: Home },
@@ -83,7 +82,7 @@ export default function RiderLayout() {
                 {riderNavLinks.map(link => (
                     <SidebarMenuItem key={link.href}>
                     <SidebarMenuButton asChild>
-                        <Link href={link.href}>
+                        <Link to={link.href}>
                         <link.icon />
                         {link.label}
                         </Link>

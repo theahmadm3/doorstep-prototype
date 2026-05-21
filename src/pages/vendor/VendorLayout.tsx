@@ -21,7 +21,6 @@ import {
 	Utensils,
     CreditCard,
 } from "lucide-react";
-import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LogoutButton from "@/components/auth/logout-button";
 import { useEffect, useState, useCallback } from "react";
@@ -30,7 +29,7 @@ import { getRestaurantProfile } from "@/lib/api";
 import VendorAddressModal from "@/components/vendor/vendor-address-modal";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 
 const vendorNavLinks = [
 	{ href: "/vendor/dashboard", label: "Dashboard", icon: Home },
@@ -92,7 +91,7 @@ export default function VendorLayout() {
 							{vendorNavLinks.map((link) => (
 								<SidebarMenuItem key={link.href}>
 									<SidebarMenuButton asChild>
-										<Link href={link.href}>
+										<Link to={link.href}>
 											<link.icon />
 											{link.label}
 										</Link>

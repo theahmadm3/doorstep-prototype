@@ -16,7 +16,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { Search as SearchIcon, Star, Utensils, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AddToCartModal from "@/components/checkout/add-to-cart-modal";
@@ -122,7 +122,7 @@ const RestaurantCard = ({
 	restaurant: SearchResultRestaurant;
 }) => {
 	return (
-		<Link href={`/customer/restaurants/${restaurant.id}`}>
+		<Link to={`/customer/restaurants/${restaurant.id}`}>
 			<Card
 				className={cn(
 					"hover:shadow-md transition-shadow",

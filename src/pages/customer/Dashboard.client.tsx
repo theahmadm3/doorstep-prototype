@@ -8,7 +8,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { Utensils, MapPin, Star } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
 import { useUIStore } from "@/stores/useUIStore";
@@ -38,7 +38,7 @@ export default function CustomerDashboardClient({
 				{restaurants.map((restaurant) => (
 					<Link
 						key={restaurant.id}
-						href={`/customer/restaurants/${restaurant.id}`}
+						to={`/customer/restaurants/${restaurant.id}`}
 						onClick={() => setViewedRestaurant(restaurant)}
 						className="flex-shrink-0 w-[280px] snap-start"
 					>

@@ -20,13 +20,12 @@ import {
   ShoppingBag,
   Utensils,
 } from 'lucide-react';
-import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import LogoutButton from '@/components/auth/logout-button';
 import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
 import BottomNavigation from '@/components/layout/bottom-navigation';
-import { Outlet } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 
 const adminNavLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
@@ -62,7 +61,7 @@ export default function AdminLayout() {
               {adminNavLinks.map(link => (
                 <SidebarMenuItem key={link.href}>
                   <SidebarMenuButton asChild>
-                    <Link href={link.href}>
+                    <Link to={link.href}>
                       <link.icon />
                       {link.label}
                     </Link>

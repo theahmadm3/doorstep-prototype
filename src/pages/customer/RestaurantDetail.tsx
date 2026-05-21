@@ -26,7 +26,7 @@ import {
 	X,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import CheckoutModal from "@/components/checkout/checkout-modal";
 import { cn } from "@/lib/utils";
@@ -224,7 +224,7 @@ export default function RestaurantMenuPage() {
 					Restaurant data not found.
 				</p>
 				<Button asChild variant="link">
-					<Link href="/customer/dashboard">Go back to dashboard</Link>
+					<Link to="/customer/dashboard">Go back to dashboard</Link>
 				</Button>
 			</div>
 		);
@@ -249,7 +249,7 @@ export default function RestaurantMenuPage() {
 
 			<div className="mb-4 w-full inline-flex items-center justify-between restaurant-header">
 				<Button asChild variant="ghost" className="px-2">
-					<Link href="/customer/dashboard">
+					<Link to="/customer/dashboard">
 						<ArrowLeft className="mr-2 h-4 w-4" />
 						All Restaurants
 					</Link>

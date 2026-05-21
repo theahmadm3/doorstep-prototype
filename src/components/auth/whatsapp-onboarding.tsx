@@ -4,7 +4,7 @@
 import { Button } from "@/components/ui/button";
 import { Copy, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 
 interface WhatsappOnboardingProps {
@@ -47,7 +47,7 @@ export default function WhatsappOnboarding({ onConfirm }: WhatsappOnboardingProp
       </div>
       
       <Button asChild className="w-full" size="lg">
-        <Link href={whatsappLink} target="_blank" rel="noopener noreferrer">
+        <Link to={whatsappLink} target="_blank" rel="noopener noreferrer">
           Open WhatsApp
         </Link>
       </Button>
