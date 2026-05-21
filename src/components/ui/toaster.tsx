@@ -1,35 +1,29 @@
-"use client"
-
-import { useToast } from "@/hooks/use-toast"
-import {
-  Toast,
-  ToastClose,
-  ToastDescription,
-  ToastProvider,
-  ToastTitle,
-  ToastViewport,
-} from "@/components/ui/toast"
+import { useToast } from "@/hooks/use-toast";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 export function Toaster() {
-  const { toasts } = useToast()
-
+  const { toasts } = useToast();
   return (
-    <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
-        return (
-          <Toast key={id} {...props}>
-            <div className="grid gap-1">
-              {title && <ToastTitle>{title}</ToastTitle>}
-              {description && (
-                <ToastDescription>{description}</ToastDescription>
-              )}
-            </div>
-            {action}
-            <ToastClose />
-          </Toast>
-        )
-      })}
-      <ToastViewport />
-    </ToastProvider>
-  )
+    <>
+      {toasts.map(({ id, title, description, variant, open, action }) => (
+        <Snackbar
+          key={id}
+          open={open}
+          autoHideDuration={5000}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert
+            severity={variant === "destructive" ? "error" : "success"}
+            variant="filled"
+            action={action as any}
+            sx={{ width: "100%" }}
+          >
+            {title ? <div style={{ fontWeight: 600 }}>{title}</div> : null}
+            {description ? <div>{description}</div> : null}
+          </Alert>
+        </Snackbar>
+      ))}
+    </>
+  );
 }
