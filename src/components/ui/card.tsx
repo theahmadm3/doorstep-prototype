@@ -1,5 +1,6 @@
 
 import * as React from "react";
+import Paper from "@mui/material/Paper";
 
 import { cn } from "@/lib/utils";
 
@@ -7,8 +8,9 @@ const Card = React.forwardRef<
 	HTMLDivElement,
 	React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-	<div
+	<Paper
 		ref={ref}
+		elevation={0}
 		className={cn(
 			"rounded-lg border bg-card text-card-foreground shadow-sm",
 			className,
