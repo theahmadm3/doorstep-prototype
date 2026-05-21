@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { usePathname, useRouter } from "next/navigation";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { LogOut, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,7 +32,7 @@ interface BottomNavigationProps {
 }
 
 function TempLogoutButton() {
-	const router = useRouter();
+	const navigate = useNavigate();
 	const [open, setOpen] = useState(false);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
 	const { toast } = useToast();
@@ -56,7 +55,7 @@ function TempLogoutButton() {
 
 			// Close dialog and redirect
 			setOpen(false);
-			router.push("/login");
+			navigate("/login");
 		} catch (error) {
 			console.error("Logout error:", error);
 			toast({
@@ -72,7 +71,7 @@ function TempLogoutButton() {
 			queryClient.clear();
 			localStorage.clear();
 			setOpen(false);
-			router.push("/login");
+			navigate("/login");
 		} finally {
 			setIsLoggingOut(false);
 		}
@@ -112,7 +111,7 @@ function TempLogoutButton() {
 }
 
 export default function BottomNavigation({ links }: BottomNavigationProps) {
-	const pathname = usePathname();
+	const pathname = useLocation().pathname;
 
 	return (
 		<>

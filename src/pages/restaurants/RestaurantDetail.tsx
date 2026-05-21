@@ -9,15 +9,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ArrowLeft } from "lucide-react";
-import { notFound, useParams, useRouter } from "next/navigation";
-import { Link } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 export default function RestaurantMenuPage() {
   const { toast } = useToast();
   const params = useParams();
-  const router = useRouter();
+  const navigate = useNavigate();
   const restaurantId = params.restaurantId as string;
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -52,14 +51,14 @@ export default function RestaurantMenuPage() {
     // If the user is logged in, redirect them to the customer-specific page to add the item.
     // If not, prompt them to log in.
     if (user) {
-      router.push(`/customer/restaurants/${restaurantId}`);
+      navigate(`/customer/restaurants/${restaurantId}`);
     } else {
         toast({
             title: "Login Required",
             description: "Please log in to start ordering.",
             variant: "destructive"
         });
-      router.push(`/?redirect=/restaurants/${restaurantId}`);
+      navigate(`/?redirect=/restaurants/${restaurantId}`);
     }
   };
 
@@ -97,7 +96,7 @@ export default function RestaurantMenuPage() {
   }
   
   if (!menuItems || menuItems.length === 0) {
-    notFound();
+    return <Navigate to="/404" replace />;
   }
 
   return (

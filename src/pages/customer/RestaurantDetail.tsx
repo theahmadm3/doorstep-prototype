@@ -25,8 +25,7 @@ import {
 	Search,
 	X,
 } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import CheckoutModal from "@/components/checkout/checkout-modal";
 import { cn } from "@/lib/utils";
@@ -109,7 +108,7 @@ export default function RestaurantMenuPage() {
 	const { viewedRestaurant } = useUIStore();
 	const { toast } = useToast();
 	const params = useParams();
-	const router = useRouter();
+	const navigate = useNavigate();
 	const restaurantId = params.restaurantId as string;
 
 	const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -132,9 +131,9 @@ export default function RestaurantMenuPage() {
 			setUser(JSON.parse(storedUser));
 		} else {
 			// If no user, redirect to login, as this is a customer-only page
-			router.push(`/login?redirect=/customer/restaurants/${restaurantId}`);
+			navigate(`/login?redirect=/customer/restaurants/${restaurantId}`);
 		}
-	}, [router, restaurantId]);
+	}, [navigate, restaurantId]);
 
 	useEffect(() => {
 		if (restaurantId) {

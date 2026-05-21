@@ -53,7 +53,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 
 const chartConfig = {
@@ -86,7 +86,7 @@ export default function VendorDashboardPage() {
 	const [isToggleUpdating, setToggleUpdating] = useState(false);
 	const { toast } = useToast();
 	const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const router = useRouter();
+    const navigate = useNavigate();
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -166,7 +166,7 @@ export default function VendorDashboardPage() {
 	};
 
 	const handleGoToOrders = () => {
-        router.push('/vendor/orders');
+        navigate('/vendor/orders');
     }
 
 	return (

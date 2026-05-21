@@ -8,7 +8,7 @@ import { Utensils } from "lucide-react";
 import { Suspense, useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import WhatsappOnboarding from "@/components/auth/whatsapp-onboarding";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 function LoginFormSkeleton() {
   return (
@@ -32,7 +32,7 @@ const ROLE_ROUTES: Record<string, string> = {
 export default function LoginPage() {
   const [hasOnboarded, setHasOnboarded] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -43,7 +43,7 @@ export default function LoginPage() {
         const user = JSON.parse(storedUser);
         const destination = ROLE_ROUTES[user.role];
         if (destination) {
-          router.replace(destination);
+          navigate(destination, { replace: true });
           return;
         }
       } catch {
@@ -52,7 +52,7 @@ export default function LoginPage() {
     }
 
     setIsCheckingAuth(false);
-  }, [router]);
+  }, [navigate]);
 
   if (isCheckingAuth) {
     return (

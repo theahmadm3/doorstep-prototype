@@ -22,9 +22,8 @@ import AddressSelectionModal from "@/components/location/address-selection-modal
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
-import { usePathname } from "next/navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
@@ -39,7 +38,7 @@ export default function CustomerLayout() {
 	const { addresses, isAddressesLoading } = useAddresses();
 	const [isAddressModalRequired, setAddressModalRequired] = useState(false);
 	const [isClient, setIsClient] = useState(false);
-	const pathname = usePathname();
+	const pathname = useLocation().pathname;
 
 	const showHeader = pathname === "/customer/dashboard";
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -23,7 +23,7 @@ const RESEND_TIMEOUT = 59; // seconds
 
 export default function VerifyOtpForm() {
   const { toast } = useToast();
-  const router = useRouter();
+  const navigate = useNavigate();
   const { clearUserOrders } = useCartStore();
 
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
@@ -40,12 +40,12 @@ export default function VerifyOtpForm() {
         description: "Please start the login process again.",
         variant: "destructive",
       });
-      router.replace("/login");
+      navigate("/login", { replace: true });
       return;
     }
-    
+
     setPhoneNumber(storedPhone);
-  }, [router, toast]);
+  }, [navigate, toast]);
 
   // Resend timer countdown
   useEffect(() => {
@@ -144,19 +144,19 @@ export default function VerifyOtpForm() {
       setTimeout(() => {
         switch (user.role) {
           case "customer":
-            router.push("/customer/dashboard");
+            navigate("/customer/dashboard");
             break;
           case "restaurant":
-            router.push("/vendor/dashboard");
+            navigate("/vendor/dashboard");
             break;
           case "driver":
-            router.push("/rider/dashboard");
+            navigate("/rider/dashboard");
             break;
           case "admin":
-            router.push("/admin/dashboard");
+            navigate("/admin/dashboard");
             break;
           default:
-            router.push("/login");
+            navigate("/login");
         }
       }, 100);
 

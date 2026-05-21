@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import type { User, Order, OrderPayload, OrderItemPayload, Discount } from "@/lib/types";
 import type { PaystackTransaction, InitializePaymentPayload } from "@/lib/types/paystack";
@@ -58,7 +58,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   
   const { selectedAddress, viewedRestaurant } = useUIStore();
   
-  const router = useRouter();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -238,7 +238,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
       });
 
       onClose();
-      router.push(`/customer/orders`);
+      navigate(`/customer/orders`);
 
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to place order after payment.";
@@ -250,7 +250,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     } finally {
       setIsPlacingOrder(false);
     }
-  }, [order, selectedAddress, updateOrderStatus, toast, onClose, router, orderType, deliveryFee]);
+  }, [order, selectedAddress, updateOrderStatus, toast, onClose, navigate, orderType, deliveryFee]);
 
   const onSuccess = useCallback((transaction: PaystackTransaction) => {
     if (transaction.status === 'success') {
@@ -310,14 +310,14 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
     if (!user || !order) {
         toast({ title: "Please Log In", description: "You need to be logged in to place an order.", variant: "destructive" });
         onClose();
-        router.push(`/?redirect=/customer/dashboard`);
+        navigate(`/?redirect=/customer/dashboard`);
         return;
     }
 
     if (!user.phone_number) {
         toast({ title: "Phone Number Required", description: "Please add a phone number to your profile before placing an order.", variant: "destructive" });
         onClose();
-        router.push('/customer/profile');
+        navigate('/customer/profile');
         return;
     }
 
@@ -344,7 +344,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
       }
       setShowHighFeeModal(false);
       onClose();
-      router.push('/customer/dashboard');
+      navigate('/customer/dashboard');
   }
 
   const handleIncrease = (cartItemId: string) => {

@@ -15,14 +15,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { loginUser, getAuthUser } from "@/lib/auth-api";
 import { partnerLoginSchema } from "@/lib/types";
 import { useCartStore } from "@/stores/useCartStore";
 
 export default function PartnerLoginForm() {
   const { toast } = useToast();
-  const router = useRouter();
+  const navigate = useNavigate();
   const { clearUserOrders } = useCartStore();
 
   const form = useForm<z.infer<typeof partnerLoginSchema>>({
@@ -63,17 +63,17 @@ export default function PartnerLoginForm() {
       setTimeout(() => {
         switch (user.role) {
           case "restaurant":
-            router.push("/vendor/dashboard");
+            navigate("/vendor/dashboard");
             break;
           case "driver":
-            router.push("/rider/dashboard");
+            navigate("/rider/dashboard");
             break;
           case "admin":
-            router.push("/admin/dashboard");
+            navigate("/admin/dashboard");
             break;
           default:
             // If a customer somehow logs in here, send them to the main login.
-            router.push("/login");
+            navigate("/login");
         }
       }, 100);
 

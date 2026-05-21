@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -21,7 +21,7 @@ import { useUIStore } from "@/stores/useUIStore";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function LogoutButton() {
-	const router = useRouter();
+	const navigate = useNavigate();
 	const [open, setOpen] = useState(false);
 	const { toast } = useToast();
 	const clearUserOrders = useCartStore(state => state.clearUserOrders);
@@ -47,7 +47,7 @@ export default function LogoutButton() {
 			queryClient.clear(); // Clears all TanStack Query cache
 			localStorage.removeItem("accessToken");
 			localStorage.removeItem("user");
-			router.push("/");
+			navigate("/");
 		}
 	};
 
