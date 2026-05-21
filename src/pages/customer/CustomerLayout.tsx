@@ -25,6 +25,7 @@ import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { usePathname } from "next/navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
+import { Outlet } from "react-router-dom";
 
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
@@ -33,11 +34,7 @@ const customerNavLinks = [
 	{ href: "/customer/profile", label: "Profile", icon: User },
 ];
 
-export default function CustomerLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export default function CustomerLayout() {
 	useNotificationListener();
 	const [user, setUser] = useState<UserType | null>(null);
 	const { addresses, isAddressesLoading } = useAddresses();
@@ -145,7 +142,7 @@ export default function CustomerLayout({
 				<div className="flex-1 flex flex-col min-w-0">
 					{showHeader && <ClientHeader />}
 					<main className="flex-1 overflow-y-auto">
-						<div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8">{children}</div>
+						<div className="p-4 md:p-6 lg:p-8 pb-20 md:pb-8"><Outlet /></div>
 					</main>
 					<BottomNavigation links={customerNavLinks} />
 				</div>

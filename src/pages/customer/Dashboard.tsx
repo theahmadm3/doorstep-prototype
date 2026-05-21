@@ -2,7 +2,7 @@
 "use client";
 
 import { getRestaurants } from "@/lib/api";
-import CustomerDashboardClient from "./page.client";
+import CustomerDashboardClient from "./Dashboard.client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 

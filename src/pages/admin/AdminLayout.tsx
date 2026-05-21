@@ -26,6 +26,7 @@ import LogoutButton from '@/components/auth/logout-button';
 import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
 import BottomNavigation from '@/components/layout/bottom-navigation';
+import { Outlet } from "react-router-dom";
 
 const adminNavLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
@@ -36,11 +37,7 @@ const adminNavLinks = [
   { href: '/admin/config', label: 'Config', icon: Settings },
 ];
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AdminLayout() {
   const [user, setUser] = useState<UserType | null>(null);
 
   useEffect(() => {
@@ -96,7 +93,7 @@ export default function AdminLayout({
             <h1 className="text-lg font-semibold">Admin Panel</h1>
           </div>
           <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
-            {children}
+            <Outlet />
           </main>
           <BottomNavigation links={adminNavLinks} />
         </div>

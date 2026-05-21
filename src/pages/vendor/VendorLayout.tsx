@@ -30,6 +30,7 @@ import { getRestaurantProfile } from "@/lib/api";
 import VendorAddressModal from "@/components/vendor/vendor-address-modal";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
+import { Outlet } from "react-router-dom";
 
 const vendorNavLinks = [
 	{ href: "/vendor/dashboard", label: "Dashboard", icon: Home },
@@ -40,11 +41,7 @@ const vendorNavLinks = [
 	{ href: "/vendor/profile", label: "Profile", icon: User },
 ];
 
-export default function VendorLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export default function VendorLayout() {
 	useNotificationListener();
 	const [user, setUser] = useState<UserType | null>(null);
 	const [showAddressModal, setShowAddressModal] = useState(false);
@@ -135,7 +132,7 @@ export default function VendorLayout({
 						<h1 className="text-lg font-semibold">Vendor Panel</h1>
 					</div>
 					<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
-						{children}
+						<Outlet />
 					</main>
 					<BottomNavigation links={vendorNavLinks} />
 				</div>

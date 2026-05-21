@@ -27,6 +27,7 @@ import type { User as UserType } from '@/lib/types';
 import BottomNavigation from '@/components/layout/bottom-navigation';
 import { useRiderLocation as useRiderLocationData, LocationStatus } from '@/hooks/use-rider-location-socket';
 import { useNotificationListener } from '@/hooks/use-notification-listener';
+import { Outlet } from "react-router-dom";
 
 const riderNavLinks = [
   { href: "/rider/dashboard", label: "Dashboard", icon: Home },
@@ -52,11 +53,7 @@ function RiderLocationProvider({ children }: { children: React.ReactNode }) {
     )
 }
 
-export default function RiderLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RiderLayout() {
   useNotificationListener();
   const [user, setUser] = useState<UserType | null>(null);
 
@@ -119,7 +116,7 @@ export default function RiderLayout({
                 <h1 className="text-lg font-semibold">Rider Panel</h1>
             </div>
             <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
-                {children}
+                <Outlet />
             </main>
             <BottomNavigation links={riderNavLinks} />
             </div>
