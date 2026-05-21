@@ -43,10 +43,10 @@ import type {
 } from "./types/paystack";
 import { format } from "date-fns";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 if (!BASE_URL) {
-	throw new Error("Missing NEXT_PUBLIC_BASE_URL environment variable");
+	throw new Error("Missing VITE_BASE_URL environment variable");
 }
 
 async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {

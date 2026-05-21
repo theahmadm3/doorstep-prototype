@@ -2,7 +2,7 @@
 // Push notification utility library
 
 import type { PlatformInfo } from "./types";
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 /**
  * Convert VAPID public key from base64 to Uint8Array

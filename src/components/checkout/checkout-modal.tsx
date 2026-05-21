@@ -272,14 +272,14 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
   }, [toast]);
 
   const initializePaystackPayment = usePaystackPayment({
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+    publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || '',
     email: user?.email || '',
     amount: totalInKobo,
     reference: paymentReference,
   });
 
   const triggerPaymentInitialization = useCallback(async () => {
-     if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
+     if (!import.meta.env.VITE_PAYSTACK_PUBLIC_KEY) {
         toast({ title: "Configuration Error", description: "Paystack public key is not configured.", variant: "destructive" });
         return;
     }

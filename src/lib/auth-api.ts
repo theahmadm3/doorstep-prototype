@@ -3,10 +3,10 @@
 
 import { LoginResponse, SignupPayload, SignupResponse, User, ProfileUpdatePayload, CustomerSignupPayload, OtpVerificationPayload, VerifyOtpResponse, PartnerLoginCredentials } from "./types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 if (!BASE_URL) {
-    throw new Error("Missing NEXT_PUBLIC_BASE_URL environment variable");
+    throw new Error("Missing VITE_BASE_URL environment variable");
 }
 
 export async function loginUser(credentials: PartnerLoginCredentials): Promise<LoginResponse> {
