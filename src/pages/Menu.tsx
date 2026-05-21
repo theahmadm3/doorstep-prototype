@@ -6,7 +6,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import Image from "next/image";
 import { Link } from "react-router-dom";
 import { Utensils } from "lucide-react";
 
@@ -38,7 +37,7 @@ export default async function MenuPage() {
 								>
 									<Card className="flex flex-col h-full overflow-hidden transition-all duration-200 hover:shadow-xl hover:-translate-y-1">
 										<CardHeader className="p-0">
-											<Image
+											<img
 												src={
 													restaurant.image_url &&
 													restaurant.image_url !== "string"

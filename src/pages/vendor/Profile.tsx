@@ -16,7 +16,6 @@ import { getRestaurantProfile, updateRestaurantProfile, uploadRestaurantProfileI
 import { VendorProfile, VendorProfileUpdatePayload } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import Image from "next/image";
 import { useLoadScript } from "@react-google-maps/api";
 import usePlacesAutocomplete, { getGeocode, getLatLng } from "use-places-autocomplete";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -335,11 +334,10 @@ function VendorProfilePage() {
                             <div className="flex flex-col md:flex-row gap-6">
                                 <div className="flex-shrink-0 mx-auto md:mx-0">
                                     <div className="relative group w-48 h-48">
-                                        <Image
+                                        <img
                                             src={previewProfileImage || profileImageUrl}
                                             alt={profile.name}
-                                            fill
-                                            className="rounded-lg object-cover bg-muted"
+                                            className="absolute inset-0 h-full w-full rounded-lg object-cover bg-muted"
                                         />
                                         <div className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Button

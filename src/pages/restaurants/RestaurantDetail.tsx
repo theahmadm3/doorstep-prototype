@@ -6,7 +6,6 @@ import { getRestaurantMenu } from "@/lib/api";
 import type { MenuItem, User } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { PlusCircle, ArrowLeft } from "lucide-react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
@@ -122,7 +121,7 @@ export default function RestaurantMenuPage() {
                   <Card key={item.id} className={cn("flex flex-col overflow-hidden", { 'opacity-50': !item.is_available })}>
                       <CardHeader className="p-0">
                         {item.is_available ? (
-                            <Image
+                            <img
                                 src={item.image_url && item.image_url !== 'string' ? item.image_url : "https://placehold.co/400x250.png"}
                                 alt={item.name}
                                 width={400}

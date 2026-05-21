@@ -7,7 +7,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import Image from "next/image";
 import { Link } from "react-router-dom";
 import { Utensils, MapPin, Star } from "lucide-react";
 import type { Restaurant } from "@/lib/types";
@@ -44,15 +43,14 @@ export default function CustomerDashboardClient({
 					>
 						<Card className="overflow-hidden border-0 shadow-md rounded-2xl">
 							<div className="relative h-44">
-								<Image
+								<img
 									src={
 										restaurant.image_url && restaurant.image_url !== "string"
 											? restaurant.image_url
 											: `https://placehold.co/400x250.png`
 									}
 									alt={restaurant.name}
-									fill
-									className="object-cover"
+									className="absolute inset-0 h-full w-full object-cover"
 								/>
 							</div>
 							<div className="p-3">

@@ -14,7 +14,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import {
 	PlusCircle,
@@ -290,13 +289,12 @@ export default function RestaurantMenuPage() {
 			)}
 
 			<div className="relative h-48 md:h-64 rounded-2xl overflow-hidden mb-8">
-				<Image
+				<img
 					src={
 						viewedRestaurant.image_url || "https://placehold.co/1200x400.png"
 					}
 					alt={viewedRestaurant.name}
-					fill
-					className="object-cover"
+					className="absolute inset-0 h-full w-full object-cover"
 				/>
 				<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
 				<div className="absolute bottom-0 left-0 p-6">
@@ -364,11 +362,10 @@ export default function RestaurantMenuPage() {
 														</p>
 													</div>
 													<div className="relative w-24 h-24 flex-shrink-0">
-														<Image
+														<img
 															src={imageUrl}
 															alt={item.name}
-															fill
-															className="rounded-md object-cover"
+															className="absolute inset-0 h-full w-full rounded-md object-cover"
 														/>
 													</div>
 												</CardContent>

@@ -55,7 +55,6 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { MenuItem, MenuItemPayload, MenuCategory } from "@/lib/types";
@@ -426,7 +425,7 @@ export default function VendorItemManagement() {
 									return (
 										<TableRow key={item.id}>
 											<TableCell className="hidden sm:table-cell">
-												<Image
+												<img
 													src={imageUrl}
 													alt={item.name}
 													width={64}
@@ -551,15 +550,14 @@ export default function VendorItemManagement() {
 							</Button>
 							{(previewImage || editingItem?.image_url) && (
 								<div className="mt-4 relative w-32 h-32">
-									<Image
+									<img
 										src={
 											previewImage ||
 											editingItem?.image_url ||
 											"https://placehold.co/128x128.png"
 										}
 										alt="Item preview"
-										fill
-										className="rounded-md object-cover"
+										className="absolute inset-0 h-full w-full rounded-md object-cover"
 									/>
 								</div>
 							)}

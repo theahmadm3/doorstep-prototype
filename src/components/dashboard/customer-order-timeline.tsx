@@ -9,7 +9,6 @@ import { orderStatusSteps, pickupOrderStatusSteps } from "@/lib/data";
 import { Check, CheckCircle, CircleDotDashed, Star, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "../ui/skeleton";
-import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
@@ -70,7 +69,7 @@ export default function CustomerOrderTimeline({ order, details, isLoadingDetails
                         <div className="lg:col-span-2 space-y-6">
                             <Card>
                                 <CardHeader className="flex flex-row items-center gap-4">
-                                    <Image 
+                                    <img
                                         src={(details.restaurant.image_url && details.restaurant.image_url.startsWith('http')) ? details.restaurant.image_url : "https://placehold.co/64x64.png"}
                                         alt={details.restaurant.name}
                                         width={64}

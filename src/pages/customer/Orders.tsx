@@ -30,7 +30,6 @@ import {
 	CardFooter,
 } from "@/components/ui/card";
 import { useCartStore } from "@/stores/useCartStore";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import CheckoutModal from "@/components/checkout/checkout-modal";
@@ -329,7 +328,7 @@ export default function CustomerOrdersPage() {
 											className="flex justify-between items-center text-sm"
 										>
 											<div className="flex items-center gap-3">
-												<Image
+												<img
 													src={
 														item.menuItem.image_url &&
 														item.menuItem.image_url.startsWith("http")

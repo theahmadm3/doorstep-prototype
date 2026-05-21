@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import Image from "next/image";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import type { User, Order, OrderPayload, OrderItemPayload, Discount } from "@/lib/types";
@@ -464,7 +463,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder }: 
                     {checkoutItems.map(item => (
                         <div key={item.cartItemId} className="flex justify-between items-start">
                             <div className="flex items-center gap-3">
-                                <Image src={(item.menuItem.image_url && item.menuItem.image_url.startsWith('http')) ? item.menuItem.image_url : "https://placehold.co/48x48.png"} alt={item.menuItem.name} width={48} height={48} className="rounded-md" />
+                                <img src={(item.menuItem.image_url && item.menuItem.image_url.startsWith('http')) ? item.menuItem.image_url : "https://placehold.co/48x48.png"} alt={item.menuItem.name} width={48} height={48} className="rounded-md" />
                                 <div>
                                     <p className="font-medium text-sm">{item.menuItem.name}</p>
                                      {item.options.length > 0 && (

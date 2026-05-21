@@ -11,7 +11,6 @@ import {
 	DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { MenuItem, OptionChoice } from "@/lib/types";
 import { Plus, Minus } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
@@ -87,11 +86,10 @@ export default function AddToCartModal({
 				</DialogHeader>
 				<div className="grid gap-4">
 					<div className="relative w-full h-40">
-						<Image
+						<img
 							src={imageUrl}
 							alt={item.name}
-							fill
-							className="object-cover"
+							className="absolute inset-0 h-full w-full object-cover"
 						/>
 					</div>
 

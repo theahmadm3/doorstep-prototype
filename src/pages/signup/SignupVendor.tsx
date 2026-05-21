@@ -7,7 +7,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Utensils, ArrowLeft, ArrowDown } from "lucide-react";
-import Image from "next/image";
 
 export default function VendorSignupPage() {
   const formRef = useRef<HTMLDivElement>(null);
@@ -51,7 +50,7 @@ export default function VendorSignupPage() {
                     </Button>
                 </div>
               </div>
-              <Image
+              <img
                 src="https://placehold.co/600x400.png"
                 width="600"
                 height="400"

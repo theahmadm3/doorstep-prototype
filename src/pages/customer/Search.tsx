@@ -15,7 +15,6 @@ import {
 } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
 import { Link } from "react-router-dom";
 import { Search as SearchIcon, Star, Utensils, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -91,7 +90,7 @@ const MenuItemCard = ({
 			onClick={() => onClick(item)}
 		>
 			<CardContent className="flex gap-4 p-4">
-				<Image
+				<img
 					src={item.image_url || "https://placehold.co/100x100.png"}
 					alt={item.name}
 					width={80}
@@ -130,7 +129,7 @@ const RestaurantCard = ({
 				)}
 			>
 				<CardContent className="flex gap-4 p-4">
-					<Image
+					<img
 						src={restaurant.image_url || "https://placehold.co/100x100.png"}
 						alt={restaurant.name}
 						width={80}
