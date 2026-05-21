@@ -5,6 +5,8 @@ import { Providers } from "@/components/providers";
 import { theme } from "@/theme";
 import { router } from "@/routes";
 import { Toaster } from "@/components/ui/toaster";
+import PWAInstallPrompt from "@/components/pwa-install-prompt";
+import PushInitializer from "@/components/pwa/push-initializer";
 
 export default function App() {
   return (
@@ -12,7 +14,9 @@ export default function App() {
       <CssBaseline enableColorScheme={false} />
       <Providers>
         <RouterProvider router={router} />
+        <PWAInstallPrompt />
         <Toaster />
+        <PushInitializer />
       </Providers>
     </ThemeProvider>
   );
