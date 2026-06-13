@@ -7,7 +7,10 @@
     "build": "vite build",
     "preview": "vite preview --port 9002",
     "lint": "eslint . --ext ts,tsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@emotion/react": "^11.13.0",
@@ -43,6 +46,7 @@
     "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tanstack/react-query-devtools": "^5.51.11",
     "@types/node": "^20",
     "@types/react": "^18",
