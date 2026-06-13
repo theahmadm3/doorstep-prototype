@@ -9,6 +9,15 @@
 # testing
 /coverage
 
+# playwright
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache
+
+# vite-plugin-pwa dev service worker output
+/dev-dist
+
 # build output
 /.next/
 /out/

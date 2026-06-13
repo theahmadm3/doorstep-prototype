@@ -15,7 +15,11 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
       },
-      devOptions: { enabled: false },
+      // Register the precache service worker in `npm run dev` too, so the app
+      // meets PWA install criteria locally (Chrome only fires
+      // `beforeinstallprompt` when a SW with a fetch handler is registered).
+      // The canonical check is still a production build + preview.
+      devOptions: { enabled: true, type: "module" },
     }),
   ],
   server: { port: 9002 },

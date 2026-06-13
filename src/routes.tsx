@@ -9,6 +9,7 @@ import RiderSignup from "@/pages/rider/RiderSignup";
 import RestaurantDetail from "@/pages/restaurants/RestaurantDetail";
 import SecretLogin from "@/pages/secret/SecretLogin";
 import NotFound from "@/pages/NotFound";
+import RequireAuth from "@/components/auth/require-auth";
 
 import CustomerLayout from "@/pages/customer/CustomerLayout";
 import CustomerDashboard from "@/pages/customer/Dashboard";
@@ -42,6 +43,9 @@ import AdminVendors from "@/pages/admin/Vendors";
 
 export const router = createBrowserRouter([
   { path: "/", element: <Login /> },
+  // Alias so the many `navigate("/login")` call sites (logout, OTP + partner
+  // fallbacks) resolve to the login screen instead of the 404 page.
+  { path: "/login", element: <Login /> },
   { path: "/menu", element: <Menu /> },
   { path: "/verify-otp", element: <VerifyOtp /> },
   { path: "/signup", element: <Signup /> },
@@ -52,7 +56,11 @@ export const router = createBrowserRouter([
   { path: "/secret/non-accessible/to/customers/login", element: <SecretLogin /> },
   {
     path: "/customer",
-    element: <CustomerLayout />,
+    element: (
+      <RequireAuth allow="customer">
+        <CustomerLayout />
+      </RequireAuth>
+    ),
     children: [
       { path: "dashboard", element: <CustomerDashboard /> },
       { path: "orders", element: <CustomerOrders /> },
@@ -61,9 +69,16 @@ export const router = createBrowserRouter([
       { path: "restaurants/:restaurantId", element: <CustomerRestaurantDetail /> },
     ],
   },
+  // Public vendor signup — self-contained page, must stay outside the guarded
+  // /vendor group (it renders its own layout, not the vendor sidebar).
+  { path: "/vendor/signup", element: <VendorSignup /> },
   {
     path: "/vendor",
-    element: <VendorLayout />,
+    element: (
+      <RequireAuth allow="restaurant">
+        <VendorLayout />
+      </RequireAuth>
+    ),
     children: [
       { path: "dashboard", element: <VendorDashboard /> },
       { path: "orders", element: <VendorOrders /> },
@@ -71,12 +86,15 @@ export const router = createBrowserRouter([
       { path: "config", element: <VendorConfig /> },
       { path: "payouts", element: <VendorPayouts /> },
       { path: "profile", element: <VendorProfile /> },
-      { path: "signup", element: <VendorSignup /> },
     ],
   },
   {
     path: "/rider",
-    element: <RiderLayout />,
+    element: (
+      <RequireAuth allow="driver">
+        <RiderLayout />
+      </RequireAuth>
+    ),
     children: [
       { path: "dashboard", element: <RiderDashboard /> },
       { path: "orders", element: <RiderOrders /> },
@@ -86,7 +104,11 @@ export const router = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <RequireAuth allow="admin">
+        <AdminLayout />
+      </RequireAuth>
+    ),
     children: [
       { path: "dashboard", element: <AdminDashboard /> },
       { path: "orders", element: <AdminOrders /> },
