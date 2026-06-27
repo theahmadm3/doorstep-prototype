@@ -3,7 +3,7 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 
 export function Toaster() {
-  const { toasts } = useToast();
+  const { toasts, dismiss } = useToast();
   return (
     <>
       {toasts.map(({ id, title, description, variant, open, action }) => (
@@ -11,11 +11,13 @@ export function Toaster() {
           key={id}
           open={open}
           autoHideDuration={5000}
+          onClose={(_, reason) => { if (reason !== "clickaway") dismiss(id); }}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
           <Alert
             severity={variant === "destructive" ? "error" : "success"}
             variant="filled"
+            onClose={() => dismiss(id)}
             action={action as any}
             sx={{ width: "100%" }}
           >

@@ -80,7 +80,7 @@ const AlertDialogContent = React.forwardRef<
       slotProps={{
         paper: {
           className: cn(
-            "grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg",
+            "grid w-full max-w-lg md:max-w-sm gap-4 border bg-background p-6 shadow-lg sm:rounded-lg max-h-[75vh] overflow-y-auto",
             className
           ),
           ...props,

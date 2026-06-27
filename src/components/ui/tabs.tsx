@@ -56,7 +56,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
     const { value, setValue } = React.useContext(TabsContext)
     return (
       <MuiTabs
-        ref={ref as React.Ref<any>}
+        ref={ref as React.Ref<HTMLDivElement>}
         value={value ?? false}
         onChange={(_e, next) => setValue(String(next))}
         variant="scrollable"
@@ -81,7 +81,7 @@ interface TabsTriggerProps {
 const TabsTrigger = React.forwardRef<HTMLDivElement, TabsTriggerProps>(
   ({ value, className, disabled, children, ...props }, ref) => (
     <MuiTab
-      ref={ref as React.Ref<any>}
+      ref={ref as React.Ref<HTMLDivElement>}
       value={value}
       label={children}
       disabled={disabled}

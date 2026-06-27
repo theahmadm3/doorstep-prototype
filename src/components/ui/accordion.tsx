@@ -116,7 +116,7 @@ const AccordionItem = React.forwardRef<HTMLDivElement, AccordionItemProps>(
     return (
       <AccordionItemContext.Provider value={{ value }}>
         <MuiAccordion
-          ref={ref as React.Ref<any>}
+          ref={ref as React.Ref<HTMLDivElement>}
           disableGutters
           elevation={0}
           square
@@ -143,7 +143,7 @@ const AccordionTrigger = React.forwardRef<
   AccordionTriggerProps
 >(({ className, children, ...props }, ref) => (
   <MuiAccordionSummary
-    ref={ref as React.Ref<any>}
+    ref={ref as React.Ref<HTMLDivElement>}
     expandIcon={<ExpandMoreIcon className="h-4 w-4 shrink-0" />}
     className={cn(
       "flex flex-1 items-center justify-between py-4 font-medium",
@@ -162,7 +162,7 @@ const AccordionContent = React.forwardRef<
   HTMLDivElement,
   AccordionContentProps
 >(({ className, children, ...props }, ref) => (
-  <MuiAccordionDetails ref={ref as React.Ref<any>} sx={{ p: 0 }} {...props}>
+  <MuiAccordionDetails ref={ref as React.Ref<HTMLDivElement>} sx={{ p: 0 }} {...props}>
     <div className={cn("pb-4 pt-0 text-sm", className)}>{children}</div>
   </MuiAccordionDetails>
 ))

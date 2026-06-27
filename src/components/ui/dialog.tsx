@@ -88,7 +88,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
       slotProps={{
         paper: {
           className: cn(
-            "relative grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg sm:rounded-lg max-h-[90svh] overflow-y-auto",
+            "relative grid w-full max-w-lg md:max-w-md gap-4 border bg-background p-6 shadow-lg sm:rounded-lg max-h-[90svh] md:max-h-[75vh] overflow-y-auto",
             className
           ),
           ...props,
