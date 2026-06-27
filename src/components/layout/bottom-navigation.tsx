@@ -1,25 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, type LucideIcon } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { useCartStore } from "@/stores/useCartStore";
-import { useUIStore } from "@/stores/useUIStore";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 interface NavLink {
 	href: string;
@@ -31,146 +14,80 @@ interface BottomNavigationProps {
 	links: NavLink[];
 }
 
-function TempLogoutButton() {
-	const navigate = useNavigate();
-	const [open, setOpen] = useState(false);
-	const [isLoggingOut, setIsLoggingOut] = useState(false);
-	const { toast } = useToast();
-	const clearUserOrders = useCartStore((state) => state.clearUserOrders);
-	const clearUIState = useUIStore.getState().clearUIState;
-	const queryClient = useQueryClient();
-
-	const handleLogout = async () => {
-		setIsLoggingOut(true);
-
-		try {
-			// In a real app, call your API endpoint to invalidate the token on the server
-			// await logoutUser();
-
-			// Clear all application state
-			clearUserOrders();
-			clearUIState();
-			queryClient.clear();
-			localStorage.clear();
-
-			// Close dialog and redirect
-			setOpen(false);
-			navigate("/login");
-		} catch (error) {
-			console.error("Logout error:", error);
-			toast({
-				title: "Logout Error",
-				description:
-					"Could not log you out from the server, but you have been logged out locally.",
-				variant: "destructive",
-			});
-
-			// Still clear local state even if server logout fails
-			clearUserOrders();
-			clearUIState();
-			queryClient.clear();
-			localStorage.clear();
-			setOpen(false);
-			navigate("/login");
-		} finally {
-			setIsLoggingOut(false);
-		}
-	};
-
-	return (
-		<AlertDialog open={open} onOpenChange={setOpen}>
-			<AlertDialogTrigger asChild>
-				<button
-					type="button"
-					className="group relative inline-flex flex-col items-center justify-center px-5 transition-all duration-300"
-					aria-label="Logout"
-				>
-					{/* Glassy hover effect */}
-					<div className="absolute inset-0 rounded-2xl bg-white/10 dark:bg-white/5 opacity-0 group-hover:opacity-100 group-active:opacity-100 group-active:bg-white/20 dark:group-active:bg-white/10 transition-all duration-300 backdrop-blur-xl" />
-
-					<LogOut className="w-6 h-6 mb-1.5 relative z-10 transition-all duration-300 group-hover:scale-110 group-active:scale-95" />
-					<span className="text-xs font-medium relative z-10">Logout</span>
-				</button>
-			</AlertDialogTrigger>
-			<AlertDialogContent className="backdrop-blur-3xl bg-white/80 dark:bg-gray-900/80 border border-white/20 dark:border-white/10 shadow-2xl">
-				<AlertDialogHeader>
-					<AlertDialogTitle>Confirm Logout</AlertDialogTitle>
-					<AlertDialogDescription>
-						Are you sure you want to log out of your account?
-					</AlertDialogDescription>
-				</AlertDialogHeader>
-				<AlertDialogFooter>
-					<AlertDialogCancel disabled={isLoggingOut}>Cancel</AlertDialogCancel>
-					<AlertDialogAction onClick={handleLogout} disabled={isLoggingOut}>
-						{isLoggingOut ? "Logging out..." : "Logout"}
-					</AlertDialogAction>
-				</AlertDialogFooter>
-			</AlertDialogContent>
-		</AlertDialog>
-	);
-}
-
 export default function BottomNavigation({ links }: BottomNavigationProps) {
 	const pathname = useLocation().pathname;
+	const activeIndex = links.findIndex((link) => pathname.startsWith(link.href));
 
 	return (
-		<>
-			<nav
-				className="fixed bottom-0 left-0 z-50 w-full md:hidden"
-				aria-label="Bottom navigation"
-			>
-				<div className="relative mx-3 mb-2 shadow-[0_0_2px_rgba(0,0,0,0.3)] bg-[rgba(255,255,255,0.9)] rounded-[28px] overflow-hidden">
-					{/* Content */}
-					<div className="relative inline-flex items-center justify-around h-16 w-full px-2 font-medium">
-						{/* Animated background bubble */}
+		<nav
+			className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+			aria-label="Bottom navigation"
+			style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+		>
+			<div className="mx-4 mb-3">
+				<div
+					className={cn(
+						"relative flex items-center justify-around h-[62px] px-1",
+						"rounded-[28px]",
+						// Liquid glass base
+						"bg-white/25 dark:bg-black/25",
+						"backdrop-blur-3xl",
+						// Specular edge + inner highlight
+						"border border-white/60 dark:border-white/20",
+						"shadow-[0_8px_40px_rgba(0,0,0,0.12),inset_0_1px_0_rgba(255,255,255,0.85),inset_0_-1px_0_rgba(255,255,255,0.15)]",
+						"dark:shadow-[0_8px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.12)]",
+					)}
+				>
+					{/* Active glass pill */}
+					{activeIndex !== -1 && (
 						<div
-							className="absolute h-12 bg-primary/10 dark:bg-primary/20 rounded-2xl backdrop-blur-xl transition-all duration-300 ease-out"
+							className={cn(
+								"absolute h-11 rounded-[20px] transition-all duration-300 ease-out",
+								"bg-white/40 dark:bg-white/12",
+								"border border-white/60 dark:border-white/20",
+								"backdrop-blur-xl",
+								"shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_2px_8px_rgba(0,0,0,0.06)]",
+							)}
 							style={{
-								width: `${100 / links.length}%`,
-								left: `${
-									(links.findIndex((link) => pathname.startsWith(link.href)) *
-										100) /
-									links.length
-								}%`,
+								width: `calc(${100 / links.length}% - 10px)`,
+								left: `calc(${activeIndex * (100 / links.length)}% + 5px)`,
 							}}
 						/>
+					)}
 
-						{links.map(({ href, label, icon: Icon }) => {
-							const isActive = pathname.startsWith(href);
-							return (
-								<Link
-									key={href}
-									to={href}
+					{links.map(({ href, label, icon: Icon }) => {
+						const isActive = pathname.startsWith(href);
+						return (
+							<Link
+								key={href}
+								to={href}
+								className="relative flex-1 flex flex-col items-center justify-center h-full gap-[3px] active:scale-90 transition-transform duration-150"
+								aria-current={isActive ? "page" : undefined}
+							>
+								<Icon
 									className={cn(
-										"group relative inline-flex flex-col items-center justify-center px-3 py-1 rounded-2xl transition-all duration-300 flex-1",
-										isActive && "text-primary",
+										"w-[22px] h-[22px] transition-colors duration-200",
+										isActive
+											? "text-primary"
+											: "text-foreground/40 dark:text-white/40",
 									)}
-									aria-current={isActive ? "page" : undefined}
+									aria-hidden="true"
+								/>
+								<span
+									className={cn(
+										"text-[10px] font-medium tracking-tight transition-colors duration-200",
+										isActive
+											? "text-primary"
+											: "text-foreground/40 dark:text-white/40",
+									)}
 								>
-									{/* Hover effect */}
-									<div className="absolute inset-0 rounded-2xl bg-white/10 dark:bg-white/5 opacity-0 group-hover:opacity-100 group-active:opacity-100 group-active:bg-white/20 dark:group-active:bg-white/10 transition-all duration-300 backdrop-blur-xl" />
-
-									<Icon
-										className={cn(
-											"w-6 h-6 mb-1.5 relative z-10 transition-all duration-300 group-hover:scale-110 group-active:scale-95",
-											!isActive && "text-muted-foreground",
-										)}
-										aria-hidden="true"
-									/>
-									<span
-										className={cn(
-											"text-xs font-medium relative z-10",
-											!isActive && "text-muted-foreground",
-										)}
-									>
-										{label}
-									</span>
-								</Link>
-							);
-						})}
-					</div>
+									{label}
+								</span>
+							</Link>
+						);
+					})}
 				</div>
-			</nav>
-		</>
+			</div>
+		</nav>
 	);
 }

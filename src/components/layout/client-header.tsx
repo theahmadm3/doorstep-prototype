@@ -3,7 +3,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SidebarTrigger } from "../ui/sidebar";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { useAddresses } from "@/hooks/use-addresses";
@@ -46,7 +45,6 @@ export default function ClientHeader() {
 			/>
 			<div className="p-4 flex justify-between items-center gap-4 bg-background shadow-sm border-b sticky top-0 z-10">
 				<div className="flex items-center gap-2">
-					<SidebarTrigger />
 					{isClient ? (
 						<Button
 							variant="outline"

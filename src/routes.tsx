@@ -1,4 +1,5 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import RouteError from "@/components/route-error";
 import Login from "@/pages/Login";
 import Menu from "@/pages/Menu";
 import VerifyOtp from "@/pages/VerifyOtp";
@@ -17,6 +18,7 @@ import CustomerOrders from "@/pages/customer/Orders";
 import CustomerProfile from "@/pages/customer/Profile";
 import CustomerSearch from "@/pages/customer/Search";
 import CustomerRestaurantDetail from "@/pages/customer/RestaurantDetail";
+import CustomerRestaurantList from "@/pages/customer/RestaurantListPage";
 
 import VendorLayout from "@/pages/vendor/VendorLayout";
 import VendorDashboard from "@/pages/vendor/Dashboard";
@@ -24,6 +26,7 @@ import VendorOrders from "@/pages/vendor/Orders";
 import VendorAnalytics from "@/pages/vendor/Analytics";
 import VendorConfig from "@/pages/vendor/Config";
 import VendorPayouts from "@/pages/vendor/Payouts";
+import VendorDiscounts from "@/pages/vendor/Discounts";
 import VendorProfile from "@/pages/vendor/Profile";
 import VendorSignup from "@/pages/vendor/Signup";
 
@@ -61,12 +64,15 @@ export const router = createBrowserRouter([
         <CustomerLayout />
       </RequireAuth>
     ),
+    errorElement: <RouteError />,
     children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <CustomerDashboard /> },
       { path: "orders", element: <CustomerOrders /> },
       { path: "profile", element: <CustomerProfile /> },
       { path: "search", element: <CustomerSearch /> },
       { path: "restaurants/:restaurantId", element: <CustomerRestaurantDetail /> },
+      { path: "section/:type", element: <CustomerRestaurantList /> },
     ],
   },
   // Public vendor signup — self-contained page, must stay outside the guarded
@@ -79,12 +85,15 @@ export const router = createBrowserRouter([
         <VendorLayout />
       </RequireAuth>
     ),
+    errorElement: <RouteError />,
     children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <VendorDashboard /> },
       { path: "orders", element: <VendorOrders /> },
       { path: "analytics", element: <VendorAnalytics /> },
       { path: "config", element: <VendorConfig /> },
       { path: "payouts", element: <VendorPayouts /> },
+      { path: "discounts", element: <VendorDiscounts /> },
       { path: "profile", element: <VendorProfile /> },
     ],
   },
@@ -95,7 +104,9 @@ export const router = createBrowserRouter([
         <RiderLayout />
       </RequireAuth>
     ),
+    errorElement: <RouteError />,
     children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <RiderDashboard /> },
       { path: "orders", element: <RiderOrders /> },
       { path: "payouts", element: <RiderPayouts /> },
@@ -109,7 +120,9 @@ export const router = createBrowserRouter([
         <AdminLayout />
       </RequireAuth>
     ),
+    errorElement: <RouteError />,
     children: [
+      { index: true, element: <Navigate to="dashboard" replace /> },
       { path: "dashboard", element: <AdminDashboard /> },
       { path: "orders", element: <AdminOrders /> },
       { path: "analytics", element: <AdminAnalytics /> },
