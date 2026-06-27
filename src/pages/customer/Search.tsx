@@ -16,7 +16,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Search as SearchIcon, Star, Utensils, ShoppingCart } from "lucide-react";
+import { Search as SearchIcon, Star, Utensils, ShoppingCart, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AddToCartModal from "@/components/checkout/add-to-cart-modal";
 import CheckoutModal from "@/components/checkout/checkout-modal";
@@ -121,7 +121,10 @@ const RestaurantCard = ({
 	restaurant: SearchResultRestaurant;
 }) => {
 	return (
-		<Link to={`/customer/restaurants/${restaurant.id}`}>
+		<Link
+			to={`/customer/restaurants/${restaurant.id}`}
+			state={{ id: restaurant.id, name: restaurant.name, image_url: restaurant.image_url, rating: restaurant.rating, latitude: restaurant.address?.latitude ?? null, longitude: restaurant.address?.longitude ?? null, address: restaurant.address?.street_name ?? "" }}
+		>
 			<Card
 				className={cn(
 					"hover:shadow-md transition-shadow",
@@ -219,7 +222,7 @@ export default function SearchPage() {
 	const { menuItems, restaurants } = useMemo(() => {
 		const items: SearchResultMenuItem[] = [];
 		const rests: SearchResultRestaurant[] = [];
-		searchResults?.result?.forEach((result) => {
+		searchResults?.results?.forEach((result) => {
 			if (result.result_type === "menu_item") {
 				items.push(result.data as SearchResultMenuItem);
 			} else if (result.result_type === "restaurant") {
@@ -296,17 +299,26 @@ export default function SearchPage() {
 				order={unsubmittedOrder}
 			/>
 
-			<h1 className="text-3xl font-bold font-headline">Search</h1>
-			<div className="sticky top-[73px] bg-background py-4 z-10 -mt-6 -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 border-b">
+			<h1 className="text-3xl font-bold font-headline mb-3">Search</h1>
+			<div className="sticky top-0 bg-background pb-4 z-10 -mx-5 px-5 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 border-b">
 				<div className="relative">
-					<SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+					<SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
 					<Input
-						type="search"
+						type="text"
 						placeholder="Search for restaurants or food..."
-						className="pl-10 text-base h-12"
+						className="pl-10 pr-10 h-11"
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 					/>
+					{searchTerm && (
+						<button
+							className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+							onClick={() => setSearchTerm("")}
+							aria-label="Clear search"
+						>
+							<X className="h-4 w-4" />
+						</button>
+					)}
 				</div>
 			</div>
 
