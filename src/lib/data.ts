@@ -1,6 +1,6 @@
 
 
-import type { OrderStatus as Status, Order } from './types';
+import type { OrderStatus as Status } from './types';
 
 export const restaurants = [
   { id: 1, name: "Pizza Palace" },
@@ -25,79 +25,6 @@ export type OrderStatus = Status;
 export const orderStatusFlow: OrderStatus[] = ['Order Placed', 'Vendor Accepted', 'Preparing', 'Order Ready', 'Rider Assigned', 'Rider on the Way', 'Delivered'];
 export const orderStatusSteps: OrderStatus[] = ['Pending', 'Accepted', 'Preparing', 'Ready for Pickup', 'On the Way', 'Delivered'];
 export const pickupOrderStatusSteps: OrderStatus[] = ['Pending', 'Accepted', 'Preparing', 'Ready for Pickup', 'Completed'];
-
-
-export const orders: Order[] = [
-  {
-    id: "ORD001",
-    customerId: "1",
-    restaurantId: "1",
-    date: "2023-10-26",
-    total: 27.98,
-    status: "Delivered",
-    items: [
-      { ...foodItems[0], quantity: 1 },
-      { ...foodItems[1], quantity: 1 },
-    ],
-  },
-  {
-    id: "ORD002",
-    customerId: "2",
-    restaurantId: "2",
-    date: "2023-10-27",
-    total: 19.98,
-    status: "Preparing",
-    items: [
-      { ...foodItems[2], quantity: 1 },
-      { ...foodItems[3], quantity: 1 },
-    ],
-  },
-  {
-    id: "ORD003",
-    customerId: "1",
-    restaurantId: "3",
-    date: "2023-10-28",
-    total: 17.98,
-    status: "Rider on the Way",
-    items: [
-      { ...foodItems[4], quantity: 1 },
-      { ...foodItems[5], quantity: 1 },
-    ],
-  },
-   {
-    id: "ORD004",
-    customerId: "3",
-    restaurantId: "1",
-    date: "2023-10-28",
-    total: 12.99,
-    status: "Order Placed",
-    items: [
-      { ...foodItems[0], quantity: 1 },
-    ],
-  },
-   {
-    id: "ORD005",
-    customerId: "4",
-    restaurantId: "4",
-    date: "2023-10-28",
-    total: 9.50,
-    status: "Order Ready",
-    items: [
-      { ...foodItems[6], quantity: 1 },
-    ],
-  },
-  {
-    id: "ORD006",
-    customerId: "2",
-    restaurantId: "4",
-    date: "2023-10-28",
-    total: 11.50,
-    status: "Rider Assigned",
-    items: [
-      { ...foodItems[7], quantity: 1 },
-    ],
-  },
-];
 
 export const users = [
     { id: 1, name: "Alice Johnson", email: "alice@example.com", totalOrders: 25 },
