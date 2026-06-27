@@ -33,9 +33,19 @@ export const useCartStore = create<CartState>()(
 
       addOrUpdateItem: (menuItem: MenuItem, quantity: number, selectedOptions: OptionChoice[]) => {
         const { orders } = get();
-        
+
+        // Apply the first active item-level discount to the base price
+        const rawBase = parseFloat(menuItem.price);
+        const firstDiscount = menuItem.active_discounts?.[0];
+        let effectiveBase = rawBase;
+        if (firstDiscount) {
+          effectiveBase = firstDiscount.type === "fixed_amount"
+            ? Math.max(0, rawBase - parseFloat(firstDiscount.value))
+            : rawBase * (1 - parseFloat(firstDiscount.value) / 100);
+        }
+
         const optionsPrice = selectedOptions.reduce((acc, opt) => acc + parseFloat(opt.price_adjustment), 0);
-        const singleItemPrice = parseFloat(menuItem.price) + optionsPrice;
+        const singleItemPrice = effectiveBase + optionsPrice;
         const totalItemPrice = singleItemPrice * quantity;
 
         // Check for an existing unsubmitted order for this restaurant
@@ -50,18 +60,17 @@ export const useCartStore = create<CartState>()(
           let newItems: OrderItem[];
 
           if (existingCartItem) {
-            // If found, just update its quantity
             newItems = existingOrder.items.map(item =>
               item.cartItemId === existingCartItem.cartItemId
-                ? { ...item, quantity: item.quantity + quantity, totalPrice: singleItemPrice * (item.quantity + quantity) }
+                ? { ...item, quantity: item.quantity + quantity, totalPrice: item.unitPrice * (item.quantity + quantity) }
                 : item
             );
           } else {
-            // If not found, add a new OrderItem to the existing order
             const newCartItem: OrderItem = {
               cartItemId: uuidv4(),
               menuItem: menuItem,
               quantity: quantity,
+              unitPrice: singleItemPrice,
               options: selectedOptions,
               totalPrice: totalItemPrice,
             };
@@ -81,6 +90,7 @@ export const useCartStore = create<CartState>()(
             cartItemId: uuidv4(),
             menuItem: menuItem,
             quantity: quantity,
+            unitPrice: singleItemPrice,
             options: selectedOptions,
             totalPrice: totalItemPrice,
           };
@@ -110,8 +120,7 @@ export const useCartStore = create<CartState>()(
               const newItems = order.items.map(item => {
                 if (item.cartItemId === cartItemId) {
                   const newQuantity = item.quantity + 1;
-                  const singleItemPrice = item.totalPrice / item.quantity;
-                  return { ...item, quantity: newQuantity, totalPrice: singleItemPrice * newQuantity };
+                  return { ...item, quantity: newQuantity, totalPrice: item.unitPrice * newQuantity };
                 }
                 return item;
               });
@@ -124,24 +133,21 @@ export const useCartStore = create<CartState>()(
 
       decreaseOrderItemQuantity: (orderId, cartItemId) => {
         set(state => {
-          let orderToUpdate = state.orders.find(order => order.id === orderId);
+          const orderToUpdate = state.orders.find(order => order.id === orderId);
           if (!orderToUpdate) return state;
 
           const itemToUpdate = orderToUpdate.items.find(item => item.cartItemId === cartItemId);
           if (!itemToUpdate) return state;
-          
+
           let newItems: OrderItem[];
 
           if (itemToUpdate.quantity <= 1) {
-            // Remove the item if quantity is 1 or less
             newItems = orderToUpdate.items.filter(item => item.cartItemId !== cartItemId);
           } else {
-            // Otherwise, just decrement
             newItems = orderToUpdate.items.map(item => {
                 if (item.cartItemId === cartItemId) {
                   const newQuantity = item.quantity - 1;
-                  const singleItemPrice = item.totalPrice / item.quantity;
-                  return { ...item, quantity: newQuantity, totalPrice: singleItemPrice * newQuantity };
+                  return { ...item, quantity: newQuantity, totalPrice: item.unitPrice * newQuantity };
                 }
                 return item;
               });
