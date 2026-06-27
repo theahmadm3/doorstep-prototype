@@ -91,7 +91,7 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
                 className="pl-10"
             />
             {status === "OK" && (
-                 <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg">
+                 <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg">
                     <ScrollArea className="h-auto max-h-60">
                         {renderSuggestions()}
                     </ScrollArea>
