@@ -2,6 +2,11 @@
 // Push notification utility library
 
 import type { PlatformInfo } from "./types";
+
+// Safari-only non-standard property (not in the TS lib)
+interface SafariNavigator extends Navigator {
+  standalone?: boolean;
+}
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 /**
@@ -144,7 +149,7 @@ export function detectPlatform(): PlatformInfo {
 
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as any).standalone === true;
+    (window.navigator as SafariNavigator).standalone === true;
 
   // iOS 16.4+ supports push in installed PWAs
   const needsPWAInstall = isIOS && !isStandalone;
@@ -156,7 +161,7 @@ export function detectPlatform(): PlatformInfo {
     isStandalone,
     needsPWAInstall,
     displayMode: window.matchMedia("(display-mode: standalone)").matches,
-    navigatorStandalone: (window.navigator as any).standalone
+    navigatorStandalone: (window.navigator as SafariNavigator).standalone
   });
 
   return {

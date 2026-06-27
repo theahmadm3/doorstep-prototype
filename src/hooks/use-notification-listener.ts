@@ -10,7 +10,7 @@ interface NotificationMessage {
   notification?: {
     title?: string;
     body?: string;
-    data?: any;
+    data?: Record<string, unknown>;
   };
 }
 
