@@ -44,6 +44,7 @@ import type {
 	InitializePaymentPayload,
 	InitializePaymentResponse,
 } from "./types/paystack";
+import { clearAuth } from "./auth";
 import { format } from "date-fns";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -74,8 +75,9 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 
 	if (!res.ok) {
 		if (res.status === 401 && typeof window !== "undefined") {
-			// Token is invalid or expired.
-			localStorage.clear();
+			// Token is invalid or expired — remove only auth keys, not the
+			// entire localStorage (cart state, reviewed order IDs, etc. survive).
+			clearAuth();
 			window.location.href = "/?session_expired=true";
 			throw new Error("Session expired. Please log in again.");
 		}

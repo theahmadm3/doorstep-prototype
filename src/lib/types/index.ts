@@ -31,6 +31,7 @@ export type PartnerLoginCredentials = z.infer<typeof partnerLoginSchema>;
 
 export interface LoginResponse {
 	access: string;
+	refresh: string;
 	user: User;
 }
 
@@ -56,8 +57,8 @@ export type OtpVerificationPayload = z.infer<typeof otpVerificationSchema> & {
 };
 
 export interface VerifyOtpResponse {
-	tokens: { access: string };
-	user_role: "customer";
+	tokens: { access: string; refresh: string };
+	user: User;
 }
 
 // Legacy signup - keeping for other roles if needed
@@ -94,6 +95,7 @@ export interface User {
 	avatar_url: string | null;
 	created_at: string;
 	login_count: number;
+	push_notification_subscribed: boolean;
 }
 
 export interface AdminUser {

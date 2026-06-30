@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { verifyLoginOTP, resendOTP, getAuthUser } from "@/lib/auth-api";
+import { verifyLoginOTP, resendOTP } from "@/lib/auth-api";
 import { otpVerificationSchema, type OtpVerificationPayload } from "@/lib/types";
+import { persistAuth } from "@/lib/auth";
 import { useCartStore } from "@/stores/useCartStore";
 
 const RESEND_TIMEOUT = 59; // seconds
@@ -115,18 +116,9 @@ export default function VerifyOtpForm() {
         otp_code: values.otp_code,
       });
 
-      // Step 2: Store tokens
-      if (response.tokens?.access) {
-        localStorage.setItem('token', response.tokens.access);
-        localStorage.setItem('accessToken', response.tokens.access);
-      }
-      // if (response.tokens?.refresh) {
-      //   localStorage.setItem('refreshToken', response.tokens.refresh);
-      // }
-
-      // Step 3: Fetch user data
-      const user = await getAuthUser();
-      localStorage.setItem('user', JSON.stringify(user));
+      // Step 2: Persist tokens + user
+      persistAuth(response.tokens, response.user);
+      const user = response.user;
 
       // Step 4: Clear guest cart
       clearUserOrders();

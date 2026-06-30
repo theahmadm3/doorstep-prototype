@@ -5,7 +5,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { sendLoginOTP, verifyLoginOTP, resendOTP, getAuthUser } from "@/lib/auth-api";
+import { sendLoginOTP, verifyLoginOTP, resendOTP } from "@/lib/auth-api";
+import { persistAuth } from "@/lib/auth";
 import { loginSchema } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/stores/useCartStore";
@@ -18,7 +19,7 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { Utensils, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const ROLE_ROUTES: Record<string, string> = {
   customer: "/customer/dashboard",
@@ -52,12 +53,23 @@ export default function LoginPage() {
     if (token && storedUser) {
       try {
         const user = JSON.parse(storedUser);
-        const dest = ROLE_ROUTES[user.role];
-        if (dest) { navigate(dest, { replace: true }); return; }
+        const dashboard = ROLE_ROUTES[user.role];
+        if (dashboard) {
+          // When the service worker opens a fresh tab from a notification
+          // click and we don't have an explicit URL in the payload, we land
+          // here with `?openOrders=1`. Send the user to their orders page
+          // instead of the role dashboard.
+          const wantsOrders = searchParams.get("openOrders") === "1";
+          const dest = wantsOrders
+            ? dashboard.replace(/\/dashboard$/, "/orders")
+            : dashboard;
+          navigate(dest, { replace: true });
+          return;
+        }
       } catch { /* corrupted — fall through */ }
     }
     setIsCheckingAuth(false);
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   useEffect(() => {
     if (searchParams.get("session_expired")) {
@@ -106,12 +118,8 @@ export default function LoginPage() {
     setIsVerifying(true);
     try {
       const response = await verifyLoginOTP({ phone_number: formattedPhone, otp_code: code });
-      if (response.tokens?.access) {
-        localStorage.setItem("token", response.tokens.access);
-        localStorage.setItem("accessToken", response.tokens.access);
-      }
-      const user = await getAuthUser();
-      localStorage.setItem("user", JSON.stringify(user));
+      persistAuth(response.tokens, response.user);
+      const user = response.user;
       clearUserOrders();
       localStorage.removeItem("tempPhoneNumber");
       toast({ title: `Welcome back, ${user.full_name}!` });
@@ -177,7 +185,7 @@ export default function LoginPage() {
   if (isCheckingAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-primary">
-        <Utensils className="h-8 w-8 text-primary-foreground animate-pulse" />
+        <img src="/doorstep-logo-icon.png" alt="Doorstep" className="h-12 w-auto animate-pulse brightness-0 invert" />
       </div>
     );
   }
@@ -186,9 +194,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       {/* ── Brand panel (desktop only) ── */}
       <div className="hidden lg:flex lg:w-[45%] bg-primary flex-col justify-between p-14 text-primary-foreground">
-        <div className="flex items-center gap-3">
-          <Utensils className="h-7 w-7" />
-          <span className="text-2xl font-bold tracking-tight">Doorstep</span>
+        <div>
+          <img src="/doorstep-logo.png" alt="Doorstep" className="h-9 w-auto brightness-0 invert" />
         </div>
 
         <div className="space-y-4">
@@ -209,9 +216,8 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col bg-background">
         {/* Mobile brand strip */}
         <div className="lg:hidden bg-primary px-6 pt-10 pb-8 text-primary-foreground">
-          <div className="flex items-center gap-2 mb-3">
-            <Utensils className="h-6 w-6" />
-            <span className="text-xl font-bold">Doorstep</span>
+          <div className="mb-3">
+            <img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto brightness-0 invert" />
           </div>
           <p className="text-primary-foreground/70 text-sm">
             Log in to your account

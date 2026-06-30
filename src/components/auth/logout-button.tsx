@@ -19,6 +19,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { useQueryClient } from "@tanstack/react-query";
+import { unsubscribeFromPushNotifications } from "@/lib/push-notifications";
+import { usePushStore } from "@/hooks/use-push-manager";
+import { clearAuth } from "@/lib/auth";
 
 export default function LogoutButton() {
 	const navigate = useNavigate();
@@ -41,12 +44,21 @@ export default function LogoutButton() {
 				variant: "destructive",
 			});
 		} finally {
-			// Clear all application state and local storage before redirecting.
+			// Best-effort: drop the push subscription so the backend stops sending
+			// notifications to this device for the previous user. We don't block on
+			// it — failures here shouldn't prevent the user from logging out.
+			try {
+				await unsubscribeFromPushNotifications();
+			} catch (err) {
+				console.error("Push unsubscribe failed during logout:", err);
+			}
+			usePushStore.setState({ isSubscribed: false, initialized: false });
+
+			// Clear all auth keys (tokens, user, role history) then app state.
+			clearAuth();
 			clearUserOrders();
 			clearUIState();
-			queryClient.clear(); // Clears all TanStack Query cache
-			localStorage.removeItem("accessToken");
-			localStorage.removeItem("user");
+			queryClient.clear();
 			navigate("/");
 		}
 	};

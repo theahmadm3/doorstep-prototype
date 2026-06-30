@@ -16,8 +16,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { loginUser, getAuthUser } from "@/lib/auth-api";
+import { loginUser } from "@/lib/auth-api";
 import { partnerLoginSchema } from "@/lib/types";
+import { persistAuth } from "@/lib/auth";
 import { useCartStore } from "@/stores/useCartStore";
 
 export default function PartnerLoginForm() {
@@ -40,15 +41,9 @@ export default function PartnerLoginForm() {
       // Step 1: Login user
       const loginResponse = await loginUser(values);
 
-      // Step 2: Store tokens
-      if (loginResponse.access) {
-        localStorage.setItem('token', loginResponse.access);
-        localStorage.setItem('accessToken', loginResponse.access);
-      }
-
-      // Step 3: Fetch user data
-      const user = await getAuthUser();
-      localStorage.setItem('user', JSON.stringify(user));
+      // Step 2: Persist tokens + user
+      persistAuth(loginResponse, loginResponse.user);
+      const user = loginResponse.user;
 
       // Step 4: Clear any guest cart data
       clearUserOrders();
