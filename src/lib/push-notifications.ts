@@ -1,173 +1,113 @@
-
-// Push notification utility library
+// Push notification utility library.
+// The service worker itself is registered once at app boot in `main.tsx`.
+// Everything in here either waits for that registration or operates on it.
 
 import type { PlatformInfo } from "./types";
 
 // Safari-only non-standard property (not in the TS lib)
 interface SafariNavigator extends Navigator {
-  standalone?: boolean;
+	standalone?: boolean;
 }
+
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+const DEV = import.meta.env.DEV;
+const log = (...args: unknown[]) => {
+	if (DEV) console.log("[PushLib]", ...args);
+};
 
 /**
- * Convert VAPID public key from base64 to Uint8Array
+ * Convert a base64-url VAPID public key into the Uint8Array form that
+ * `pushManager.subscribe` expects.
  */
-export function urlBase64ToUint8Array(
-	base64String: string,
-): Uint8Array {
+export function urlBase64ToUint8Array(base64String: string): Uint8Array {
 	const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-	const base64 = (base64String + padding)
-		.replace(/\-/g, "+")
-		.replace(/_/g, "/");
-
+	const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
 	const rawData = window.atob(base64);
-	const outputArray = new Uint8Array(rawData.length);
-
-	for (let i = 0; i < rawData.length; ++i) {
-		outputArray[i] = rawData.charCodeAt(i);
-	}
-	return outputArray;
+	const out = new Uint8Array(rawData.length);
+	for (let i = 0; i < rawData.length; ++i) out[i] = rawData.charCodeAt(i);
+	return out;
 }
 
 /**
- * Register the push service worker
+ * Resolve the existing service worker registration. The SW is registered in
+ * `main.tsx`; this helper just waits for it to be ready.
  */
-export async function registerPushServiceWorker(): Promise<ServiceWorkerRegistration> {
-	console.log('[PushLib] registerPushServiceWorker called');
+export async function getPushServiceWorker(): Promise<ServiceWorkerRegistration> {
 	if (!("serviceWorker" in navigator)) {
-		console.error("[PushLib] Service workers are not supported in this browser");
 		throw new Error("Service workers are not supported in this browser");
 	}
-
-	try {
-		const registration = await navigator.serviceWorker.register("/push-sw.js");
-		console.log("[PushLib] Service worker registered successfully:", registration);
-		await registration.update();
-		console.log("[PushLib] Service worker updated.");
-		return registration;
-	} catch (error) {
-		console.error("[PushLib] Service worker registration failed:", error);
-		throw error;
-	}
+	const registration = await navigator.serviceWorker.ready;
+	log("Service worker ready", registration.scope);
+	return registration;
 }
 
 /**
- * Subscribe to push notifications
+ * Subscribe to push notifications using an existing SW registration.
  */
 export async function subscribeToPushNotifications(
 	registration: ServiceWorkerRegistration,
 ): Promise<PushSubscription> {
-	console.log('[PushLib] subscribeToPushNotifications called');
 	if (!VAPID_PUBLIC_KEY) {
-		console.error("[PushLib] VAPID public key is not configured");
 		throw new Error("VAPID public key is not configured");
 	}
-	console.log("[PushLib] VAPID public key found.");
-
-	try {
-		const subscription = await registration.pushManager.subscribe({
-			userVisibleOnly: true,
-			applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-		});
-		console.log("[PushLib] Push subscription successful:", subscription);
-		return subscription;
-	} catch (error) {
-		console.error("[PushLib] Push subscription failed:", error);
-		throw error;
-	}
+	return registration.pushManager.subscribe({
+		userVisibleOnly: true,
+		applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+	});
 }
 
 /**
- * Get the current push subscription
+ * Get the current push subscription, or null if not subscribed / unsupported.
  */
 export async function getCurrentSubscription(): Promise<PushSubscription | null> {
-	console.log('[PushLib] getCurrentSubscription called');
-	if (!isPushNotificationSupported()) {
-		console.log("[PushLib] Push not supported, returning null subscription.");
-		return null;
-	}
-	
+	if (!isPushNotificationSupported()) return null;
 	try {
 		const registration = await navigator.serviceWorker.getRegistration("/push-sw.js");
-		if (!registration) {
-			console.log("[PushLib] No service worker registration found.");
-			return null;
-		}
-		console.log("[PushLib] Found service worker registration.");
-		const subscription = await registration.pushManager.getSubscription();
-		console.log("[PushLib] Found subscription:", subscription);
-		return subscription;
-	} catch (error) {
-		console.error("[PushLib] Error getting current subscription:", error);
+		if (!registration) return null;
+		return registration.pushManager.getSubscription();
+	} catch (err) {
+		log("getCurrentSubscription error", err);
 		return null;
 	}
 }
 
-
 /**
- * Unsubscribe from push notifications
+ * Unsubscribe from push notifications. Returns true if there was a
+ * subscription that was successfully removed, false if no subscription existed.
  */
 export async function unsubscribeFromPushNotifications(): Promise<boolean> {
-	console.log('[PushLib] unsubscribeFromPushNotifications called');
 	const subscription = await getCurrentSubscription();
-	if (!subscription) {
-		console.log("[PushLib] No subscription to unsubscribe from.");
+	if (!subscription) return false;
+	try {
+		return await subscription.unsubscribe();
+	} catch (err) {
+		log("Unsubscribe failed", err);
 		return false;
 	}
-
-	try {
-		const result = await subscription.unsubscribe();
-		console.log("[PushLib] Unsubscription successful:", result);
-		return result;
-	} catch (error) {
-		console.error("[PushLib] Unsubscription failed:", error);
-		throw error;
-	}
 }
 
 /**
- * Check if push notifications are supported
+ * Check whether the browser supports the full push notification stack.
  */
 export function isPushNotificationSupported(): boolean {
-  const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
-  console.log("[Push] Support check:", {
-    serviceWorker: "serviceWorker" in navigator,
-    PushManager: "PushManager" in window,
-    Notification: "Notification" in window,
-    result: supported
-  });
-  return supported;
+	return (
+		"serviceWorker" in navigator &&
+		"PushManager" in window &&
+		"Notification" in window
+	);
 }
 
 /**
- * Detect platform information (iOS, PWA status, etc.)
+ * Detect platform info: iOS push only works inside an installed PWA, so we
+ * surface that constraint here so the UI can guide the user.
  */
 export function detectPlatform(): PlatformInfo {
-  const userAgent = window.navigator.userAgent.toLowerCase();
-  const isIOS = /iphone|ipad|ipod/.test(userAgent);
-  const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
-
-  const isStandalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as SafariNavigator).standalone === true;
-
-  // iOS 16.4+ supports push in installed PWAs
-  const needsPWAInstall = isIOS && !isStandalone;
-
-  console.log("[Platform] Detection:", {
-    userAgent,
-    isIOS,
-    isSafari,
-    isStandalone,
-    needsPWAInstall,
-    displayMode: window.matchMedia("(display-mode: standalone)").matches,
-    navigatorStandalone: (window.navigator as SafariNavigator).standalone
-  });
-
-  return {
-    isIOS,
-    isSafari,
-    isStandalone,
-    needsPWAInstall,
-  };
+	const userAgent = window.navigator.userAgent.toLowerCase();
+	const isIOS = /iphone|ipad|ipod/.test(userAgent);
+	const isSafari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
+	const isStandalone =
+		window.matchMedia("(display-mode: standalone)").matches ||
+		(window.navigator as SafariNavigator).standalone === true;
+	const needsPWAInstall = isIOS && !isStandalone;
+	return { isIOS, isSafari, isStandalone, needsPWAInstall };
 }

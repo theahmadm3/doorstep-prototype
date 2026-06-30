@@ -46,8 +46,8 @@ pnpm-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# PWA - Service Worker files (auto-generated)
-public/sw.js
+# Old VitePWA auto-generated artifacts — no longer generated since we dropped
+# the plugin. Patterns kept so local build artefacts don't sneak back in.
 public/sw.js.map
 public/workbox-*.js
 public/workbox-*.js.map
