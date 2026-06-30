@@ -24,7 +24,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { placeOrder, initializePayment, applyDiscountCode, getRestaurantDetails } from "@/lib/api";
-import { Minus, Plus, Edit, Info, Truck, Package, Trash2, Tag } from "lucide-react";
+import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
+import { Minus, Plus, Edit, Info, Truck, Package, Trash2, Tag, Bell } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import AddressSelectionModal from "../location/address-selection-modal";
 import { haversineDistance } from "@/lib/utils";
@@ -74,6 +75,10 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder, re
   const [showHighFeeModal, setShowHighFeeModal] = useState(false);
 
   const [orderType, setOrderType] = useState<'delivery' | 'pickup'>('delivery');
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
+
+  const { isSubscribed, isSubscribing } = usePushStore();
+  const { handleSubscribe } = usePushManager();
 
   // Discount State
   const [discountCode, setDiscountCode] = useState("");
@@ -264,8 +269,12 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder, re
         description: "Your order has been submitted. We're on it!",
       });
 
-      onClose();
-      navigate(`/customer/orders`);
+      if (!isSubscribed) {
+        setShowPushPrompt(true);
+      } else {
+        onClose();
+        navigate('/customer/orders');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to place order after payment.";
       toast({
@@ -427,6 +436,46 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder, re
       />
 
       <DialogContent className="sm:max-w-md max-h-[90svh] flex flex-col p-0">
+        {showPushPrompt ? (
+          <div className="flex flex-col items-center gap-5 px-8 py-10 text-center">
+            <div className="bg-primary/10 rounded-full p-4">
+              <Bell className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-1.5">
+              <h2 className="text-lg font-bold">Stay in the loop</h2>
+              <p className="text-sm text-muted-foreground">
+                Enable push notifications so we can alert you the moment your order is picked up, on its way, or delivered.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 w-full">
+              <Button
+                className="w-full"
+                onClick={async () => {
+                  await handleSubscribe();
+                  setShowPushPrompt(false);
+                  onClose();
+                  navigate('/customer/orders');
+                }}
+                disabled={isSubscribing}
+              >
+                <Bell className="mr-2 h-4 w-4" />
+                {isSubscribing ? "Enabling…" : "Enable Notifications"}
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full text-muted-foreground"
+                onClick={() => {
+                  setShowPushPrompt(false);
+                  onClose();
+                  navigate('/customer/orders');
+                }}
+              >
+                Maybe later
+              </Button>
+            </div>
+          </div>
+        ) : (
+        <>
         <DialogHeader className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogTitle className="text-xl font-bold">Checkout</DialogTitle>
           {restaurantInfo?.name && (
@@ -667,6 +716,8 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder, re
             {isPlacingOrder ? "Initializing Payment..." : isFetchingRestaurantCoords ? "Calculating fee..." : `Pay ₦${total.toFixed(2)}`}
           </Button>
         </div>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );
