@@ -19,7 +19,6 @@ import {
 	ShoppingBag,
 	Tag,
 	User,
-	Utensils,
     CreditCard,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -84,8 +83,7 @@ export default function VendorLayout() {
 				<Sidebar className="hidden md:flex md:flex-col">
 					<SidebarHeader>
 						<div className="flex items-center gap-2">
-							<Utensils className="w-8 h-8 text-primary" />
-							<span className="text-xl font-bold font-headline">Doorstep</span>
+							<img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto" />
 						</div>
 					</SidebarHeader>
 					<SidebarContent>

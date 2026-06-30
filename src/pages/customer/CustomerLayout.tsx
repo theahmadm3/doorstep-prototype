@@ -11,7 +11,7 @@ import {
 	SidebarFooter,
 	SidebarContent,
 } from "@/components/ui/sidebar";
-import { Home, Package, User, Utensils, Search } from "lucide-react";
+import { Home, Package, User, Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ClientHeader from "@/components/layout/client-header";
 import LogoutButton from "@/components/auth/logout-button";
@@ -78,8 +78,7 @@ export default function CustomerLayout() {
 				<Sidebar className="hidden md:flex md:flex-col">
 					<SidebarHeader className="p-4 border-b">
 						<div className="flex items-center gap-2">
-							<Utensils className="w-8 h-8 text-primary" />
-							<span className="text-xl font-bold font-headline">Doorstep</span>
+							<img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto" />
 						</div>
 					</SidebarHeader>
 

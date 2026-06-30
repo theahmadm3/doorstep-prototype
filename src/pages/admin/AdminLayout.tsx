@@ -26,6 +26,7 @@ import { useEffect, useState } from 'react';
 import type { User as UserType } from '@/lib/types';
 import BottomNavigation from '@/components/layout/bottom-navigation';
 import { Link, Outlet } from "react-router-dom";
+import { useNotificationListener } from '@/hooks/use-notification-listener';
 
 const adminNavLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
@@ -37,6 +38,7 @@ const adminNavLinks = [
 ];
 
 export default function AdminLayout() {
+  useNotificationListener();
   const [user, setUser] = useState<UserType | null>(null);
 
   useEffect(() => {
@@ -52,8 +54,7 @@ export default function AdminLayout() {
         <Sidebar className="hidden md:flex md:flex-col">
           <SidebarHeader>
             <div className="flex items-center gap-2">
-              <Utensils className="w-8 h-8 text-primary" />
-              <span className="text-xl font-bold font-headline">Doorstep</span>
+              <img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto" />
             </div>
           </SidebarHeader>
           <SidebarContent>
