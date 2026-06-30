@@ -4,8 +4,17 @@ import { useState, useEffect } from "react";
 import { X, Download, Share, Plus, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+interface BeforeInstallPromptEvent extends Event {
+	prompt(): Promise<void>;
+	userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
+interface SafariNavigator extends Navigator {
+	standalone?: boolean;
+}
+
 export default function PWAInstallPrompt() {
-	const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+	const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 	const [showPrompt, setShowPrompt] = useState(false);
 	const [isIOS, setIsIOS] = useState(false);
 
@@ -14,7 +23,7 @@ export default function PWAInstallPrompt() {
 		const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 		const isStandalone = window.matchMedia(
 			"(display-mode: standalone)",
-		).matches || (window.navigator as any).standalone === true;
+		).matches || (window.navigator as SafariNavigator).standalone === true;
 
 		setIsIOS(iOS);
 
@@ -35,7 +44,7 @@ export default function PWAInstallPrompt() {
 		// Android/Chrome install prompt
 		const handler = (e: Event) => {
 			e.preventDefault();
-			setDeferredPrompt(e);
+			setDeferredPrompt(e as BeforeInstallPromptEvent);
 
 			// Check dismissal for Android too
 			const dismissed = localStorage.getItem("pwa-prompt-dismissed");

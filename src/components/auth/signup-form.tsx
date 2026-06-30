@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { signupCustomer } from "@/lib/auth-api";
 import { customerSignupSchema, type CustomerSignupPayload } from "@/lib/types";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -30,7 +30,7 @@ import { format } from "date-fns"
 
 export default function SignupForm() {
   const { toast } = useToast();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
 
   const form = useForm<CustomerSignupPayload>({
@@ -72,7 +72,7 @@ export default function SignupForm() {
         description: "We've sent a verification code to you via WhatsApp.",
       });
       
-      router.push("/verify-otp");
+      navigate("/verify-otp");
       
     } catch (error) {
       const message = error instanceof Error ? error.message : "An unexpected error occurred.";

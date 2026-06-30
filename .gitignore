@@ -9,16 +9,25 @@
 # testing
 /coverage
 
-# next.js
+# playwright
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache
+
+# vite-plugin-pwa dev service worker output
+/dev-dist
+
+# build output
 /.next/
 /out/
-
-# production
 /build
+/dist
 
 # misc
 .DS_Store
 *.pem
+.playwright-mcp/
 
 # debug
 npm-debug.log*
@@ -32,13 +41,13 @@ pnpm-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
-
+.env.example
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-# PWA - Service Worker files (auto-generated)
-public/sw.js
+# Old VitePWA auto-generated artifacts — no longer generated since we dropped
+# the plugin. Patterns kept so local build artefacts don't sneak back in.
 public/sw.js.map
 public/workbox-*.js
 public/workbox-*.js.map

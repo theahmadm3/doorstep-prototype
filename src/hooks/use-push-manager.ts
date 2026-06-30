@@ -1,151 +1,152 @@
-
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
+import { create } from "zustand";
 import {
-  registerPushServiceWorker,
-  getCurrentSubscription,
-  isPushNotificationSupported,
-  subscribeToPushNotifications,
-  detectPlatform
+	getPushServiceWorker,
+	getCurrentSubscription,
+	isPushNotificationSupported,
+	subscribeToPushNotifications,
+	detectPlatform,
 } from "@/lib/push-notifications";
 import { subscribeToNotifications } from "@/lib/api";
+import { getStoredUser } from "@/lib/auth";
 import { useToast } from "./use-toast";
-import { PlatformInfo } from "@/lib/types";
-
-// Zustand store to share state across components
-import {create} from 'zustand';
+import type { PlatformInfo } from "@/lib/types";
 
 interface PushState {
-    isSupported: boolean;
-    isSubscribed: boolean;
-    isSubscribing: boolean;
-    platformInfo: PlatformInfo;
-    setIsSubscribed: (isSubscribed: boolean) => void;
-    setIsSubscribing: (isSubscribing: boolean) => void;
+	isSupported: boolean;
+	isSubscribed: boolean;
+	isSubscribing: boolean;
+	platformInfo: PlatformInfo;
+	initialized: boolean;
+	setIsSubscribed: (v: boolean) => void;
+	setIsSubscribing: (v: boolean) => void;
 }
 
 export const usePushStore = create<PushState>((set) => ({
-    isSupported: false,
-    isSubscribed: false,
-    isSubscribing: false,
-    platformInfo: { isIOS: false, isSafari: false, isStandalone: false, needsPWAInstall: false },
-    setIsSubscribed: (isSubscribed) => set({ isSubscribed }),
-    setIsSubscribing: (isSubscribing) => set({ isSubscribing }),
+	isSupported: false,
+	isSubscribed: false,
+	isSubscribing: false,
+	platformInfo: { isIOS: false, isSafari: false, isStandalone: false, needsPWAInstall: false },
+	initialized: false,
+	setIsSubscribed: (isSubscribed) => set({ isSubscribed }),
+	setIsSubscribing: (isSubscribing) => set({ isSubscribing }),
 }));
 
+const DEV = import.meta.env.DEV;
+const log = (...args: unknown[]) => {
+	if (DEV) console.log("[PushManager]", ...args);
+};
 
-// This hook manages the global state of push notifications
+/**
+ * Wait for the service worker registration to reach the `activated` state.
+ * Handles both the `installing` and `waiting` lifecycle slots.
+ */
+function waitForActive(registration: ServiceWorkerRegistration): Promise<void> {
+	const target = registration.installing ?? registration.waiting;
+	if (!target) return Promise.resolve();
+	return new Promise<void>((resolve) => {
+		const onStateChange = () => {
+			if (target.state === "activated") {
+				target.removeEventListener("statechange", onStateChange);
+				resolve();
+			}
+		};
+		target.addEventListener("statechange", onStateChange);
+	});
+}
+
 export const usePushManager = () => {
-    const { toast } = useToast();
-    const { setIsSubscribed } = usePushStore();
+	const { toast } = useToast();
 
-    const initialize = useCallback(async () => {
-        console.log("[Push Init] Starting initialization...");
-        
-        if (typeof window === 'undefined') {
-          console.log("[Push Init] Window undefined, exiting");
-          return;
-        }
+	const initialize = useCallback(async () => {
+		// Guard against re-entry: every consumer (App, header, profile pages)
+		// would otherwise re-run the entire bootstrap on mount.
+		if (usePushStore.getState().initialized) return;
+		usePushStore.setState({ initialized: true });
 
-        const supported = isPushNotificationSupported();
-        console.log("[Push Init] Push supported:", supported);
-        
-        const platform = detectPlatform();
-        console.log("[Push Init] Platform:", platform);
-        
-        usePushStore.setState({ isSupported: supported, platformInfo: platform });
-        
-        if (!supported) {
-            console.log("[Push Init] Not supported, exiting");
-            return;
-        }
+		if (typeof window === "undefined") return;
 
-        try {
-            console.log("[PushManager] Registering service worker...");
-            const registration = await registerPushServiceWorker();
-            
-            // Wait for service worker to be active
-            if (registration.installing) {
-                console.log("[PushManager] Service worker installing...");
-                await new Promise<void>((resolve) => {
-                    registration.installing!.addEventListener('statechange', (e) => {
-                        if ((e.target as ServiceWorker).state === 'activated') {
-                            console.log("[PushManager] Service worker activated.");
-                            resolve();
-                        }
-                    });
-                });
-            }
-            
-            console.log("[PushManager] Service worker ready, checking subscription...");
-            const subscription = await getCurrentSubscription();
-            setIsSubscribed(!!subscription);
-            console.log("[PushManager] Initialization complete. Subscription status:", !!subscription);
-        } catch (error) {
-            console.error("[PushManager] Failed to initialize push manager:", error);
-        }
-    }, [setIsSubscribed]);
+		const supported = isPushNotificationSupported();
+		const platform = detectPlatform();
 
-    useEffect(() => {
-        initialize();
-    }, [initialize]);
+		// Seed subscription state immediately from the server-side flag stored
+		// in the user object — no async SW check needed for the initial render.
+		const storedUser = getStoredUser();
+		const optimisticSubscribed = storedUser?.push_notification_subscribed ?? false;
+		usePushStore.setState({
+			isSupported: supported,
+			platformInfo: platform,
+			isSubscribed: optimisticSubscribed,
+		});
 
-    const handleSubscribe = async () => {
-        const { platformInfo, isSubscribed } = usePushStore.getState();
-        console.log('[PushManager] handleSubscribe called. isSubscribed:', isSubscribed);
+		if (!supported) {
+			log("Push not supported in this environment");
+			return;
+		}
 
-        if (isSubscribed) return;
+		try {
+			const registration = await getPushServiceWorker();
+			await waitForActive(registration);
+			// Confirm against the actual SW subscription — corrects the optimistic
+			// value if e.g. the user cleared browser data or uses a different device.
+			const subscription = await getCurrentSubscription();
+			usePushStore.setState({ isSubscribed: !!subscription });
+			log("Initialized. Subscribed:", !!subscription);
+		} catch (err) {
+			console.error("[PushManager] Failed to initialize:", err);
+			usePushStore.setState({ initialized: false });
+		}
+	}, []);
 
-        if (platformInfo.needsPWAInstall) {
-            console.warn('[PushManager] PWA installation needed on iOS.');
-            toast({
-                title: "Install App to Enable Notifications",
-                description: "On iOS, please add this app to your Home Screen to enable notifications. Tap the Share button and select 'Add to Home Screen'.",
-                variant: "destructive",
-            });
-            return;
-        }
+	useEffect(() => {
+		initialize();
+	}, [initialize]);
 
-        usePushStore.setState({ isSubscribing: true });
+	const handleSubscribe = async () => {
+		const { platformInfo, isSubscribed } = usePushStore.getState();
+		if (isSubscribed) return;
 
-        try {
-            console.log('[PushManager] Requesting notification permission...');
-            const permission = await Notification.requestPermission();
-            console.log('[PushManager] Notification permission status:', permission);
-            if (permission !== 'granted') {
-                throw new Error("Push notification permission denied.");
-            }
+		if (platformInfo.needsPWAInstall) {
+			toast({
+				title: "Install App to Enable Notifications",
+				description:
+					"On iOS, please add this app to your Home Screen first. Tap the Share button and select 'Add to Home Screen'.",
+				variant: "destructive",
+			});
+			return;
+		}
 
-            const registration = await navigator.serviceWorker.ready;
-            console.log('[PushManager] Service worker is ready for subscription.');
+		usePushStore.setState({ isSubscribing: true });
+		try {
+			const permission = await Notification.requestPermission();
+			if (permission !== "granted") {
+				throw new Error("Push notification permission denied.");
+			}
 
-            const subscription = await subscribeToPushNotifications(registration);
-            console.log('[PushManager] Successfully subscribed to push notifications:', subscription.endpoint);
-            
-            console.log('[PushManager] Sending subscription to server...');
-            await subscribeToNotifications(subscription);
-            console.log('[PushManager] Server subscription successful.');
-            
-            usePushStore.setState({ isSubscribed: true });
-            toast({
-                title: "Successfully Subscribed!",
-                description: "You will now receive push notifications for order updates.",
-            });
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-            console.error("[PushManager] Subscription Failed:", message);
-            toast({
-                title: "Subscription Failed",
-                description: message,
-                variant: "destructive",
-            });
-            usePushStore.setState({ isSubscribed: false });
-        } finally {
-            usePushStore.setState({ isSubscribing: false });
-            console.log('[PushManager] handleSubscribe finished.');
-        }
-    };
-    
-    return { handleSubscribe };
+			const registration = await getPushServiceWorker();
+			const subscription = await subscribeToPushNotifications(registration);
+			await subscribeToNotifications(subscription);
+
+			usePushStore.setState({ isSubscribed: true });
+			toast({
+				title: "Successfully Subscribed!",
+				description: "You will now receive push notifications for order updates.",
+			});
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+			console.error("[PushManager] Subscribe failed:", message);
+			toast({
+				title: "Subscription Failed",
+				description: message,
+				variant: "destructive",
+			});
+			usePushStore.setState({ isSubscribed: false });
+		} finally {
+			usePushStore.setState({ isSubscribing: false });
+		}
+	};
+
+	return { handleSubscribe };
 };

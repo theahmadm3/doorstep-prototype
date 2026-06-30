@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,15 +15,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { verifyLoginOTP, resendOTP, getAuthUser } from "@/lib/auth-api";
+import { verifyLoginOTP, resendOTP } from "@/lib/auth-api";
 import { otpVerificationSchema, type OtpVerificationPayload } from "@/lib/types";
+import { persistAuth } from "@/lib/auth";
 import { useCartStore } from "@/stores/useCartStore";
 
 const RESEND_TIMEOUT = 59; // seconds
 
 export default function VerifyOtpForm() {
   const { toast } = useToast();
-  const router = useRouter();
+  const navigate = useNavigate();
   const { clearUserOrders } = useCartStore();
 
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
@@ -40,12 +41,12 @@ export default function VerifyOtpForm() {
         description: "Please start the login process again.",
         variant: "destructive",
       });
-      router.replace("/login");
+      navigate("/login", { replace: true });
       return;
     }
-    
+
     setPhoneNumber(storedPhone);
-  }, [router, toast]);
+  }, [navigate, toast]);
 
   // Resend timer countdown
   useEffect(() => {
@@ -115,18 +116,9 @@ export default function VerifyOtpForm() {
         otp_code: values.otp_code,
       });
 
-      // Step 2: Store tokens
-      if (response.tokens?.access) {
-        localStorage.setItem('token', response.tokens.access);
-        localStorage.setItem('accessToken', response.tokens.access);
-      }
-      // if (response.tokens?.refresh) {
-      //   localStorage.setItem('refreshToken', response.tokens.refresh);
-      // }
-
-      // Step 3: Fetch user data
-      const user = await getAuthUser();
-      localStorage.setItem('user', JSON.stringify(user));
+      // Step 2: Persist tokens + user
+      persistAuth(response.tokens, response.user);
+      const user = response.user;
 
       // Step 4: Clear guest cart
       clearUserOrders();
@@ -144,19 +136,19 @@ export default function VerifyOtpForm() {
       setTimeout(() => {
         switch (user.role) {
           case "customer":
-            router.push("/customer/dashboard");
+            navigate("/customer/dashboard");
             break;
           case "restaurant":
-            router.push("/vendor/dashboard");
+            navigate("/vendor/dashboard");
             break;
           case "driver":
-            router.push("/rider/dashboard");
+            navigate("/rider/dashboard");
             break;
           case "admin":
-            router.push("/admin/dashboard");
+            navigate("/admin/dashboard");
             break;
           default:
-            router.push("/login");
+            navigate("/login");
         }
       }, 100);
 

@@ -15,15 +15,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { sendLoginOTP } from "@/lib/auth-api";
 import { loginSchema } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 export default function LoginForm() {
   const { toast } = useToast();
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -34,9 +34,9 @@ export default function LoginForm() {
         variant: "destructive",
       });
       // Clean the URL
-      router.replace('/');
+      navigate('/', { replace: true });
     }
-  }, [searchParams, toast, router]);
+  }, [searchParams, toast, navigate]);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -67,7 +67,7 @@ export default function LoginForm() {
         description: "We've sent a login code to you via WhatsApp.",
       });
 
-      router.push("/verify-otp");
+      navigate("/verify-otp");
 
     } catch (error) {
       const message = error instanceof Error ? error.message : "An unexpected error occurred.";

@@ -3,12 +3,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SidebarTrigger } from "../ui/sidebar";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import { useAddresses } from "@/hooks/use-addresses";
 import { Package, MapPin, Bell } from "lucide-react";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { User } from "@/lib/types";
 import AddressSelectionModal from "../location/address-selection-modal";
@@ -46,7 +45,6 @@ export default function ClientHeader() {
 			/>
 			<div className="p-4 flex justify-between items-center gap-4 bg-background shadow-sm border-b sticky top-0 z-10">
 				<div className="flex items-center gap-2">
-					<SidebarTrigger />
 					{isClient ? (
 						<Button
 							variant="outline"
@@ -94,7 +92,7 @@ export default function ClientHeader() {
 						</Button>
 					)}
 					<Button variant="ghost" size="icon" asChild>
-						<Link href="/customer/orders">
+						<Link to="/customer/orders">
 							<Package className="h-5 w-5" />
 							{isClient && unsubmittedOrderCount > 0 && (
 								<Badge className="absolute top-2 right-2 h-4 w-4 justify-center p-0">

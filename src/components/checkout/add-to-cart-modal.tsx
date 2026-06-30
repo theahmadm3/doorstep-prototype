@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -11,7 +10,6 @@ import {
 	DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { MenuItem, OptionChoice } from "@/lib/types";
 import { Plus, Minus } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
@@ -62,15 +60,26 @@ export default function AddToCartModal({
 	const incrementQuantity = () => setQuantity((prev) => prev + 1);
 	const decrementQuantity = () => setQuantity((prev) => Math.max(1, prev - 1));
 
-	const { totalPrice } = useMemo(() => {
+	const { totalPrice, discountedBasePrice } = useMemo(() => {
 		const basePrice = parseFloat(item.price);
+		const firstDiscount = (item.active_discounts ?? [])[0];
+		let effectiveBase = basePrice;
+		if (firstDiscount) {
+			effectiveBase =
+				firstDiscount.type === "fixed_amount"
+					? Math.max(0, basePrice - parseFloat(firstDiscount.value))
+					: basePrice * (1 - parseFloat(firstDiscount.value) / 100);
+		}
 		const optionsPrice = Object.values(selectedOptions).reduce(
 			(acc, opt) => acc + parseFloat(opt.price_adjustment),
 			0,
 		);
-		const total = (basePrice + optionsPrice) * quantity;
-		return { totalPrice: total.toFixed(2) };
-	}, [item.price, selectedOptions, quantity]);
+		const total = (effectiveBase + optionsPrice) * quantity;
+		return {
+			totalPrice: total.toFixed(2),
+			discountedBasePrice: firstDiscount ? effectiveBase : null,
+		};
+	}, [item.price, item.active_discounts, selectedOptions, quantity]);
 
 	const imageUrl =
 		item.image_url && item.image_url.startsWith("http")
@@ -78,8 +87,8 @@ export default function AddToCartModal({
 			: "https://placehold.co/400x400.png";
 
 	return (
-		<Dialog open={isOpen} onOpenChange={onClose}>
-			<DialogContent className="sm:max-w-md p-0">
+		<Dialog open={isOpen} onOpenChange={onClose} style={{ maxWidth: "28rem" }}>
+			<DialogContent className="sm:max-w-md p-0" style={{ maxWidth: "28rem" }}>
 				<DialogHeader className="p-6 pb-0">
 					<DialogTitle className="text-2xl font-bold text-center">
 						{item.name}
@@ -87,17 +96,22 @@ export default function AddToCartModal({
 				</DialogHeader>
 				<div className="grid gap-4">
 					<div className="relative w-full h-40">
-						<Image
+						<img
 							src={imageUrl}
 							alt={item.name}
-							fill
-							className="object-cover"
+							className="absolute inset-0 h-full w-full object-cover"
 						/>
 					</div>
 
-					<div className="px-6 text-sm text-muted-foreground">
+					<div className="px-6 text-sm text-center text-muted-foreground">
 						{item.description}
 					</div>
+
+					{(item.active_discounts?.length ?? 0) > 0 && (
+						<div className="mx-6 mt-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700">
+							🏷️ {item.active_discounts[0].description}
+						</div>
+					)}
 
 					<ScrollArea className="max-h-[30vh] px-6">
 						<div className="space-y-4">
@@ -158,7 +172,16 @@ export default function AddToCartModal({
 				</div>
 				<DialogFooter className="p-6 pt-0">
 					<Button onClick={handleAddToCart} className="w-full" size="lg">
-						Add to Cart - ₦{totalPrice}
+						{discountedBasePrice !== null ? (
+							<span className="flex items-center gap-2">
+								Add to Cart - ₦{totalPrice}
+								<span className="line-through opacity-70 text-sm">
+									₦{(parseFloat(item.price) * quantity).toFixed(2)}
+								</span>
+							</span>
+						) : (
+							`Add to Cart - ₦${totalPrice}`
+						)}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

@@ -15,14 +15,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
-import { loginUser, getAuthUser } from "@/lib/auth-api";
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "@/lib/auth-api";
 import { partnerLoginSchema } from "@/lib/types";
+import { persistAuth } from "@/lib/auth";
 import { useCartStore } from "@/stores/useCartStore";
 
 export default function PartnerLoginForm() {
   const { toast } = useToast();
-  const router = useRouter();
+  const navigate = useNavigate();
   const { clearUserOrders } = useCartStore();
 
   const form = useForm<z.infer<typeof partnerLoginSchema>>({
@@ -40,15 +41,9 @@ export default function PartnerLoginForm() {
       // Step 1: Login user
       const loginResponse = await loginUser(values);
 
-      // Step 2: Store tokens
-      if (loginResponse.access) {
-        localStorage.setItem('token', loginResponse.access);
-        localStorage.setItem('accessToken', loginResponse.access);
-      }
-
-      // Step 3: Fetch user data
-      const user = await getAuthUser();
-      localStorage.setItem('user', JSON.stringify(user));
+      // Step 2: Persist tokens + user
+      persistAuth(loginResponse, loginResponse.user);
+      const user = loginResponse.user;
 
       // Step 4: Clear any guest cart data
       clearUserOrders();
@@ -63,17 +58,17 @@ export default function PartnerLoginForm() {
       setTimeout(() => {
         switch (user.role) {
           case "restaurant":
-            router.push("/vendor/dashboard");
+            navigate("/vendor/dashboard");
             break;
           case "driver":
-            router.push("/rider/dashboard");
+            navigate("/rider/dashboard");
             break;
           case "admin":
-            router.push("/admin/dashboard");
+            navigate("/admin/dashboard");
             break;
           default:
             // If a customer somehow logs in here, send them to the main login.
-            router.push("/login");
+            navigate("/login");
         }
       }, 100);
 

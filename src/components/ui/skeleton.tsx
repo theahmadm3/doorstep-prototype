@@ -1,12 +1,17 @@
+import * as React from "react"
+import MuiSkeleton from "@mui/material/Skeleton"
+
 import { cn } from "@/lib/utils"
 
 function Skeleton({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: React.HTMLAttributes<HTMLSpanElement>) {
   return (
-    <div
-      className={cn("animate-pulse rounded-md bg-muted", className)}
+    <MuiSkeleton
+      variant="rectangular"
+      animation="wave"
+      className={cn("rounded-md bg-muted", className)}
       {...props}
     />
   )

@@ -31,6 +31,7 @@ export type PartnerLoginCredentials = z.infer<typeof partnerLoginSchema>;
 
 export interface LoginResponse {
 	access: string;
+	refresh: string;
 	user: User;
 }
 
@@ -56,8 +57,8 @@ export type OtpVerificationPayload = z.infer<typeof otpVerificationSchema> & {
 };
 
 export interface VerifyOtpResponse {
-	tokens: { access: string };
-	user_role: "customer";
+	tokens: { access: string; refresh: string };
+	user: User;
 }
 
 // Legacy signup - keeping for other roles if needed
@@ -94,6 +95,7 @@ export interface User {
 	avatar_url: string | null;
 	created_at: string;
 	login_count: number;
+	push_notification_subscribed: boolean;
 }
 
 export interface AdminUser {
@@ -138,6 +140,14 @@ export interface Restaurant {
 	updated_at: string;
 }
 
+export interface ActiveDiscount {
+	id: string;
+	type: "percentage" | "fixed_amount";
+	value: string;
+	scope: "item" | "category" | "order" | "delivery" | "service_fee";
+	description: string;
+}
+
 export interface MenuItem {
 	id: string;
 	restaurant: string;
@@ -149,6 +159,7 @@ export interface MenuItem {
 	category: MenuCategory | null;
 	options: Record<string, OptionChoice[]>;
 	item_type: "single" | "combo";
+	active_discounts: ActiveDiscount[];
 	created_at: string;
 	updated_at: string;
 }
@@ -233,9 +244,10 @@ export type OrderStatus =
     | "Completed";
 
 export interface OrderItem {
-	cartItemId: string; // Unique identifier for this specific configuration in the cart
+	cartItemId: string;
 	menuItem: MenuItem;
 	quantity: number;
+	unitPrice: number;
 	options: OptionChoice[];
 	totalPrice: number;
 }
@@ -270,6 +282,26 @@ export interface OrderPayload {
 	payment_method: "card" | "cash";
 	order_type: "delivery" | "pickup";
 	delivery_fee?: number;
+	discount_code?: string | null;
+}
+
+export interface DiscountBreakdown {
+	code: string;
+	id: string;
+	amount: string;
+	funded_by: "restaurant" | "doorstep";
+	description?: string | null;
+}
+
+export interface PlaceOrderResponse {
+	id: string;
+	subtotal_amount?: string;
+	service_fee?: string;
+	delivery_fee?: string;
+	discount_amount?: string;
+	discount_breakdown?: DiscountBreakdown;
+	applied_discount?: string | null;
+	total_amount?: string;
 }
 
 
@@ -616,6 +648,53 @@ export interface Discount {
 }
 
 
+// Dashboard aggregated view
+export interface DashboardRestaurant {
+	id: string;
+	name: string;
+	image: string | null;
+	rating: string;
+	description: string | null;
+	preparationTime: string;
+	address: string;
+	badge: string | null;
+	latitude: string | null;
+	longitude: string | null;
+	is_open: boolean;
+}
+
+export interface DashboardComboItem {
+	id: string;
+	name: string;
+	image: string | null;
+	price: string;
+	originalPrice: number;
+	discount: string;
+	badge: string;
+	restaurantId: string;
+}
+
+export interface DashboardPagination {
+	currentPage: number;
+	totalPages: number;
+	totalItems: number;
+	itemsPerPage: number;
+	hasMore: boolean;
+}
+
+export interface DashboardData {
+	popularNearYou: DashboardRestaurant[];
+	featuredSelections: DashboardRestaurant[];
+	allRestaurants: DashboardRestaurant[];
+	comboDeals: DashboardComboItem[];
+	pagination: DashboardPagination;
+}
+
+export interface DashboardResponse {
+	success: boolean;
+	data: DashboardData;
+}
+
 // Search
 export interface SearchResultMenuItem {
 	id: string;
@@ -655,3 +734,71 @@ export type SearchResult =
 			result_type: "restaurant";
 			data: SearchResultRestaurant;
 	  };
+
+// Vendor Discount Management
+export type DiscountScopeType =
+	| "order"
+	| "delivery"
+	| "service_fee"
+	| "item"
+	| "category"
+	| "all_menu_items";
+
+export interface VendorDiscount {
+	id: string;
+	code: string | null;
+	description: string | null;
+	discount_type: "percentage" | "fixed_amount";
+	value: string;
+	min_order_value: string;
+	max_discount_amount: string | null;
+	start_date: string;
+	end_date: string;
+	is_active: boolean;
+	scope_type: DiscountScopeType;
+	funded_by: "restaurant" | "doorstep";
+	menu_items: string[];
+	categories: string[];
+	created_at: string;
+	updated_at: string;
+}
+
+const RESTAURANT_SCOPES: DiscountScopeType[] = ["item", "category", "all_menu_items"];
+const DOORSTEP_SCOPES: DiscountScopeType[] = ["order", "delivery", "service_fee"];
+
+export const vendorDiscountSchema = z
+	.object({
+		code: z.string().nullable().optional(),
+		description: z.string().nullable().optional(),
+		discount_type: z.enum(["percentage", "fixed_amount"]),
+		value: z.string().min(1, "Value is required"),
+		min_order_value: z.string().default("0"),
+		max_discount_amount: z.string().nullable().optional(),
+		start_date: z.string().min(1, "Start date is required"),
+		end_date: z.string().min(1, "End date is required"),
+		is_active: z.boolean().default(true),
+		scope_type: z.enum([
+			"order",
+			"delivery",
+			"service_fee",
+			"item",
+			"category",
+			"all_menu_items",
+		]),
+		funded_by: z.enum(["restaurant", "doorstep"]),
+		menu_items: z.array(z.string()).default([]),
+		categories: z.array(z.string()).default([]),
+	})
+	.refine(
+		(d) =>
+			d.funded_by === "restaurant"
+				? RESTAURANT_SCOPES.includes(d.scope_type as DiscountScopeType)
+				: DOORSTEP_SCOPES.includes(d.scope_type as DiscountScopeType),
+		{ message: "Scope type is not valid for the selected funding source", path: ["scope_type"] },
+	)
+	.refine((d) => !d.start_date || !d.end_date || new Date(d.start_date) < new Date(d.end_date), {
+		message: "Start date must be before end date",
+		path: ["end_date"],
+	});
+
+export type VendorDiscountPayload = z.infer<typeof vendorDiscountSchema>;

@@ -1,0 +1,141 @@
+
+"use client";
+
+import {
+	Sidebar,
+	SidebarHeader,
+	SidebarMenu,
+	SidebarMenuItem,
+	SidebarMenuButton,
+	SidebarProvider,
+	SidebarTrigger,
+	SidebarFooter,
+	SidebarContent,
+} from "@/components/ui/sidebar";
+import {
+	Home,
+	LineChart,
+	Settings,
+	ShoppingBag,
+	Tag,
+	User,
+    CreditCard,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import LogoutButton from "@/components/auth/logout-button";
+import { useEffect, useState, useCallback } from "react";
+import type { User as UserType } from "@/lib/types";
+import { getRestaurantProfile } from "@/lib/api";
+import VendorAddressModal from "@/components/vendor/vendor-address-modal";
+import BottomNavigation from "@/components/layout/bottom-navigation";
+import { useNotificationListener } from "@/hooks/use-notification-listener";
+import { Link, Outlet } from "react-router-dom";
+
+const vendorNavLinks = [
+	{ href: "/vendor/dashboard", label: "Dashboard", icon: Home },
+	{ href: "/vendor/orders", label: "Orders", icon: ShoppingBag },
+	{ href: "/vendor/analytics", label: "Analytics", icon: LineChart },
+	{ href: "/vendor/config", label: "Config", icon: Settings },
+    { href: "/vendor/payouts", label: "Payouts", icon: CreditCard },
+	{ href: "/vendor/discounts", label: "Discounts", icon: Tag },
+	{ href: "/vendor/profile", label: "Profile", icon: User },
+];
+
+export default function VendorLayout() {
+	useNotificationListener();
+	const [user, setUser] = useState<UserType | null>(null);
+	const [showAddressModal, setShowAddressModal] = useState(false);
+
+	const checkVendorAddress = useCallback(async () => {
+		try {
+			const profile = await getRestaurantProfile();
+			if (!profile.address) {
+				setShowAddressModal(true);
+			}
+		} catch (error) {
+			console.error("Failed to fetch vendor profile:", error);
+			// Handle error, maybe show a toast
+		}
+	}, []);
+
+	useEffect(() => {
+		const storedUser = localStorage.getItem("user");
+		if (storedUser) {
+			const parsedUser = JSON.parse(storedUser);
+			setUser(parsedUser);
+			if (parsedUser.role === "restaurant") {
+				checkVendorAddress();
+			}
+		}
+	}, [checkVendorAddress]);
+
+	const handleAddressSaved = () => {
+		setShowAddressModal(false);
+	};
+
+	return (
+		<SidebarProvider>
+			<div className="flex min-h-screen">
+				<VendorAddressModal
+					isOpen={showAddressModal}
+					onAddressSaved={handleAddressSaved}
+				/>
+				<Sidebar className="hidden md:flex md:flex-col">
+					<SidebarHeader>
+						<div className="flex items-center gap-2">
+							<img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto" />
+						</div>
+					</SidebarHeader>
+					<SidebarContent>
+						<SidebarMenu>
+							{vendorNavLinks.map((link) => (
+								<SidebarMenuItem key={link.href}>
+									<SidebarMenuButton asChild>
+										<Link to={link.href}>
+											<link.icon />
+											{link.label}
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							))}
+						</SidebarMenu>
+					</SidebarContent>
+					<SidebarFooter className="mt-auto">
+						<div className="flex flex-col items-center gap-3 p-2 rounded-md bg-muted">
+							<div className="w-full flex items-center gap-2">
+								<Avatar>
+									<AvatarImage
+										src={user?.avatar_url || "https://github.com/shadcn.png"}
+										alt={user?.full_name || "Vendor"}
+									/>
+									<AvatarFallback>
+										{user?.full_name?.[0]?.toUpperCase() || "V"}
+									</AvatarFallback>
+								</Avatar>
+								<div className="flex flex-col">
+									<span className="text-sm font-semibold">
+										{user?.full_name || ""}
+									</span>
+									<span className="text-xs text-muted-foreground">
+										{user?.email || ""}
+									</span>
+								</div>
+							</div>
+							<LogoutButton />
+						</div>
+					</SidebarFooter>
+				</Sidebar>
+				<div className="flex flex-col flex-1 min-w-0">
+					<div className="p-4 flex items-center gap-4 bg-background border-b sticky top-0 z-10 md:hidden">
+						<SidebarTrigger />
+						<h1 className="text-lg font-semibold">Vendor Panel</h1>
+					</div>
+					<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
+						<Outlet />
+					</main>
+					<BottomNavigation links={vendorNavLinks} />
+				</div>
+			</div>
+		</SidebarProvider>
+	);
+}

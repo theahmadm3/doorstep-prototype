@@ -1,5 +1,3 @@
-
-
 import {
 	PaginatedResponse,
 	Restaurant,
@@ -8,6 +6,7 @@ import {
 	AddressPostData,
 	AddressFormData,
 	OrderPayload,
+	PlaceOrderResponse,
 	CustomerOrder,
 	OrderItemDetail,
 	OrderDetail,
@@ -36,17 +35,22 @@ import {
 	SearchResult,
 	ReviewPayload,
 	Discount,
+	DashboardData,
+	DashboardRestaurant,
+	VendorDiscount,
+	VendorDiscountPayload,
 } from "./types";
 import type {
 	InitializePaymentPayload,
 	InitializePaymentResponse,
 } from "./types/paystack";
+import { clearAuth } from "./auth";
 import { format } from "date-fns";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 if (!BASE_URL) {
-	throw new Error("Missing NEXT_PUBLIC_BASE_URL environment variable");
+	throw new Error("Missing VITE_BASE_URL environment variable");
 }
 
 async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
@@ -71,8 +75,9 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 
 	if (!res.ok) {
 		if (res.status === 401 && typeof window !== "undefined") {
-			// Token is invalid or expired.
-			localStorage.clear();
+			// Token is invalid or expired — remove only auth keys, not the
+			// entire localStorage (cart state, reviewed order IDs, etc. survive).
+			clearAuth();
 			window.location.href = "/?session_expired=true";
 			throw new Error("Session expired. Please log in again.");
 		}
@@ -97,6 +102,62 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 export async function getRestaurants(): Promise<Restaurant[]> {
 	const data = await fetcher<PaginatedResponse<Restaurant>>("/restaurants/");
 	return data.results;
+}
+
+export interface GetDashboardParams {
+	lat?: number;
+	lon?: number;
+	page?: number;
+}
+
+interface RawTextField { text: string; type?: string; code?: string }
+interface RawDashboardRestaurant extends Omit<DashboardRestaurant, 'rating' | 'preparationTime' | 'address' | 'badge'> {
+	rating: string | RawTextField;
+	preparationTime: string | RawTextField;
+	address: string | RawTextField;
+	badge: string | RawTextField | null;
+}
+interface RawDashboardData extends Omit<DashboardData, 'popularNearYou' | 'featuredSelections' | 'allRestaurants'> {
+	popularNearYou: RawDashboardRestaurant[];
+	featuredSelections: RawDashboardRestaurant[];
+	allRestaurants: RawDashboardRestaurant[];
+}
+interface RawDashboardResponse { success: boolean; data: RawDashboardData }
+
+function extractText(val: string | RawTextField | null | undefined): string {
+	if (val == null) return "";
+	if (typeof val === "string") return val;
+	return String(val.text ?? "");
+}
+
+function normalizeRestaurants(restaurants: RawDashboardRestaurant[]): DashboardRestaurant[] {
+	return restaurants.map((r) => ({
+		...r,
+		rating: extractText(r.rating),
+		preparationTime: extractText(r.preparationTime),
+		address: extractText(r.address),
+		badge: r.badge == null ? null : extractText(r.badge),
+	}));
+}
+
+export async function getDashboard(
+	params: GetDashboardParams = {},
+): Promise<DashboardData> {
+	const q = new URLSearchParams();
+	if (params.lat !== undefined) q.set("lat", String(params.lat));
+	if (params.lon !== undefined) q.set("lon", String(params.lon));
+	if (params.page !== undefined) q.set("page", String(params.page));
+	const qs = q.toString();
+	const response = await fetcher<RawDashboardResponse>(
+		`/dashboard/${qs ? `?${qs}` : ""}`,
+	);
+	const data = response.data;
+	return {
+		...data,
+		popularNearYou: normalizeRestaurants(data.popularNearYou),
+		featuredSelections: normalizeRestaurants(data.featuredSelections),
+		allRestaurants: normalizeRestaurants(data.allRestaurants),
+	};
 }
 
 export async function getRestaurantDetails(
@@ -146,9 +207,10 @@ export async function deleteAddress(addressId: string): Promise<void> {
 }
 
 // Order Management API Calls
-export async function placeOrder(orderData: OrderPayload): Promise<any> {
-	// Replace 'any' with a proper Order response type if you have one
-	return fetcher<any>("/orders/", {
+export async function placeOrder(
+	orderData: OrderPayload,
+): Promise<PlaceOrderResponse> {
+	return fetcher<PlaceOrderResponse>("/orders/", {
 		method: "POST",
 		body: JSON.stringify(orderData),
 	});
@@ -186,9 +248,8 @@ export async function getAdminUsers(
 }
 
 export async function getAdminOrders(): Promise<AdminOrder[]> {
-	const response = await fetcher<PaginatedResponse<AdminOrder>>(
-		"/admin/orders/",
-	);
+	const response =
+		await fetcher<PaginatedResponse<AdminOrder>>("/admin/orders/");
 	return response.results.map((order) => ({
 		...order,
 		created_at: format(new Date(order.created_at), "dd MMM yyyy, hh:mm a"),
@@ -412,14 +473,16 @@ export async function getRestaurantProfile(): Promise<VendorProfile> {
 	return fetcher<VendorProfile>("/restaurants/me/");
 }
 
-export async function uploadRestaurantProfileImage(image: File): Promise<VendorProfile> {
-    const formData = new FormData();
-    formData.append("image", image);
+export async function uploadRestaurantProfileImage(
+	image: File,
+): Promise<VendorProfile> {
+	const formData = new FormData();
+	formData.append("image", image);
 
-    return fetcher<VendorProfile>("/upload_restaurant_profile_pic/", {
-        method: "POST",
-        body: formData,
-    });
+	return fetcher<VendorProfile>("/upload_restaurant_profile_pic/", {
+		method: "POST",
+		body: formData,
+	});
 }
 
 export async function updateRestaurantProfile(
@@ -438,7 +501,9 @@ export async function toggleRestaurantOpenStatus(): Promise<VendorProfile> {
 }
 
 // Rider API
-export async function getAvailableRiderOrders(): Promise<PaginatedResponse<RiderOrderBatch>> {
+export async function getAvailableRiderOrders(): Promise<
+	PaginatedResponse<RiderOrderBatch>
+> {
 	return fetcher<PaginatedResponse<RiderOrderBatch>>(
 		"/drivers/orders/available",
 	);
@@ -544,7 +609,7 @@ export async function submitRestaurantReview(
 	});
 }
 
-// Discount API
+// Discount API — Customer
 export async function applyDiscountCode(
 	code: string,
 	restaurantId: string,
@@ -552,6 +617,37 @@ export async function applyDiscountCode(
 	return fetcher<Discount>(
 		`/discounts/lookup/?code=${code}&restaurant_id=${restaurantId}`,
 	);
+}
+
+// Discount API — Vendor
+export async function getVendorDiscounts(): Promise<VendorDiscount[]> {
+	const data = await fetcher<PaginatedResponse<VendorDiscount>>("/restaurants/me/discounts/");
+	return data.results;
+}
+
+export async function createVendorDiscount(
+	payload: VendorDiscountPayload,
+): Promise<VendorDiscount> {
+	return fetcher<VendorDiscount>("/restaurants/me/discounts/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function updateVendorDiscount(
+	id: string,
+	payload: Partial<VendorDiscountPayload>,
+): Promise<VendorDiscount> {
+	return fetcher<VendorDiscount>(`/restaurants/me/discounts/${id}/`, {
+		method: "PATCH",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function deleteVendorDiscount(id: string): Promise<void> {
+	await fetcher<void>(`/restaurants/me/discounts/${id}/`, {
+		method: "DELETE",
+	});
 }
 
 // Search API
