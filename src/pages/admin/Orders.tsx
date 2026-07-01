@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,14 @@ import { getAdminOrders } from "@/lib/api";
 import type { AdminOrder } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const OrderTable = ({ orders, title, description, actionButton, isLoading }) => {
+type OrderTableProps = {
+    orders: AdminOrder[];
+    title: string;
+    description: string;
+    actionButton?: (order: AdminOrder) => React.ReactNode;
+    isLoading: boolean;
+};
+const OrderTable = ({ orders, title, description, actionButton, isLoading }: OrderTableProps) => {
     if (isLoading) {
         return (
              <Card>
@@ -178,7 +185,7 @@ export default function AdminOrdersPage() {
                         orders={riderAssignedOrders}
                         title="Rider Assigned"
                         description="Orders currently out for delivery."
-                        actionButton={null}
+                        actionButton={undefined}
                         isLoading={isLoading}
                     />
                 </TabsContent>
@@ -187,7 +194,7 @@ export default function AdminOrdersPage() {
                         orders={pastOrders}
                         title="Past Orders"
                         description="Completed or cancelled orders."
-                        actionButton={null}
+                        actionButton={undefined}
                         isLoading={isLoading}
                     />
                 </TabsContent>

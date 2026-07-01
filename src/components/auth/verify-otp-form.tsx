@@ -15,7 +15,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { verifyLoginOTP, resendOTP } from "@/lib/auth-api";
-import { otpVerificationSchema, type OtpVerificationPayload } from "@/lib/types";
+import { otpVerificationSchema } from "@/lib/types";
+import type { z } from "zod";
+
+type OtpFormValues = z.infer<typeof otpVerificationSchema>;
 import { persistAuth } from "@/lib/auth";
 import { useCartStore } from "@/stores/useCartStore";
 
@@ -60,7 +63,7 @@ export default function VerifyOtpForm() {
     };
   }, [resendTimer]);
 
-  const form = useForm<OtpVerificationPayload>({
+  const form = useForm<OtpFormValues>({
     resolver: zodResolver(otpVerificationSchema),
     defaultValues: { otp_code: "" },
     mode: "onChange",
@@ -98,7 +101,7 @@ export default function VerifyOtpForm() {
     }
   }
 
-  async function onSubmit(values: OtpVerificationPayload) {
+  async function onSubmit(values: OtpFormValues) {
     if (!phoneNumber) {
       toast({
         title: "Error",

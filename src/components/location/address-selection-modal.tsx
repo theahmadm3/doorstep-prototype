@@ -25,7 +25,7 @@ interface AddressSelectionModalProps {
     onClose: () => void;
 }
 
-const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
+const GooglePlacesAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.maps.places.PlaceResult) => void }) => {
     const {
         ready,
         value,
@@ -41,7 +41,7 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
         setValue(e.target.value);
     };
 
-    const handleSelect = ({ description, place_id }) => () => {
+    const handleSelect = ({ description, place_id }: { description: string; place_id: string }) => () => {
         setValue(description, false);
         clearSuggestions();
 

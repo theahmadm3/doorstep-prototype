@@ -1,5 +1,6 @@
 
 
+import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getVendorOrders, updateVendorOrderStatus, getVendorRiders, assignRiderToOrder } from "@/lib/api";
 import { QUERY_KEYS } from "@/lib/query-keys";
 import { CheckCircle, Utensils, ThumbsUp, ThumbsDown, UserCheck, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { VendorOrder, Rider } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -42,7 +43,18 @@ import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 
 const ITEMS_PER_PAGE = 5;
 
-const OrderTable = ({ title, description, orders, actions, currentPage, onPageChange, totalPages, isLoading, showActions = true }) => {
+type OrderTableProps = {
+    title: string;
+    description?: string;
+    orders: VendorOrder[];
+    actions: (order: VendorOrder) => React.ReactNode;
+    currentPage: number;
+    onPageChange: (page: number) => void;
+    totalPages: number;
+    isLoading: boolean;
+    showActions?: boolean;
+};
+const OrderTable = ({ title, description, orders, actions, currentPage, onPageChange, totalPages, isLoading, showActions = true }: OrderTableProps) => {
     if (isLoading) {
         return (
              <Card>
@@ -164,18 +176,21 @@ export default function VendorOrdersPage() {
     const { toast } = useToast();
     const { isCooldownActive, remainingSeconds, triggerRefresh } = useRefreshCooldown();
 
-    const { data: orders = [], isLoading, isFetching, refetch } = useQuery<VendorOrder[], Error>({
+    const { data: orders = [], isLoading, isFetching, isError, refetch } = useQuery<VendorOrder[], Error>({
         queryKey: QUERY_KEYS.vendorOrders,
         queryFn: getVendorOrders,
         refetchOnWindowFocus: false,
-        onError: () => {
+    });
+
+    useEffect(() => {
+        if (isError) {
             toast({
                 title: "Error fetching orders",
                 description: "Could not retrieve your orders. Please try again later.",
-                variant: "destructive"
+                variant: "destructive",
             });
         }
-    });
+    }, [isError, toast]);
 
     const [isUpdating, setIsUpdating] = useState<string | null>(null);
     

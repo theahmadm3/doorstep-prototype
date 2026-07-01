@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { getRestaurants } from "@/lib/api";
 import {
 	Card,
@@ -6,29 +7,38 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
 import { Utensils } from "lucide-react";
 
-// Add this line to make the page dynamic
-export const dynamic = "force-dynamic";
+export default function MenuPage() {
+	const { data: restaurants = [], isLoading, isError } = useQuery({
+		queryKey: ["restaurants"],
+		queryFn: getRestaurants,
+	});
 
-export default async function MenuPage() {
-	try {
-		const restaurants = await getRestaurants();
+	return (
+		<div className="flex flex-col min-h-screen">
+			<main className="flex-grow">
+				<div className="container py-12">
+					<div className="text-center mb-12">
+						<h1 className="text-4xl font-bold font-headline">
+							Explore Restaurants
+						</h1>
+						<p className="text-muted-foreground mt-2 text-lg">
+							{isError
+								? "Unable to load restaurants at the moment. Please try again later."
+								: "Choose a restaurant to see their menu and start your order."}
+						</p>
+					</div>
 
-		return (
-			<div className="flex flex-col min-h-screen">
-				<main className="flex-grow">
-					<div className="container py-12">
-						<div className="text-center mb-12">
-							<h1 className="text-4xl font-bold font-headline">
-								Explore Restaurants
-							</h1>
-							<p className="text-muted-foreground mt-2 text-lg">
-								Choose a restaurant to see their menu and start your order.
-							</p>
+					{isLoading ? (
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+							{Array.from({ length: 8 }).map((_, i) => (
+								<Skeleton key={i} className="h-64 w-full rounded-xl" />
+							))}
 						</div>
-
+					) : (
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
 							{restaurants.map((restaurant) => (
 								<Link
@@ -64,29 +74,9 @@ export default async function MenuPage() {
 								</Link>
 							))}
 						</div>
-					</div>
-				</main>
-			</div>
-		);
-	} catch (error) {
-		console.error("Failed to fetch restaurants:", error);
-
-		return (
-			<div className="flex flex-col min-h-screen">
-				<main className="flex-grow">
-					<div className="container py-12">
-						<div className="text-center mb-12">
-							<h1 className="text-4xl font-bold font-headline">
-								Explore Restaurants
-							</h1>
-							<p className="text-muted-foreground mt-2 text-lg">
-								Unable to load restaurants at the moment. Please try again
-								later.
-							</p>
-						</div>
-					</div>
-				</main>
-			</div>
-		);
-	}
+					)}
+				</div>
+			</main>
+		</div>
+	);
 }

@@ -601,7 +601,9 @@ export default function VendorItemManagement() {
 								<Select
 									name="category_id"
 									defaultValue={
-										editingItem?.category || ""
+										(typeof editingItem?.category === "object"
+											? editingItem?.category?.id
+											: editingItem?.category) || ""
 									}
 								>
 									<SelectTrigger>

@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect } from "react";
 import { getRiderOrders } from "@/lib/api";
 import { QUERY_KEYS } from "@/lib/query-keys";
 import { RiderOrder, OrderStatus } from "@/lib/types";
@@ -159,14 +160,17 @@ export default function RiderOrdersPage() {
         queryKey: QUERY_KEYS.riderOrders,
         queryFn: getRiderOrders,
         refetchOnWindowFocus: false,
-        onError: () => {
+    });
+
+    useEffect(() => {
+        if (isError) {
             toast({
                 title: "Error fetching orders",
                 description: "Could not retrieve your orders.",
-                variant: "destructive"
+                variant: "destructive",
             });
         }
-    });
+    }, [isError, toast]);
 
     const handleRefresh = () => {
         triggerRefresh(() => refetch());

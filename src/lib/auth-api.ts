@@ -41,7 +41,9 @@ export async function sendLoginOTP(phoneNumber: string): Promise<{ detail: strin
     return res.json();
 }
 
-export async function signupCustomer(credentials: CustomerSignupPayload): Promise<{ detail: string }> {
+type CustomerSignupApiPayload = Omit<CustomerSignupPayload, "birthday"> & { birthday?: string };
+
+export async function signupCustomer(credentials: CustomerSignupApiPayload): Promise<{ detail: string }> {
     const res = await fetch(`${BASE_URL}/auth/signup/customer/`, {
         method: 'POST',
         headers: {
