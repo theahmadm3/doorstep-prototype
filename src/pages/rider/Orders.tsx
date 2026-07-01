@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRiderOrders } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { RiderOrder, OrderStatus } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -155,7 +156,7 @@ export default function RiderOrdersPage() {
     const { isCooldownActive, remainingSeconds, triggerRefresh } = useRefreshCooldown();
 
     const { data: orders = [], isLoading, isFetching, isError, refetch } = useQuery({
-        queryKey: ['riderOrders'],
+        queryKey: QUERY_KEYS.riderOrders,
         queryFn: getRiderOrders,
         refetchOnWindowFocus: false,
         onError: () => {

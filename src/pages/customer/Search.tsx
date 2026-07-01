@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { searchItemsAndRestaurants, getRestaurantMenu } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import {
 	SearchResult,
 	SearchResultMenuItem,
@@ -213,7 +214,7 @@ export default function SearchPage() {
 	}, [orders]);
 
 	const { data: searchResults, isLoading } = useQuery({
-		queryKey: ["search", debouncedSearchTerm],
+		queryKey: QUERY_KEYS.search(debouncedSearchTerm),
 		queryFn: () => searchItemsAndRestaurants(debouncedSearchTerm),
 		enabled: !!debouncedSearchTerm,
 	});

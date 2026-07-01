@@ -16,6 +16,7 @@ import {
 	AccordionContent,
 } from "@/components/ui/accordion";
 import { useCartStore } from "@/stores/useCartStore";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import CheckoutModal from "@/components/checkout/checkout-modal";
@@ -178,7 +179,7 @@ export default function CustomerOrdersPage() {
 		isFetching,
 		refetch,
 	} = useQuery({
-		queryKey: ["customerOrders"],
+		queryKey: QUERY_KEYS.customerOrders,
 		queryFn: getCustomerOrders,
 		refetchOnWindowFocus: false,
 	});
@@ -228,7 +229,7 @@ export default function CustomerOrdersPage() {
 		mutationFn: confirmOrderDelivery,
 		onSuccess: () => {
 			setConfirmingOrderId(null);
-			queryClient.invalidateQueries({ queryKey: ["customerOrders"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.customerOrders });
 			toast({ title: "Delivery Confirmed", description: "Thank you for confirming your delivery!" });
 		},
 		onError: (error) => {

@@ -11,6 +11,7 @@ import {
 	deleteMenuOption,
 	getVendorMenuItems,
 } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import {
 	OptionChoice,
 	OptionPayload,
@@ -89,14 +90,14 @@ export default function OptionManagement() {
 	const { data: options = [], isLoading: isLoadingOptions } = useQuery<
 		OptionChoice[]
 	>({
-		queryKey: ["menuOptions"],
+		queryKey: QUERY_KEYS.menuOptions,
 		queryFn: getMenuOptions,
 	});
 
 	const { data: menuItems = [], isLoading: isLoadingMenuItems } = useQuery<
 		MenuItem[]
 	>({
-		queryKey: ["vendorMenuItems"],
+		queryKey: QUERY_KEYS.vendorMenuItems,
 		queryFn: getVendorMenuItems,
 	});
 
@@ -113,7 +114,7 @@ export default function OptionManagement() {
 		mutationFn: createMenuOption,
 		onSuccess: () => {
 			toast({ title: "Option Created" });
-			queryClient.invalidateQueries({ queryKey: ["menuOptions"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.menuOptions });
 			setDialogOpen(false);
 		},
 		onError: (error) => {
@@ -130,7 +131,7 @@ export default function OptionManagement() {
 			updateMenuOption(payload.id, payload.data),
 		onSuccess: () => {
 			toast({ title: "Option Updated" });
-			queryClient.invalidateQueries({ queryKey: ["menuOptions"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.menuOptions });
 			setDialogOpen(false);
 		},
 		onError: (error) => {
@@ -146,7 +147,7 @@ export default function OptionManagement() {
 		mutationFn: (id: string) => deleteMenuOption(id),
 		onSuccess: () => {
 			toast({ title: "Option Deleted" });
-			queryClient.invalidateQueries({ queryKey: ["menuOptions"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.menuOptions });
 			setItemToDelete(null);
 		},
 		onError: (error) => {

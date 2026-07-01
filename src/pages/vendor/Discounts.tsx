@@ -12,6 +12,7 @@ import {
 	getVendorMenuItems,
 	getMenuCategories,
 } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import {
 	vendorDiscountSchema,
 	type VendorDiscount,
@@ -161,13 +162,13 @@ function DiscountFormDialog({
 
 	// Fetch menu items / categories only when needed
 	const { data: menuItems = [] } = useQuery<MenuItem[]>({
-		queryKey: ["vendor-menu-items"],
+		queryKey: QUERY_KEYS.vendorMenuItems,
 		queryFn: getVendorMenuItems,
 		enabled: open && scopeType === "item",
 	});
 
 	const { data: categories = [] } = useQuery<MenuCategory[]>({
-		queryKey: ["vendor-menu-categories"],
+		queryKey: QUERY_KEYS.menuCategories,
 		queryFn: getMenuCategories,
 		enabled: open && scopeType === "category",
 	});
@@ -606,12 +607,12 @@ export default function VendorDiscountsPage() {
 	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	const { data: discounts = [], isLoading } = useQuery({
-		queryKey: ["vendor-discounts"],
+		queryKey: QUERY_KEYS.vendorDiscounts,
 		queryFn: getVendorDiscounts,
 	});
 
 	const invalidate = () =>
-		queryClient.invalidateQueries({ queryKey: ["vendor-discounts"] });
+		queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorDiscounts });
 
 	const { mutate: create, isPending: isCreating } = useMutation({
 		mutationFn: createVendorDiscount,

@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAvailableRiderOrders, performRiderAction } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useRiderLocation } from "@/hooks/use-rider-location-socket";
@@ -70,7 +71,7 @@ export default function RiderDashboardPage() {
 		isError,
 		refetch,
 	} = useQuery<PaginatedResponse<RiderOrderBatch>>({
-		queryKey: ["availableRiderOrders"],
+		queryKey: QUERY_KEYS.availableRiderOrders,
 		queryFn: getAvailableRiderOrders,
 		refetchOnWindowFocus: false,
 		enabled: locationStatus.status === "connected",
@@ -94,7 +95,7 @@ export default function RiderDashboardPage() {
 				description: "Your order list has been updated.",
 			});
 			refetch(); // Refetch available orders
-			queryClient.invalidateQueries({ queryKey: ["riderOrders"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.riderOrders });
 		},
 		onError: (error, { action }) => {
 			toast({

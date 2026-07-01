@@ -10,6 +10,7 @@ import {
 	updateMenuCategory,
 	deleteMenuCategory,
 } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import {
 	MenuCategory,
 	CategoryPayload,
@@ -66,7 +67,7 @@ export default function CategoryManagement() {
 	const [selectedCategory, setSelectedCategory] = useState<MenuCategory | null>(null);
 
 	const { data: categories = [], isLoading } = useQuery<MenuCategory[], Error>({
-		queryKey: ["menuCategories"],
+		queryKey: QUERY_KEYS.menuCategories,
 		queryFn: getMenuCategories,
 	});
 
@@ -92,7 +93,7 @@ export default function CategoryManagement() {
 				title: "Category Created",
 				description: "The new category has been added successfully.",
 			});
-			queryClient.invalidateQueries({ queryKey: ["menuCategories"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.menuCategories });
 			setAddDialogOpen(false);
 			addForm.reset();
 		},
@@ -115,7 +116,7 @@ export default function CategoryManagement() {
 				title: "Category Updated",
 				description: "The category has been updated successfully.",
 			});
-			queryClient.invalidateQueries({ queryKey: ["menuCategories"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.menuCategories });
 			setEditDialogOpen(false);
 			setSelectedCategory(null);
 		},
@@ -138,7 +139,7 @@ export default function CategoryManagement() {
 				title: "Category Deleted",
 				description: "The category has been successfully deleted.",
 			});
-			queryClient.invalidateQueries({ queryKey: ["menuCategories"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.menuCategories });
 			setDeleteDialogOpen(false);
 			setEditDialogOpen(false);
 			setSelectedCategory(null);

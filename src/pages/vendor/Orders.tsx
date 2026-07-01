@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getVendorOrders, updateVendorOrderStatus, getVendorRiders, assignRiderToOrder } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { CheckCircle, Utensils, ThumbsUp, ThumbsDown, UserCheck, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import type { VendorOrder, Rider } from "@/lib/types";
@@ -164,7 +165,7 @@ export default function VendorOrdersPage() {
     const { isCooldownActive, remainingSeconds, triggerRefresh } = useRefreshCooldown();
 
     const { data: orders = [], isLoading, isFetching, refetch } = useQuery<VendorOrder[], Error>({
-        queryKey: ['vendorOrders'],
+        queryKey: QUERY_KEYS.vendorOrders,
         queryFn: getVendorOrders,
         refetchOnWindowFocus: false,
         onError: () => {
