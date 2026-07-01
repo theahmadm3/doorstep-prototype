@@ -1,5 +1,4 @@
 
-"use client";
 
 import { getDashboard } from "@/lib/api";
 import CustomerDashboardClient from "./Dashboard.client";

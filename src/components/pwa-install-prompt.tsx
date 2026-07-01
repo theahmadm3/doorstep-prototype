@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useEffect } from "react";
 import { X, Download, Share, Plus, Square } from "lucide-react";

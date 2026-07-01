@@ -61,6 +61,12 @@ export interface VerifyOtpResponse {
 	user: User;
 }
 
+export interface RefreshTokenResponse {
+	access: string;
+	refresh: string;
+	message: string;
+}
+
 // Legacy signup - keeping for other roles if needed
 export const signupSchema = z
 	.object({

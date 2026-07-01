@@ -30,6 +30,18 @@ export function persistAuth(
 }
 
 /**
+ * Rotate access + refresh after a successful token refresh. Leaves the
+ * stored user and role untouched — this is a token rotation, not a login.
+ */
+export function updateAccessToken(tokens: {
+	access: string;
+	refresh: string;
+}): void {
+	localStorage.setItem(AUTH_KEYS.accessToken, tokens.access);
+	localStorage.setItem(AUTH_KEYS.refreshToken, tokens.refresh);
+}
+
+/**
  * Removes all auth-related keys. Call on logout and on unrecoverable 401.
  */
 export function clearAuth(): void {

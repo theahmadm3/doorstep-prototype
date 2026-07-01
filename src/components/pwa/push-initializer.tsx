@@ -1,5 +1,4 @@
 
-"use client";
 
 import { usePushManager } from "@/hooks/use-push-manager";
 

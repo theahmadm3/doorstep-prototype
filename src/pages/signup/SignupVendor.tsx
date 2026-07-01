@@ -1,5 +1,4 @@
 
-"use client";
 
 import { useRef } from "react";
 import PartnerSignupForm from "@/components/auth/partner-signup-form";

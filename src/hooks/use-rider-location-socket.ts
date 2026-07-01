@@ -1,5 +1,4 @@
 
-"use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -21,7 +20,6 @@ export const useRiderLocation = (): LocationStatus => {
     const sendLocationUpdate = useCallback(async () => {
         const userStr = localStorage.getItem('user');
         if (!userStr) {
-            console.log("No user found, stopping location updates.");
             if (locationIntervalRef.current) clearInterval(locationIntervalRef.current);
             setStatus('disconnected');
             return;
@@ -37,7 +35,6 @@ export const useRiderLocation = (): LocationStatus => {
                 const { latitude, longitude } = position.coords;
                 try {
                     await updateRiderLocation(latitude, longitude);
-                    console.log(`Location updated: ${latitude}, ${longitude}`);
                     setStatus('connected');
                 } catch (error) {
                     console.error('Failed to update location:', error);

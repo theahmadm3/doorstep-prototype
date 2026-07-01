@@ -1,7 +1,7 @@
 
-"use client";
 
 import { LoginResponse, SignupPayload, SignupResponse, User, ProfileUpdatePayload, CustomerSignupPayload, OtpVerificationPayload, VerifyOtpResponse, PartnerLoginCredentials } from "./types";
+import { fetcher } from "./api";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
@@ -95,46 +95,14 @@ export async function resendOTP(phoneNumber: string): Promise<{ detail: string }
 
 
 export async function getAuthUser(): Promise<User> {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-        throw new Error("No access token found");
-    }
-
-    const res = await fetch(`${BASE_URL}/auth/users/me/`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-
-     if (!res.ok) {
-        const errorBody = await res.json();
-        throw new Error(errorBody.detail || `API Error: ${res.status}`);
-    }
-
-    return res.json();
+    return fetcher<User>("/auth/users/me/");
 }
 
 export async function updateUserProfile(data: ProfileUpdatePayload): Promise<User> {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-        throw new Error("Authentication token not found. Please log in again.");
-    }
-    
-    const res = await fetch(`${BASE_URL}/auth/users/me/update/`, {
-        method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-        },
+    return fetcher<User>("/auth/users/me/update/", {
+        method: "PATCH",
         body: JSON.stringify(data),
     });
-
-    if (!res.ok) {
-        const errorBody = await res.json();
-        throw new Error(errorBody.detail || `API Error: ${res.status}`);
-    }
-
-    return res.json();
 }
 
 

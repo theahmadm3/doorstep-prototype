@@ -44,7 +44,8 @@ import type {
 	InitializePaymentPayload,
 	InitializePaymentResponse,
 } from "./types/paystack";
-import { clearAuth } from "./auth";
+import type { RefreshTokenResponse } from "./types";
+import { AUTH_KEYS, clearAuth, updateAccessToken } from "./auth";
 import { format } from "date-fns";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -53,9 +54,57 @@ if (!BASE_URL) {
 	throw new Error("Missing VITE_BASE_URL environment variable");
 }
 
-async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
+// Dedupe concurrent 401s: multiple in-flight requests that hit 401 at once
+// share one refresh attempt instead of each firing their own.
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(refresh: string): Promise<RefreshTokenResponse> {
+	const res = await fetch(`${BASE_URL}/auth/refresh_token/`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ refresh }),
+	});
+	if (!res.ok) {
+		throw new Error(`Refresh failed: ${res.status}`);
+	}
+	return res.json();
+}
+
+async function tryRefresh(): Promise<string | null> {
+	if (refreshPromise) return refreshPromise;
+	refreshPromise = (async () => {
+		try {
+			const refresh = localStorage.getItem(AUTH_KEYS.refreshToken);
+			if (!refresh) return null;
+			const { access, refresh: newRefresh } = await refreshAccessToken(refresh);
+			updateAccessToken({ access, refresh: newRefresh });
+			return access;
+		} catch {
+			return null;
+		} finally {
+			refreshPromise = null;
+		}
+	})();
+	return refreshPromise;
+}
+
+function handleUnrecoverable401(): never {
+	clearAuth();
+	if (typeof window !== "undefined") {
+		window.location.href = "/?session_expired=true";
+	}
+	throw new Error("Session expired. Please log in again.");
+}
+
+async function fetcher<T>(
+	url: string,
+	options: RequestInit = {},
+	isRetry = false,
+): Promise<T> {
 	const token =
-		typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+		typeof window !== "undefined"
+			? localStorage.getItem(AUTH_KEYS.accessToken)
+			: null;
 
 	const isFormData = options.body instanceof FormData;
 
@@ -69,17 +118,18 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 		headers.set("Authorization", `Bearer ${token}`);
 	}
 
-	options.headers = headers;
-
-	const res = await fetch(`${BASE_URL}${url}`, options);
+	const res = await fetch(`${BASE_URL}${url}`, { ...options, headers });
 
 	if (!res.ok) {
 		if (res.status === 401 && typeof window !== "undefined") {
-			// Token is invalid or expired — remove only auth keys, not the
-			// entire localStorage (cart state, reviewed order IDs, etc. survive).
-			clearAuth();
-			window.location.href = "/?session_expired=true";
-			throw new Error("Session expired. Please log in again.");
+			if (isRetry) {
+				handleUnrecoverable401();
+			}
+			const newAccess = await tryRefresh();
+			if (newAccess) {
+				return fetcher<T>(url, options, true);
+			}
+			handleUnrecoverable401();
 		}
 
 		const errorBody = await res.text();
@@ -98,6 +148,8 @@ async function fetcher<T>(url: string, options: RequestInit = {}): Promise<T> {
 	}
 	return undefined as T;
 }
+
+export { fetcher };
 
 export async function getRestaurants(): Promise<Restaurant[]> {
 	const data = await fetcher<PaginatedResponse<Restaurant>>("/restaurants/");

@@ -1,5 +1,4 @@
 
-"use client";
 
 import { useUIStore } from "@/stores/useUIStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -48,7 +47,6 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
 
         getGeocode({ address: description }).then((results) => {
             const { lat, lng } = getLatLng(results[0]);
-            console.log("📍 Coordinates: ", { lat, lng });
 
             // Fetch Place Details
             const service = new window.google.maps.places.PlacesService(document.createElement('div'));
@@ -305,7 +303,7 @@ export default function AddressSelectionModalWrapper(props: AddressSelectionModa
     });
     
     if (!apiKey) {
-        console.error("Google Maps API key is missing. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.");
+        console.error("Google Maps API key is missing. Please set VITE_GOOGLE_MAPS_API_KEY environment variable.");
         // Render a version without Google Maps functionality
         return <AddressSelectionContent {...props} />;
     }
