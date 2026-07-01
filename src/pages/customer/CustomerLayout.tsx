@@ -22,6 +22,7 @@ import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { getStoredUser } from "@/lib/auth";
 
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
@@ -42,9 +43,9 @@ export default function CustomerLayout() {
 
 	useEffect(() => {
 		setIsClient(true);
-		const storedUser = localStorage.getItem("user");
+		const storedUser = getStoredUser();
 		if (storedUser) {
-			setUser(JSON.parse(storedUser));
+			setUser(storedUser);
 		}
 	}, []);
 

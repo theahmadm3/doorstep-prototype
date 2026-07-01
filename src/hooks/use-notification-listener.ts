@@ -3,6 +3,8 @@ import { useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "./use-toast";
+import { getStoredUser } from "@/lib/auth";
+import { QUERY_KEYS } from "@/lib/query-keys";
 
 interface OrderUpdateMessage {
 	type: "ORDER_UPDATE";
@@ -32,14 +34,8 @@ const ROLE_ORDERS_PATH: Record<string, string> = {
 };
 
 function ordersPathForCurrentUser(): string | null {
-	try {
-		const raw = localStorage.getItem("user");
-		if (!raw) return null;
-		const user = JSON.parse(raw) as { role?: string };
-		return user.role ? ROLE_ORDERS_PATH[user.role] ?? null : null;
-	} catch {
-		return null;
-	}
+	const user = getStoredUser();
+	return user?.role ? ROLE_ORDERS_PATH[user.role] ?? null : null;
 }
 
 const DEV = import.meta.env.DEV;
@@ -58,10 +54,10 @@ export const useNotificationListener = () => {
 
 	const refetchAllOrders = useCallback(() => {
 		return Promise.all([
-			queryClient.refetchQueries({ queryKey: ["customerOrders"], type: "active" }),
-			queryClient.refetchQueries({ queryKey: ["vendorOrders"], type: "active" }),
-			queryClient.refetchQueries({ queryKey: ["riderOrders"], type: "active" }),
-			queryClient.refetchQueries({ queryKey: ["availableRiderOrders"], type: "active" }),
+			queryClient.refetchQueries({ queryKey: QUERY_KEYS.customerOrders, type: "active" }),
+			queryClient.refetchQueries({ queryKey: QUERY_KEYS.vendorOrders, type: "active" }),
+			queryClient.refetchQueries({ queryKey: QUERY_KEYS.riderOrders, type: "active" }),
+			queryClient.refetchQueries({ queryKey: QUERY_KEYS.availableRiderOrders, type: "active" }),
 		]);
 	}, [queryClient]);
 

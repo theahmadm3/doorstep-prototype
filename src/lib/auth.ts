@@ -49,6 +49,22 @@ export function clearAuth(): void {
 }
 
 /**
+ * Update only the user blob — call after profile mutations so the stored
+ * object stays in sync without affecting tokens or role history.
+ */
+export function updateStoredUser(user: User): void {
+	localStorage.setItem(AUTH_KEYS.user, JSON.stringify(user));
+}
+
+/**
+ * Read the raw access token — use instead of localStorage.getItem("accessToken")
+ * so key names stay in one place.
+ */
+export function getStoredToken(): string | null {
+	return localStorage.getItem(AUTH_KEYS.accessToken);
+}
+
+/**
  * Fast role read — avoids JSON.parse of the full user object for rerouting.
  */
 export function getStoredRole(): string | null {

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { sendLoginOTP, verifyLoginOTP, resendOTP } from "@/lib/auth-api";
-import { persistAuth } from "@/lib/auth";
+import { persistAuth, getStoredToken, getStoredUser } from "@/lib/auth";
 import { loginSchema } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useCartStore } from "@/stores/useCartStore";
@@ -47,25 +47,22 @@ export default function LoginPage() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    const storedUser = localStorage.getItem("user");
-    if (token && storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        const dashboard = ROLE_ROUTES[user.role];
-        if (dashboard) {
-          // When the service worker opens a fresh tab from a notification
-          // click and we don't have an explicit URL in the payload, we land
-          // here with `?openOrders=1`. Send the user to their orders page
-          // instead of the role dashboard.
-          const wantsOrders = searchParams.get("openOrders") === "1";
-          const dest = wantsOrders
-            ? dashboard.replace(/\/dashboard$/, "/orders")
-            : dashboard;
-          navigate(dest, { replace: true });
-          return;
-        }
-      } catch { /* corrupted — fall through */ }
+    const token = getStoredToken();
+    const user = getStoredUser();
+    if (token && user) {
+      const dashboard = ROLE_ROUTES[user.role];
+      if (dashboard) {
+        // When the service worker opens a fresh tab from a notification
+        // click and we don't have an explicit URL in the payload, we land
+        // here with `?openOrders=1`. Send the user to their orders page
+        // instead of the role dashboard.
+        const wantsOrders = searchParams.get("openOrders") === "1";
+        const dest = wantsOrders
+          ? dashboard.replace(/\/dashboard$/, "/orders")
+          : dashboard;
+        navigate(dest, { replace: true });
+        return;
+      }
     }
     setIsCheckingAuth(false);
   }, [navigate, searchParams]);

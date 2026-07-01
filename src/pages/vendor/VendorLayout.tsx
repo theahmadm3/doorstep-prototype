@@ -29,6 +29,7 @@ import VendorAddressModal from "@/components/vendor/vendor-address-modal";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
 import { Link, Outlet } from "react-router-dom";
+import { getStoredUser } from "@/lib/auth";
 
 const vendorNavLinks = [
 	{ href: "/vendor/dashboard", label: "Dashboard", icon: Home },
@@ -58,11 +59,10 @@ export default function VendorLayout() {
 	}, []);
 
 	useEffect(() => {
-		const storedUser = localStorage.getItem("user");
+		const storedUser = getStoredUser();
 		if (storedUser) {
-			const parsedUser = JSON.parse(storedUser);
-			setUser(parsedUser);
-			if (parsedUser.role === "restaurant") {
+			setUser(storedUser);
+			if (storedUser.role === "restaurant") {
 				checkVendorAddress();
 			}
 		}

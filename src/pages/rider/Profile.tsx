@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEffect, useState } from "react";
 import { User } from "@/lib/types";
+import { getStoredUser } from "@/lib/auth";
 import { Bell } from "lucide-react";
 import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
 
@@ -17,10 +18,8 @@ export default function RiderProfilePage() {
     const { handleSubscribe } = usePushManager();
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
+        const storedUser = getStoredUser();
+        if (storedUser) setUser(storedUser);
     }, []);
 
     return (

@@ -26,6 +26,7 @@ import type { User as UserType } from '@/lib/types';
 import BottomNavigation from '@/components/layout/bottom-navigation';
 import { Link, Outlet } from "react-router-dom";
 import { useNotificationListener } from '@/hooks/use-notification-listener';
+import { getStoredUser } from '@/lib/auth';
 
 const adminNavLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: Home },
@@ -41,9 +42,9 @@ export default function AdminLayout() {
   const [user, setUser] = useState<UserType | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
+    const storedUser = getStoredUser();
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      setUser(storedUser);
     }
   }, []);
 

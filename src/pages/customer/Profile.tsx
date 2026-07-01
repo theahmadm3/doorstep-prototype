@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/auth-api";
+import { getStoredUser, updateStoredUser } from "@/lib/auth";
 import AddressManagement from "@/components/profile/address-management";
 import { Bell, ChevronRight, CreditCard, HelpCircle } from "lucide-react";
 import LogoutButton from "@/components/auth/logout-button";
@@ -33,13 +34,12 @@ export default function CustomerProfilePage() {
     const { formState: { isDirty: isProfileDirty, isValid: isProfileValid, isSubmitting: isProfileSubmitting } } = profileForm;
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
+        const storedUser = getStoredUser();
         if (storedUser) {
-            const parsedUser = JSON.parse(storedUser);
-            setUser(parsedUser);
+            setUser(storedUser);
             profileForm.reset({
-                full_name: parsedUser.full_name || '',
-                phone_number: parsedUser.phone_number || '',
+                full_name: storedUser.full_name || '',
+                phone_number: storedUser.phone_number || '',
             });
         }
     }, [profileForm]);
@@ -47,7 +47,7 @@ export default function CustomerProfilePage() {
     const onProfileSubmit = async (data: ProfileFormData) => {
         try {
             const updatedUser = await updateUserProfile(data);
-            localStorage.setItem('user', JSON.stringify(updatedUser));
+            updateStoredUser(updatedUser);
             setUser(updatedUser);
             profileForm.reset(data); // Reset form to new default values, making it "not dirty"
             toast({ title: "Success", description: "Your personal information has been updated." });

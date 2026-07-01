@@ -1,6 +1,7 @@
 
 import { Navigate, useLocation } from "react-router-dom";
 import type { ReactNode } from "react";
+import { getStoredToken, getStoredUser } from "@/lib/auth";
 
 export type AuthRole = "customer" | "restaurant" | "driver" | "admin";
 
@@ -23,14 +24,10 @@ interface StoredUser {
  */
 function readAuth(): StoredUser | null {
   if (typeof window === "undefined") return null;
-  try {
-    const token = localStorage.getItem("accessToken");
-    const raw = localStorage.getItem("user");
-    if (!token || !raw) return null;
-    return JSON.parse(raw) as StoredUser;
-  } catch {
-    return null;
-  }
+  const token = getStoredToken();
+  const user = getStoredUser();
+  if (!token || !user) return null;
+  return user;
 }
 
 /**

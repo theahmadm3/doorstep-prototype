@@ -25,6 +25,7 @@ import BottomNavigation from '@/components/layout/bottom-navigation';
 import { useRiderLocation as useRiderLocationData, LocationStatus } from '@/hooks/use-rider-location-socket';
 import { useNotificationListener } from '@/hooks/use-notification-listener';
 import { Link, Outlet } from "react-router-dom";
+import { getStoredUser } from "@/lib/auth";
 
 const riderNavLinks = [
   { href: "/rider/dashboard", label: "Dashboard", icon: Home },
@@ -55,12 +56,9 @@ export default function RiderLayout() {
   const [user, setUser] = useState<UserType | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      if (parsedUser.role === 'driver') {
-        setUser(parsedUser);
-      }
+    const storedUser = getStoredUser();
+    if (storedUser?.role === 'driver') {
+      setUser(storedUser);
     }
   }, []);
 
