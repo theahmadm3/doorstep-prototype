@@ -39,7 +39,7 @@ export default function CustomerProfilePage() {
             setUser(storedUser);
             profileForm.reset({
                 full_name: storedUser.full_name || "",
-                phone_number: storedUser.phone_number || "",
+                phone_number: (storedUser.phone_number || "").replace(/^234/, "0"),
             });
         }
     }, [profileForm]);
