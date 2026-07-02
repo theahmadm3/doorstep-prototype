@@ -179,7 +179,7 @@ export default function VendorOrdersPage() {
     const { data: orders = [], isLoading, isFetching, isError, refetch } = useQuery<VendorOrder[], Error>({
         queryKey: QUERY_KEYS.vendorOrders,
         queryFn: getVendorOrders,
-        refetchOnWindowFocus: false,
+        staleTime: 30_000,
     });
 
     useEffect(() => {

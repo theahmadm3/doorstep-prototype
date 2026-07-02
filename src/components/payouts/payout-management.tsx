@@ -94,7 +94,6 @@ const PayoutManagement = forwardRef((props, ref) => {
 	} = useQuery<WalletBalance, Error>({
 		queryKey: ["walletBalance"],
 		queryFn: getWalletBalance,
-		refetchOnWindowFocus: false,
 		refetchOnReconnect: false,
 	});
 
@@ -105,7 +104,6 @@ const PayoutManagement = forwardRef((props, ref) => {
 	} = useQuery<PayoutRecipient[], Error>({
 		queryKey: ["payoutRecipients"],
 		queryFn: getPayoutRecipients,
-		refetchOnWindowFocus: false,
 		refetchOnReconnect: false,
 	});
 

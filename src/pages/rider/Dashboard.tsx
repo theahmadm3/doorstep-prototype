@@ -73,7 +73,7 @@ export default function RiderDashboardPage() {
 	} = useQuery<PaginatedResponse<RiderOrderBatch>>({
 		queryKey: QUERY_KEYS.availableRiderOrders,
 		queryFn: getAvailableRiderOrders,
-		refetchOnWindowFocus: false,
+		staleTime: 30_000,
 		enabled: locationStatus.status === "connected",
 	});
 

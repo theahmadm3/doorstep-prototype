@@ -159,7 +159,7 @@ export default function RiderOrdersPage() {
     const { data: orders = [], isLoading, isFetching, isError, refetch } = useQuery({
         queryKey: QUERY_KEYS.riderOrders,
         queryFn: getRiderOrders,
-        refetchOnWindowFocus: false,
+        staleTime: 30_000,
     });
 
     useEffect(() => {

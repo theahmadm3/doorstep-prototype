@@ -181,7 +181,7 @@ export default function CustomerOrdersPage() {
 	} = useQuery({
 		queryKey: QUERY_KEYS.customerOrders,
 		queryFn: getCustomerOrders,
-		refetchOnWindowFocus: false,
+		staleTime: 30_000,
 	});
 
 	const pastOrderStatuses: OrderStatus[] = [

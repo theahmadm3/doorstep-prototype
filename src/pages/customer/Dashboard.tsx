@@ -70,7 +70,6 @@ export default function CustomerDashboardPage() {
 	const { data, isLoading } = useQuery({
 		queryKey: QUERY_KEYS.dashboard,
 		queryFn: () => getDashboard(),
-		refetchOnWindowFocus: false,
 	});
 
 	if (isLoading) return <DashboardSkeleton />;
