@@ -136,7 +136,7 @@ export default function CustomerLayout() {
 				<div className="flex-1 flex flex-col min-w-0">
 					{showHeader && <ClientHeader />}
 					<main className="flex-1 overflow-y-auto">
-						<div className="px-5 pb-28 md:px-6 md:pb-8 lg:px-8">
+						<div className="pb-28 md:px-6 md:pb-8 lg:px-8">
 							<Outlet />
 						</div>
 					</main>
