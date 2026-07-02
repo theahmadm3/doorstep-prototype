@@ -703,13 +703,21 @@ export async function deleteVendorDiscount(id: string): Promise<void> {
 }
 
 // Search API
+type SearchApiResponse = {
+	count: number;
+	prev: string | null;
+	next: string | null;
+	result: SearchResult[];
+};
+
 export async function searchItemsAndRestaurants(
 	query: string,
 ): Promise<PaginatedResponse<SearchResult>> {
 	if (!query) {
 		return { count: 0, next: null, previous: null, results: [] };
 	}
-	return fetcher<PaginatedResponse<SearchResult>>(
+	const raw = await fetcher<SearchApiResponse>(
 		`/search/?query=${encodeURIComponent(query)}`,
 	);
+	return { count: raw.count, next: raw.next, previous: raw.prev, results: raw.result };
 }

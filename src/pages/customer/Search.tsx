@@ -1,5 +1,3 @@
-
-
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -16,7 +14,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Search as SearchIcon, Star, Utensils, ShoppingCart, X } from "lucide-react";
+import {
+	Search as SearchIcon,
+	Star,
+	Utensils,
+	ShoppingCart,
+	X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import AddToCartModal from "@/components/checkout/add-to-cart-modal";
 import CheckoutModal from "@/components/checkout/checkout-modal";
@@ -105,9 +109,11 @@ const MenuItemCard = ({
 					<p className="text-sm font-semibold mt-1">
 						₦{parseFloat(item.price).toFixed(2)}
 					</p>
-					<p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-						<Utensils className="h-3 w-3" /> {item.restaurant_name}
-					</p>
+					{item.category?.name && (
+						<p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+							<Utensils className="h-3 w-3" /> {item.category.name}
+						</p>
+					)}
 				</div>
 			</CardContent>
 		</Card>
@@ -123,7 +129,15 @@ const RestaurantCard = ({
 	return (
 		<Link
 			to={`/customer/restaurants/${restaurant.id}`}
-			state={{ id: restaurant.id, name: restaurant.name, image_url: restaurant.image_url, rating: restaurant.rating, latitude: restaurant.address?.latitude ?? null, longitude: restaurant.address?.longitude ?? null, address: restaurant.address?.street_name ?? "" }}
+			state={{
+				id: restaurant.id,
+				name: restaurant.name,
+				image_url: restaurant.image_url,
+				rating: restaurant.rating,
+				latitude: restaurant.address?.latitude ?? null,
+				longitude: restaurant.address?.longitude ?? null,
+				address: restaurant.address?.street_name ?? "",
+			}}
 		>
 			<Card
 				className={cn(
@@ -239,7 +253,7 @@ export default function SearchPage() {
 			toast({ title: "Getting item details..." });
 
 			try {
-				const menu = await getRestaurantMenu(item.restaurant_id);
+				const menu = await getRestaurantMenu(item.restaurant);
 				const fullMenuItem = menu.find((mi) => mi.id === item.id);
 
 				if (fullMenuItem) {
@@ -299,7 +313,9 @@ export default function SearchPage() {
 				order={unsubmittedOrder}
 			/>
 
-			<h1 className="text-3xl font-bold font-headline mb-3">Search</h1>
+			<h1 className="text-3xl font-bold text-transparent font-headline mb-3">
+				Search
+			</h1>
 			<div className="sticky top-0 bg-background pb-4 z-10 -mx-5 px-5 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 border-b">
 				<div className="relative">
 					<SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
@@ -385,5 +401,3 @@ export default function SearchPage() {
 		</div>
 	);
 }
-
-    
