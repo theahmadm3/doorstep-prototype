@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getRestaurantMenu } from "@/lib/api";
 import type {
@@ -404,34 +403,28 @@ export default function RestaurantMenuPage() {
 					{/* Inline search input */}
 					{isSearchOpen && (
 						<div className="inline-flex items-center justify-between mt-3 border rounded-md px-1 h-11 w-full max-w-[600px]">
-							<Input
+							<input
 								ref={searchInputRef}
 								type="text"
 								placeholder="Search menu..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
-								className="border-0 shadow-none h-full p-2 outline-0"
+								className="border-0 shadow-none h-full p-2 outline-none w-full text-sm bg-transparent placeholder:text-muted-foreground"
+								
 							/>
-							<div className="inline-flex items-center justify-center">
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-7 w-7 shrink-0"
-									disabled
-								>
-									<Search className="h-4 w-2 text-muted-foreground" />
-								</Button>
-								<Button
-									variant="ghost"
-									size="icon"
+							<div className="inline-flex items-center justify-center gap-2">
+								<button className="h-7 w-7 shrink-0" disabled>
+									<Search className="" />
+								</button>
+								<button
 									className="h-7 w-7 shrink-0"
 									onClick={() => {
 										setSearchQuery("");
 										setIsSearchOpen(false);
 									}}
 								>
-									<X className="h-4 w-2" />
-								</Button>
+									<X className="" />
+								</button>
 							</div>
 						</div>
 					)}
