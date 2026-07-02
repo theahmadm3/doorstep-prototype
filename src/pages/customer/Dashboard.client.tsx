@@ -167,8 +167,8 @@ export default function CustomerDashboardClient({ data }: Props) {
 	};
 
 	return (
-		<div className="space-y-8">
-			<div className="pt-1">
+		<div className="space-y-8 md:px-4">
+			<div className="pt-1 px-4">
 				<h1 className="text-2xl font-bold">
 					{getGreeting()}{firstName ? `, ${firstName}` : ""}
 				</h1>
@@ -176,7 +176,7 @@ export default function CustomerDashboardClient({ data }: Props) {
 			</div>
 
 			{popularNearYou.length > 0 && (
-				<section>
+				<section className="pl-4">
 					<SectionHeader title="Popular Near You" seeAllHref="/customer/section/popular" />
 					<div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 px-5 md:mx-0 md:px-0">
 						{popularNearYou.map((r) => (
@@ -187,7 +187,7 @@ export default function CustomerDashboardClient({ data }: Props) {
 			)}
 
 			{featuredSelections.length > 0 && (
-				<section>
+				<section className="pl-4">
 					<SectionHeader
 						title="Featured Selections"
 						seeAllHref="/customer/section/featured"
@@ -201,7 +201,7 @@ export default function CustomerDashboardClient({ data }: Props) {
 			)}
 
 			{data.comboDeals.length > 0 && (
-				<section>
+				<section className="px-4">
 					<div className="flex items-center justify-between mb-3">
 						<h2 className="text-lg font-bold">Combo Deals</h2>
 						<span className="text-xs bg-green-100 text-green-700 font-semibold px-2.5 py-1 rounded-full">
@@ -217,7 +217,7 @@ export default function CustomerDashboardClient({ data }: Props) {
 			)}
 
 			{restaurants.length > 0 && (
-				<section>
+				<section className="px-4">
 					<h2 className="text-lg font-bold mb-3">All Restaurants</h2>
 					<div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
 						{restaurants.map((r) => (

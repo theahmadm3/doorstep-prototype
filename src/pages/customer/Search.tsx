@@ -298,7 +298,7 @@ export default function SearchPage() {
 	const showInitialState = !debouncedSearchTerm && !isLoading;
 
 	return (
-		<div className="space-y-6 pb-24">
+		<div className="space-y-6 pb-24 px-4">
 			{selectedItem && (
 				<AddToCartModal
 					isOpen={isAddToCartModalOpen}
@@ -319,10 +319,10 @@ export default function SearchPage() {
 			<div className="sticky top-0 bg-background pb-4 z-10 -mx-5 px-5 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 border-b">
 				<div className="relative">
 					<SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
-					<Input
+					<input
 						type="text"
 						placeholder="Search for restaurants or food..."
-						className="pl-10 pr-10 h-11"
+						className="pl-10 pr-10 h-11 outline-none w-full rounded-lg border bg-background placeholder:text-muted-foreground"
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
 					/>
