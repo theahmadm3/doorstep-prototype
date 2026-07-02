@@ -93,15 +93,23 @@ export default function CustomerProfilePage() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Phone Number</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        {...field}
-                                                        onChange={(e) => {
-                                                            const numeric = e.target.value.replace(/\D/g, "").slice(0, 11);
-                                                            field.onChange(numeric);
-                                                        }}
-                                                    />
-                                                </FormControl>
+                                                <div className="flex">
+                                                    <div className="flex items-center gap-1.5 px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm font-medium select-none shrink-0">
+                                                        🇳🇬 +234
+                                                    </div>
+                                                    <FormControl>
+                                                        <Input
+                                                            className="rounded-l-none focus-visible:ring-primary"
+                                                            placeholder="08012345678"
+                                                            inputMode="tel"
+                                                            {...field}
+                                                            onChange={(e) => {
+                                                                const numeric = e.target.value.replace(/\D/g, "").slice(0, 11);
+                                                                field.onChange(numeric);
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                </div>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
