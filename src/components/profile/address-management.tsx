@@ -37,7 +37,7 @@ import AddressSelectionModal from "../location/address-selection-modal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function AddressManagement() {
-  const { addresses, isAddressesLoading, refetchAddresses } = useAddresses();
+  const { addresses, isAddressesLoading } = useAddresses();
   const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -75,10 +75,6 @@ export default function AddressManagement() {
           toast({ title: "Error", description: error.message, variant: "destructive" });
       }
   });
-
-  useEffect(() => {
-    refetchAddresses();
-  }, [refetchAddresses]);
 
   useEffect(() => {
       if(addressToEdit) {
