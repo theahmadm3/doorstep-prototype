@@ -9,8 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Star, MapPin, LocateFixed, Search, PlusCircle, Bell } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Edit, Star, LocateFixed, Search, PlusCircle, Bell } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { getRestaurantProfile, updateRestaurantProfile, uploadRestaurantProfileImage } from "@/lib/api";
 import { VendorProfile, VendorProfileUpdatePayload } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -292,15 +292,15 @@ function VendorProfilePage() {
         return (
             <div className="space-y-8">
                  <h1 className="text-3xl font-bold font-headline">Your Restaurant Profile</h1>
-                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-8">
                         <Skeleton className="h-96 w-full" />
                         <Skeleton className="h-48 w-full" />
                     </div>
-                    <div className="space-y-8">
-                         <Skeleton className="h-64 w-full" />
+                    <div className="lg:col-span-1 space-y-8">
+                        <Skeleton className="h-64 w-full" />
                     </div>
-                 </div>
+                </div>
             </div>
         );
     }
@@ -322,7 +322,7 @@ function VendorProfilePage() {
         <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Your Restaurant Profile</h1>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-3 xl:col-span-2 space-y-8">
+                <div className="lg:col-span-2 space-y-8">
                     {/* Restaurant Info Card */}
                     <Card>
                         <CardHeader className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
@@ -373,9 +373,9 @@ function VendorProfilePage() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="flex-1 space-y-4">
-                                    <h2 className="text-2xl font-bold">{profile.name}</h2>
-                                    <p className="text-muted-foreground">{profile.description}</p>
+                                <div className="flex-1 space-y-4 min-w-0">
+                                    <h2 className="text-2xl font-bold truncate">{profile.name}</h2>
+                                    <p className="text-muted-foreground line-clamp-3">{profile.description}</p>
                                     <StarRating rating={parseFloat(profile.rating)} />
                                      <div className="flex items-center space-x-2">
                                         <Switch id="is_open" checked={profile.is_open} disabled />
@@ -404,9 +404,14 @@ function VendorProfilePage() {
                             </Button>
                         </CardHeader>
                         <CardContent>
-                             <div className="space-y-2 text-sm">
-                                <p><strong>Address:</strong> {profile.address?.street_name || 'N/A'}</p>
-                             </div>
+                            <div className="space-y-2 text-sm">
+                                <p className="flex gap-2 min-w-0">
+                                    <strong className="shrink-0">Address:</strong>
+                                    <span className="truncate text-muted-foreground" title={profile.address?.street_name || undefined}>
+                                        {profile.address?.street_name || "N/A"}
+                                    </span>
+                                </p>
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -428,23 +433,22 @@ function VendorProfilePage() {
                                             <p>To get notifications, you must add this app to your Home Screen. Tap the Share icon and then 'Add to Home Screen'.</p>
                                         </div>
                                     )}
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="font-medium">
-                                                Push Notifications
-                                            </p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {isSubscribed 
-                                                    ? "You're subscribed to push notifications" 
-                                                    : "Enable notifications to receive order updates"}
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="font-medium">Push Notifications</p>
+                                            <p className="text-sm text-muted-foreground truncate">
+                                                {isSubscribed
+                                                    ? "Subscribed to push notifications"
+                                                    : "Enable to receive order updates"}
                                             </p>
                                         </div>
-                                        <Button 
+                                        <Button
                                             onClick={handleSubscribe}
                                             disabled={isSubscribed || isSubscribing || platformInfo.needsPWAInstall}
                                             variant={isSubscribed ? "outline" : "default"}
+                                            className="shrink-0 w-full sm:w-auto"
                                         >
-                                            {isSubscribing ? "Enabling..." : isSubscribed ? "Enabled" : "Enable Notifications"}
+                                            {isSubscribing ? "Enabling..." : isSubscribed ? "Enabled" : "Enable"}
                                         </Button>
                                     </div>
                                 </>
@@ -458,25 +462,28 @@ function VendorProfilePage() {
                 </div>
 
                 {/* Owner Info Card */}
-                <div className="lg:col-span-3 xl:col-span-1 space-y-8">
+                <div className="lg:col-span-1 space-y-8">
                     <Card>
                          <CardHeader>
                              <CardTitle>Owner Information</CardTitle>
                              <CardDescription>Your personal account details.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-16 w-16">
+                            <div className="flex items-center gap-4 min-w-0">
+                                <Avatar className="h-16 w-16 shrink-0">
                                     <AvatarImage src={profile.owner.avatar_url || "https://github.com/shadcn.png"} alt={profile.owner.full_name} />
                                     <AvatarFallback>{profile.owner.full_name[0]}</AvatarFallback>
                                 </Avatar>
-                                <div>
-                                    <p className="font-bold">{profile.owner.full_name}</p>
-                                    <p className="text-sm text-muted-foreground">{profile.owner.email}</p>
+                                <div className="min-w-0">
+                                    <p className="font-bold truncate">{profile.owner.full_name}</p>
+                                    <p className="text-sm text-muted-foreground truncate" title={profile.owner.email}>{profile.owner.email}</p>
                                 </div>
                             </div>
                             <div className="space-y-2 text-sm">
-                                <p><strong>Phone:</strong> {profile.owner.phone_number || 'N/A'}</p>
+                                <p className="flex gap-2 min-w-0">
+                                    <strong className="shrink-0">Phone:</strong>
+                                    <span className="truncate">{profile.owner.phone_number || "N/A"}</span>
+                                </p>
                                 <div className="flex items-center gap-2">
                                     <strong>Role:</strong>
                                     <Badge variant="secondary" className="capitalize">{profile.owner.role}</Badge>
@@ -557,11 +564,11 @@ export default function VendorProfilePageWrapper() {
     }
 
     if (!isLoaded) return (
-         <div className="space-y-8">
+        <div className="space-y-8">
             <h1 className="text-3xl font-bold font-headline">Your Restaurant Profile</h1>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8"><Skeleton className="h-96 w-full" /></div>
-                <div className="space-y-8"><Skeleton className="h-64 w-full" /></div>
+                <div className="lg:col-span-1 space-y-8"><Skeleton className="h-64 w-full" /></div>
             </div>
         </div>
     );
