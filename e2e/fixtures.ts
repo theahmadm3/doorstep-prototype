@@ -189,3 +189,30 @@ export function adminOrder(over: Record<string, unknown> = {}) {
     ...over,
   };
 }
+
+/** Minimal dashboard response shape for /dashboard/ */
+export function dashboardData(over: Record<string, unknown> = {}) {
+  const rest = {
+    id: "rest-1",
+    name: "Mama Put Kitchen",
+    description: "Home-style Nigerian dishes",
+    image_url: null,
+    rating: 4.6,
+    is_active: true,
+    is_open: true,
+    address: { street_name: "12 Allen Avenue", latitude: 6.5244, longitude: 3.3792 },
+    estimated_delivery_time: null,
+    delivery_fee: null,
+    distance_km: null,
+  };
+  return {
+    data: {
+      popularNearYou: [rest],
+      featuredSelections: [],
+      allRestaurants: [rest],
+      comboDeals: [],
+      pagination: { currentPage: 1, totalPages: 1, totalItems: 1, itemsPerPage: 10, hasMore: false },
+    },
+    ...over,
+  };
+}

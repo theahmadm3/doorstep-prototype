@@ -9,7 +9,9 @@ test.describe("Customer signup (/signup)", () => {
     await expect(
       page.getByRole("heading", { name: "Create a Customer Account" }),
     ).toBeVisible();
+    // WhatsApp message is displayed in the onboarding card.
     await expect(page.getByText("Join opposite-tank")).toBeVisible();
+    // Signup form fields are hidden until the gate is passed.
     await expect(page.getByLabel("Full Name")).toHaveCount(0);
   });
 
