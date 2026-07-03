@@ -316,7 +316,7 @@ export default function RestaurantMenuPage() {
 	if (isLoading) return <MenuPageSkeleton />;
 
 	return (
-		<div className="pb-24 -mx-5 md:-mx-6 lg:-mx-8">
+		<div className="pb-24 -mx-5 md:-mx-6 lg:-mx-8 px-4">
 			<CheckoutModal
 				isOpen={isCheckoutOpen}
 				onClose={() => setCheckoutOpen(false)}
@@ -410,7 +410,6 @@ export default function RestaurantMenuPage() {
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								className="border-0 shadow-none h-full p-2 outline-none w-full text-sm bg-transparent placeholder:text-muted-foreground"
-								
 							/>
 							<div className="inline-flex items-center justify-center gap-2">
 								<button className="h-7 w-7 shrink-0" disabled>
