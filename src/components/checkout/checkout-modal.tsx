@@ -579,7 +579,7 @@ export default function CheckoutModal({ isOpen, onClose, order: initialOrder, re
                           </p>
                         )}
                         <div className="flex items-center gap-2 mt-1.5">
-                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleDecrease(item.cartItemId)}>
+                          <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => handleDecrease(item.cartItemId)} disabled={item.quantity <= 1}>
                             <Minus className="h-3 w-3" />
                           </Button>
                           <span className="text-sm font-semibold w-4 text-center">{item.quantity}</span>
