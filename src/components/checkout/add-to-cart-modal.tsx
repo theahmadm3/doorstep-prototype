@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MenuItem, OptionChoice } from "@/lib/types";
+import { discountedBasePrice, optionsPrice } from "@/lib/pricing";
 import { Plus, Minus } from "lucide-react";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
@@ -59,24 +60,13 @@ export default function AddToCartModal({
 	const incrementQuantity = () => setQuantity((prev) => prev + 1);
 	const decrementQuantity = () => setQuantity((prev) => Math.max(1, prev - 1));
 
-	const { totalPrice, discountedBasePrice } = useMemo(() => {
-		const basePrice = parseFloat(item.price);
-		const firstDiscount = (item.active_discounts ?? [])[0];
-		let effectiveBase = basePrice;
-		if (firstDiscount) {
-			effectiveBase =
-				firstDiscount.type === "fixed_amount"
-					? Math.max(0, basePrice - parseFloat(firstDiscount.value))
-					: basePrice * (1 - parseFloat(firstDiscount.value) / 100);
-		}
-		const optionsPrice = Object.values(selectedOptions).reduce(
-			(acc, opt) => acc + parseFloat(opt.price_adjustment),
-			0,
-		);
-		const total = (effectiveBase + optionsPrice) * quantity;
+	const { totalPrice, hasDiscount } = useMemo(() => {
+		const effectiveBase = discountedBasePrice(item.price, item.active_discounts);
+		const total =
+			(effectiveBase + optionsPrice(Object.values(selectedOptions))) * quantity;
 		return {
 			totalPrice: total.toFixed(2),
-			discountedBasePrice: firstDiscount ? effectiveBase : null,
+			hasDiscount: (item.active_discounts?.length ?? 0) > 0,
 		};
 	}, [item.price, item.active_discounts, selectedOptions, quantity]);
 
@@ -86,8 +76,8 @@ export default function AddToCartModal({
 			: "https://placehold.co/400x400.png";
 
 	return (
-		<Dialog open={isOpen} onOpenChange={onClose} style={{ maxWidth: "28rem" }}>
-			<DialogContent className="sm:max-w-md p-0" style={{ maxWidth: "28rem" }}>
+		<Dialog open={isOpen} onOpenChange={onClose}>
+			<DialogContent className="sm:max-w-md p-0">
 				<DialogHeader className="p-6 pb-0">
 					<DialogTitle className="text-2xl font-bold text-center">
 						{item.name}
@@ -171,7 +161,7 @@ export default function AddToCartModal({
 				</div>
 				<DialogFooter className="p-6 pt-0">
 					<Button onClick={handleAddToCart} className="w-full" size="lg">
-						{discountedBasePrice !== null ? (
+						{hasDiscount ? (
 							<span className="flex items-center gap-2">
 								Add to Cart - ₦{totalPrice}
 								<span className="line-through opacity-70 text-sm">

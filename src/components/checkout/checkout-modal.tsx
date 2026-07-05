@@ -49,6 +49,8 @@ import {
 } from "lucide-react";
 import AddressSelectionModal from "../location/address-selection-modal";
 import { haversineDistance } from "@/lib/utils";
+import { getStoredUser } from "@/lib/auth";
+import { orderItemOriginalTotal } from "@/lib/pricing";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
 import {
@@ -126,46 +128,66 @@ export default function CheckoutModal({
 		? orders.find((o) => o.id === initialOrder.id)
 		: null;
 
-	// Fetch restaurant coordinates when restaurantInfo prop is missing (Search page, page refresh)
+	// Fetch restaurant coordinates when restaurantInfo prop is missing (Search page, page refresh).
+	// Keyed by restaurantId so coords cached for one restaurant are never used to
+	// compute another restaurant's delivery fee; lat/lng stay null after a failed
+	// or empty lookup so we don't refetch the same restaurant in a loop.
 	const [fetchedRestaurantCoords, setFetchedRestaurantCoords] = useState<{
-		latitude: string;
-		longitude: string;
+		restaurantId: string;
+		latitude: string | null;
+		longitude: string | null;
 	} | null>(null);
 	const [isFetchingRestaurantCoords, setIsFetchingRestaurantCoords] =
 		useState(false);
 
 	useEffect(() => {
+		const restaurantId = order?.restaurantId;
 		if (
 			!restaurantInfo?.latitude &&
-			order?.restaurantId &&
-			!fetchedRestaurantCoords &&
+			restaurantId &&
+			fetchedRestaurantCoords?.restaurantId !== restaurantId &&
 			!isFetchingRestaurantCoords
 		) {
 			setIsFetchingRestaurantCoords(true);
-			getRestaurantDetails(order.restaurantId)
+			getRestaurantDetails(restaurantId)
 				.then((details) => {
-					if (details.address?.latitude && details.address?.longitude) {
-						setFetchedRestaurantCoords({
-							latitude: details.address.latitude,
-							longitude: details.address.longitude,
-						});
-					}
+					setFetchedRestaurantCoords({
+						restaurantId,
+						latitude: details.address?.latitude ?? null,
+						longitude: details.address?.longitude ?? null,
+					});
 				})
-				.catch(() => {})
+				.catch(() => {
+					// Record the attempt so the effect doesn't retry in a loop
+					setFetchedRestaurantCoords({
+						restaurantId,
+						latitude: null,
+						longitude: null,
+					});
+				})
 				.finally(() => setIsFetchingRestaurantCoords(false));
 		}
-	}, [restaurantInfo?.latitude, order?.restaurantId]);
+	}, [
+		restaurantInfo?.latitude,
+		order?.restaurantId,
+		fetchedRestaurantCoords,
+		isFetchingRestaurantCoords,
+	]);
+
+	// Only trust fetched coords that belong to the order currently in the modal
+	const coordsForCurrentOrder =
+		fetchedRestaurantCoords &&
+		fetchedRestaurantCoords.restaurantId === order?.restaurantId
+			? fetchedRestaurantCoords
+			: null;
 
 	const effectiveRestaurantLat =
-		restaurantInfo?.latitude ?? fetchedRestaurantCoords?.latitude ?? null;
+		restaurantInfo?.latitude ?? coordsForCurrentOrder?.latitude ?? null;
 	const effectiveRestaurantLng =
-		restaurantInfo?.longitude ?? fetchedRestaurantCoords?.longitude ?? null;
+		restaurantInfo?.longitude ?? coordsForCurrentOrder?.longitude ?? null;
 
 	useEffect(() => {
-		const storedUser = localStorage.getItem("user");
-		if (storedUser) {
-			setUser(JSON.parse(storedUser));
-		}
+		setUser(getStoredUser());
 	}, []);
 
 	const checkoutItems = useMemo(() => {
@@ -226,15 +248,11 @@ export default function CheckoutModal({
 		const fee = orderType === "delivery" ? deliveryFee : 0;
 
 		// Sum savings from item-level active_discounts (cart stores discounted price already)
-		const itemDiscount = checkoutItems.reduce((acc, item) => {
-			const optionsPrice = item.options.reduce(
-				(s, o) => s + parseFloat(o.price_adjustment),
-				0,
-			);
-			const originalTotal =
-				(parseFloat(item.menuItem.price) + optionsPrice) * item.quantity;
-			return acc + Math.max(0, originalTotal - item.totalPrice);
-		}, 0);
+		const itemDiscount = checkoutItems.reduce(
+			(acc, item) =>
+				acc + Math.max(0, orderItemOriginalTotal(item) - item.totalPrice),
+			0,
+		);
 
 		let discountAmount = 0;
 		if (appliedDiscount) {
@@ -838,13 +856,7 @@ export default function CheckoutModal({
 									<Label className="text-sm font-semibold">Your Order</Label>
 									<div className="space-y-4">
 										{checkoutItems.map((item) => {
-											const optionsPrice = item.options.reduce(
-												(s, o) => s + parseFloat(o.price_adjustment),
-												0,
-											);
-											const originalTotal =
-												(parseFloat(item.menuItem.price) + optionsPrice) *
-												item.quantity;
+											const originalTotal = orderItemOriginalTotal(item);
 											const hasItemDiscount =
 												(item.menuItem.active_discounts?.length ?? 0) > 0 &&
 												item.totalPrice < originalTotal - 0.01;

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
 	getCustomerOrders,
 	confirmOrderDelivery,
@@ -49,6 +49,13 @@ function displayStatus(status: OrderStatus): string {
 	if (status === "Delivered" || status === "Picked Up by Customer") return "Completed";
 	return status;
 }
+
+const PAST_ORDER_STATUSES: OrderStatus[] = [
+	"Delivered",
+	"Cancelled",
+	"Picked Up by Customer",
+	"Rejected",
+];
 
 const OrderSkeleton = () => (
 	<div className="space-y-3">
@@ -184,15 +191,18 @@ export default function CustomerOrdersPage() {
 		staleTime: 30_000,
 	});
 
-	const pastOrderStatuses: OrderStatus[] = [
-		"Delivered",
-		"Cancelled",
-		"Picked Up by Customer",
-		"Rejected",
-	];
-	const activeOrders = fetchedOrders.filter((o) => !pastOrderStatuses.includes(o.status));
-	const pastOrders = fetchedOrders.filter((o) => pastOrderStatuses.includes(o.status));
-	const unsubmittedOrders = unplacedOrders.filter((o) => o.status === "unsubmitted");
+	const activeOrders = useMemo(
+		() => fetchedOrders.filter((o) => !PAST_ORDER_STATUSES.includes(o.status)),
+		[fetchedOrders],
+	);
+	const pastOrders = useMemo(
+		() => fetchedOrders.filter((o) => PAST_ORDER_STATUSES.includes(o.status)),
+		[fetchedOrders],
+	);
+	const unsubmittedOrders = useMemo(
+		() => unplacedOrders.filter((o) => o.status === "unsubmitted"),
+		[unplacedOrders],
+	);
 
 	useEffect(() => {
 		if (isLoadingOrders || fetchedOrders.length === 0) return;

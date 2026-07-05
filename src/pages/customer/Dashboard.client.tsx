@@ -4,8 +4,14 @@ import { Link } from "react-router-dom";
 import { Star, ChevronRight, Loader2 } from "lucide-react";
 import { getDashboard } from "@/lib/api";
 import type { DashboardData, DashboardPagination, DashboardRestaurant, DashboardComboItem } from "@/lib/types";
+import { getStoredUser } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+	DashboardRestaurantCard,
+	restaurantNavState,
+} from "@/components/dashboard/restaurant-card";
 
 interface Props {
 	data: DashboardData;
@@ -37,7 +43,7 @@ function HorizontalRestaurantCard({ restaurant }: { restaurant: DashboardRestaur
 	return (
 		<Link
 			to={`/customer/restaurants/${restaurant.id}`}
-			state={{ id: restaurant.id, name: restaurant.name, image_url: restaurant.image, rating: restaurant.rating, latitude: restaurant.latitude, longitude: restaurant.longitude, address: restaurant.address }}
+			state={restaurantNavState(restaurant)}
 			className="flex-shrink-0 w-[280px] snap-start"
 		>
 			<Card className="overflow-hidden border-0 shadow-md rounded-2xl">
@@ -91,43 +97,6 @@ function ComboCard({ item }: { item: DashboardComboItem }) {
 	);
 }
 
-function AllRestaurantCard({ restaurant }: { restaurant: DashboardRestaurant }) {
-	return (
-		<Link
-			to={`/customer/restaurants/${restaurant.id}`}
-			state={{ id: restaurant.id, name: restaurant.name, image_url: restaurant.image, rating: restaurant.rating, latitude: restaurant.latitude, longitude: restaurant.longitude, address: restaurant.address }}
-			className="block rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
-		>
-			<div className="relative h-52 lg:h-40">
-				<img
-					src={restaurant.image ?? "https://placehold.co/400x208.png"}
-					alt={restaurant.name}
-					className="absolute inset-0 w-full h-full object-cover"
-				/>
-				{restaurant.badge && (
-					<span className="absolute bottom-3 left-3 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide">
-						{restaurant.badge}
-					</span>
-				)}
-			</div>
-			<div className="p-3">
-				<div className="flex items-center justify-between">
-					<span className="font-bold text-base">{restaurant.name}</span>
-					<div className="flex items-center gap-1">
-						<Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-						<span className="text-sm font-semibold">{restaurant.rating}</span>
-					</div>
-				</div>
-				<p className="text-sm text-muted-foreground mt-1 truncate">
-					{[restaurant.preparationTime, restaurant.address]
-						.filter(Boolean)
-						.join(" • ")}
-				</p>
-			</div>
-		</Link>
-	);
-}
-
 function getGreeting(): string {
 	const hour = new Date().getHours();
 	if (hour < 12) return "Good morning";
@@ -138,21 +107,15 @@ function getGreeting(): string {
 export default function CustomerDashboardClient({ data }: Props) {
 	const { popularNearYou, featuredSelections } = data;
 
+	const { toast } = useToast();
 	const [firstName, setFirstName] = useState<string | null>(null);
 	const [restaurants, setRestaurants] = useState<DashboardRestaurant[]>(data.allRestaurants);
 	const [pagination, setPagination] = useState<DashboardPagination>(data.pagination);
 	const [isLoadingMore, setIsLoadingMore] = useState(false);
 
 	useEffect(() => {
-		const stored = localStorage.getItem("user");
-		if (stored) {
-			try {
-				const user = JSON.parse(stored);
-				setFirstName(user.full_name?.split(" ")[0] ?? null);
-			} catch {
-				// ignore malformed storage
-			}
-		}
+		const user = getStoredUser();
+		setFirstName(user?.full_name?.split(" ")[0] ?? null);
 	}, []);
 
 	const handleLoadMore = async () => {
@@ -161,6 +124,12 @@ export default function CustomerDashboardClient({ data }: Props) {
 			const next = await getDashboard({ page: pagination.currentPage + 1 });
 			setRestaurants((prev) => [...prev, ...next.allRestaurants]);
 			setPagination(next.pagination);
+		} catch {
+			toast({
+				title: "Couldn't load more restaurants",
+				description: "Please check your connection and try again.",
+				variant: "destructive",
+			});
 		} finally {
 			setIsLoadingMore(false);
 		}
@@ -221,7 +190,7 @@ export default function CustomerDashboardClient({ data }: Props) {
 					<h2 className="text-lg font-bold mb-3">All Restaurants</h2>
 					<div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
 						{restaurants.map((r) => (
-							<AllRestaurantCard key={r.id} restaurant={r} />
+							<DashboardRestaurantCard key={r.id} restaurant={r} className="h-52 lg:h-40" />
 						))}
 					</div>
 					{pagination.hasMore && (

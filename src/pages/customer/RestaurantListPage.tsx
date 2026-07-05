@@ -2,51 +2,16 @@
 import { useParams, useLocation, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboard } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import type { DashboardRestaurant } from "@/lib/types";
-import { Star, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardRestaurantCard } from "@/components/dashboard/restaurant-card";
 
 const SECTION_TITLES: Record<string, string> = {
 	popular: "Popular Near You",
 	featured: "Featured Selections",
 };
-
-function RestaurantCard({ restaurant }: { restaurant: DashboardRestaurant }) {
-	return (
-		<Link
-			to={`/customer/restaurants/${restaurant.id}`}
-			state={{ id: restaurant.id, name: restaurant.name, image_url: restaurant.image, rating: restaurant.rating, latitude: restaurant.latitude, longitude: restaurant.longitude, address: restaurant.address }}
-			className="block rounded-2xl overflow-hidden border border-gray-100 shadow-sm"
-		>
-			<div className="relative h-52">
-				<img
-					src={restaurant.image ?? "https://placehold.co/400x208.png"}
-					alt={restaurant.name}
-					className="absolute inset-0 w-full h-full object-cover"
-				/>
-				{restaurant.badge && (
-					<span className="absolute bottom-3 left-3 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide">
-						{restaurant.badge}
-					</span>
-				)}
-			</div>
-			<div className="p-3">
-				<div className="flex items-center justify-between">
-					<span className="font-bold text-base">{restaurant.name}</span>
-					<div className="flex items-center gap-1">
-						<Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-						<span className="text-sm font-semibold">{restaurant.rating}</span>
-					</div>
-				</div>
-				<p className="text-sm text-muted-foreground mt-1 truncate">
-					{[restaurant.preparationTime, restaurant.address]
-						.filter(Boolean)
-						.join(" • ")}
-				</p>
-			</div>
-		</Link>
-	);
-}
 
 function ListSkeleton() {
 	return (
@@ -72,7 +37,9 @@ export default function RestaurantListPage() {
 	const stateRestaurants = (location.state as LocationState | null)?.restaurants;
 
 	const { data, isLoading } = useQuery({
-		queryKey: ["dashboard", "section", type],
+		// Same key as the dashboard page — both fetch page 1 of the same
+		// payload, so the section page can reuse the cached result
+		queryKey: QUERY_KEYS.dashboard,
 		queryFn: () => getDashboard(),
 		enabled: !stateRestaurants,
 	});
@@ -105,7 +72,7 @@ export default function RestaurantListPage() {
 			) : (
 				<div className="space-y-4">
 					{restaurants.map((r) => (
-						<RestaurantCard key={r.id} restaurant={r} />
+						<DashboardRestaurantCard key={r.id} restaurant={r} />
 					))}
 				</div>
 			)}

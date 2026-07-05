@@ -16,6 +16,7 @@ import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { submitRestaurantReview } from "@/lib/api";
+import { getStoredUser } from "@/lib/auth";
 import { User, ReviewPayload } from "@/lib/types";
 
 interface PostOrderReviewModalProps {
@@ -56,10 +57,7 @@ export default function PostOrderReviewModal({
 
    useEffect(() => {
     if (isOpen) {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
+        setUser(getStoredUser());
     }
   }, [isOpen]);
 

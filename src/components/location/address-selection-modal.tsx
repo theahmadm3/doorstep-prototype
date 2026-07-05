@@ -14,7 +14,6 @@ import { AddressPostData } from "@/lib/types";
 import { useLoadScript } from "@react-google-maps/api";
 import usePlacesAutocomplete, {
   getGeocode,
-  getLatLng,
 } from "use-places-autocomplete";
 import { useAddresses } from "@/hooks/use-addresses";
 
@@ -45,9 +44,7 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: go
         setValue(description, false);
         clearSuggestions();
 
-        getGeocode({ address: description }).then((results) => {
-            const { lat, lng } = getLatLng(results[0]);
-
+        getGeocode({ address: description }).then(() => {
             // Fetch Place Details
             const service = new window.google.maps.places.PlacesService(document.createElement('div'));
             service.getDetails({ placeId: place_id }, (place, status) => {
@@ -57,6 +54,8 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: go
                     console.error('Failed to fetch place details:', status);
                 }
             });
+        }).catch((err) => {
+            console.error('Failed to geocode selected address:', err);
         });
     };
 

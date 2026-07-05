@@ -241,22 +241,22 @@ const PayoutManagement = forwardRef((props, ref) => {
 				</AlertDialogContent>
 			</AlertDialog>
 
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+			<div className="flex flex-col lg:flex-row gap-8">
 				{/* Left side */}
-				<div className="lg:col-span-2 space-y-8">
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<Wallet className="h-6 w-6 text-primary" />
+				<div className="flex flex-col gap-8 w-full min-w-0 lg:flex-[2]">
+					<div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
+						<Card className="flex-1 sm:min-w-[220px]">
+							<CardHeader className="pb-3">
+								<CardTitle className="flex items-center gap-2 text-base font-semibold">
+									<Wallet className="h-5 w-5 shrink-0 text-primary" />
 									Total Balance
 								</CardTitle>
 							</CardHeader>
 							<CardContent>
 								{isBalanceLoading ? (
-									<Skeleton className="h-12 w-48" />
+									<Skeleton className="h-9 w-32" />
 								) : (
-									<p className="text-4xl font-bold">
+									<p className="text-2xl xl:text-3xl font-bold tabular-nums break-words">
 										{formatCurrency(balance?.total_balance)}
 									</p>
 								)}
@@ -265,18 +265,18 @@ const PayoutManagement = forwardRef((props, ref) => {
 								</p>
 							</CardContent>
 						</Card>
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<Eye className="h-6 w-6 text-green-500" />
+						<Card className="flex-1 sm:min-w-[220px]">
+							<CardHeader className="pb-3">
+								<CardTitle className="flex items-center gap-2 text-base font-semibold">
+									<Eye className="h-5 w-5 shrink-0 text-green-500" />
 									Withdrawable Balance
 								</CardTitle>
 							</CardHeader>
 							<CardContent>
 								{isBalanceLoading ? (
-									<Skeleton className="h-12 w-48" />
+									<Skeleton className="h-9 w-32" />
 								) : (
-									<p className="text-4xl font-bold">
+									<p className="text-2xl xl:text-3xl font-bold tabular-nums break-words">
 										{formatCurrency(balance?.withdrawable_balance)}
 									</p>
 								)}
@@ -285,18 +285,18 @@ const PayoutManagement = forwardRef((props, ref) => {
 								</p>
 							</CardContent>
 						</Card>
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<Banknote className="h-6 w-6 text-yellow-500" />
+						<Card className="flex-1 sm:min-w-[220px]">
+							<CardHeader className="pb-3">
+								<CardTitle className="flex items-center gap-2 text-base font-semibold">
+									<Banknote className="h-5 w-5 shrink-0 text-yellow-500" />
 									Pending Balance
 								</CardTitle>
 							</CardHeader>
 							<CardContent>
 								{isBalanceLoading ? (
-									<Skeleton className="h-12 w-48" />
+									<Skeleton className="h-9 w-32" />
 								) : (
-									<p className="text-4xl font-bold">
+									<p className="text-2xl xl:text-3xl font-bold tabular-nums break-words">
 										{formatCurrency(balance?.pending_balance)}
 									</p>
 								)}
@@ -384,9 +384,9 @@ const PayoutManagement = forwardRef((props, ref) => {
 				</div>
 
 				{/* Right side */}
-				<div className="space-y-8">
+				<div className="flex flex-col gap-8 w-full min-w-0 lg:flex-1">
 					<Card>
-						<CardHeader className="flex flex-row items-center justify-between">
+						<CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
 							<div>
 								<CardTitle>Payout Destinations</CardTitle>
 								<CardDescription>Your saved bank accounts.</CardDescription>
@@ -396,7 +396,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 								onOpenChange={setAddRecipientOpen}
 							>
 								<DialogTrigger asChild>
-									<Button variant="outline" size="icon">
+									<Button variant="outline" size="icon" className="shrink-0">
 										<PlusCircle className="h-4 w-4" />
 									</Button>
 								</DialogTrigger>
@@ -501,16 +501,16 @@ const PayoutManagement = forwardRef((props, ref) => {
 									{recipients.map((r) => (
 										<div
 											key={r.recipient_code}
-											className="flex items-center gap-4 p-3 rounded-md border"
+											className="flex items-center gap-3 p-3 rounded-md border"
 										>
-											<div className="p-2 bg-muted rounded-full">
+											<div className="p-2 bg-muted rounded-full shrink-0">
 												<Landmark className="h-5 w-5 text-primary" />
 											</div>
-											<div className="flex-grow">
-												<p className="font-semibold">
+											<div className="flex-1 min-w-0">
+												<p className="font-semibold truncate">
 													{getBankName(r.bank_code)}
 												</p>
-												<p className="text-sm text-muted-foreground">
+												<p className="text-sm text-muted-foreground truncate">
 													{r.name} - ****
 													{r.account_number.slice(-4)}
 												</p>
@@ -518,7 +518,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 											<Button
 												variant="ghost"
 												size="icon"
-												className="text-destructive hover:bg-destructive/10"
+												className="shrink-0 text-destructive hover:bg-destructive/10"
 												onClick={() => setRecipientToDelete(r)}
 											>
 												<Trash2 className="h-4 w-4" />

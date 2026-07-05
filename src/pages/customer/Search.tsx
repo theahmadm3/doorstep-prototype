@@ -1,15 +1,13 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { searchItemsAndRestaurants, getRestaurantMenu } from "@/lib/api";
 import { QUERY_KEYS } from "@/lib/query-keys";
 import {
-	SearchResult,
 	SearchResultMenuItem,
 	SearchResultRestaurant,
 	MenuItem,
 	OptionChoice,
-	Order,
 } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,61 +16,15 @@ import {
 	Search as SearchIcon,
 	Star,
 	Utensils,
-	ShoppingCart,
 	X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AddToCartModal from "@/components/checkout/add-to-cart-modal";
 import CheckoutModal from "@/components/checkout/checkout-modal";
+import FloatingCartButton from "@/components/checkout/floating-cart-button";
 import { useCartStore } from "@/stores/useCartStore";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-
-// Custom debounce hook
-function useDebounce<T>(value: T, delay?: number): T {
-	const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-	useEffect(() => {
-		const timer = setTimeout(() => setDebouncedValue(value), delay || 500);
-
-		return () => {
-			clearTimeout(timer);
-		};
-	}, [value, delay]);
-
-	return debouncedValue;
-}
-
-const FloatingCartButton = ({
-	order,
-	onCheckout,
-}: {
-	order: Order | undefined;
-	onCheckout: () => void;
-}) => {
-	if (!order || order.items.length === 0) return null;
-
-	const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
-
-	return (
-		<div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-20">
-			<Button
-				onClick={onCheckout}
-				size="lg"
-				className="w-full h-14 rounded-full shadow-2xl flex justify-between items-center text-lg"
-			>
-				<div className="flex items-center gap-2">
-					<ShoppingCart />
-					<span>
-						{itemCount} item{itemCount > 1 ? "s" : ""}
-					</span>
-				</div>
-				<span>View Order</span>
-				<span>₦{order.total.toFixed(2)}</span>
-			</Button>
-		</div>
-	);
-};
 
 // Component for displaying a menu item search result
 const MenuItemCard = ({
@@ -302,7 +254,12 @@ export default function SearchPage() {
 			{selectedItem && (
 				<AddToCartModal
 					isOpen={isAddToCartModalOpen}
-					onClose={() => setAddToCartModalOpen(false)}
+					onClose={() => {
+						// Also clear the item so the modal unmounts — otherwise its
+						// quantity/options state leaks into the next item opened
+						setAddToCartModalOpen(false);
+						setSelectedItem(null);
+					}}
 					item={selectedItem}
 					onAddToCart={handleAddItem}
 				/>
@@ -313,7 +270,7 @@ export default function SearchPage() {
 				order={unsubmittedOrder}
 			/>
 
-			<h1 className="text-3xl font-bold text-transparent font-headline mb-3">
+			<h1 className="text-3xl font-bold font-headline mb-3">
 				Search
 			</h1>
 			<div className="sticky top-0 bg-background pb-4 z-10 -mx-5 px-5 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 border-b">

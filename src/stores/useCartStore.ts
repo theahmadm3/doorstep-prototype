@@ -1,7 +1,8 @@
 
-import create from 'zustand';
+import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { MenuItem, Order, OrderItem, OrderStatus, OptionChoice } from '@/lib/types';
+import { discountedBasePrice, optionsPrice } from '@/lib/pricing';
 import { v4 as uuidv4 } from 'uuid';
 
 interface CartState {
@@ -35,17 +36,8 @@ export const useCartStore = create<CartState>()(
         const { orders } = get();
 
         // Apply the first active item-level discount to the base price
-        const rawBase = parseFloat(menuItem.price);
-        const firstDiscount = menuItem.active_discounts?.[0];
-        let effectiveBase = rawBase;
-        if (firstDiscount) {
-          effectiveBase = firstDiscount.type === "fixed_amount"
-            ? Math.max(0, rawBase - parseFloat(firstDiscount.value))
-            : rawBase * (1 - parseFloat(firstDiscount.value) / 100);
-        }
-
-        const optionsPrice = selectedOptions.reduce((acc, opt) => acc + parseFloat(opt.price_adjustment), 0);
-        const singleItemPrice = effectiveBase + optionsPrice;
+        const effectiveBase = discountedBasePrice(menuItem.price, menuItem.active_discounts);
+        const singleItemPrice = effectiveBase + optionsPrice(selectedOptions);
         const totalItemPrice = singleItemPrice * quantity;
 
         // Check for an existing unsubmitted order for this restaurant

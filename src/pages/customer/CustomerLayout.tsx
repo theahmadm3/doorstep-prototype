@@ -36,13 +36,11 @@ export default function CustomerLayout() {
 	const [user, setUser] = useState<UserType | null>(null);
 	const { addresses, isAddressesLoading } = useAddresses();
 	const [isAddressModalRequired, setAddressModalRequired] = useState(false);
-	const [isClient, setIsClient] = useState(false);
 	const pathname = useLocation().pathname;
 
 	const showHeader = pathname === "/customer/dashboard";
 
 	useEffect(() => {
-		setIsClient(true);
 		const storedUser = getStoredUser();
 		if (storedUser) {
 			setUser(storedUser);
@@ -98,7 +96,7 @@ export default function CustomerLayout() {
 					</SidebarContent>
 
 					<SidebarFooter className="p-4 border-t">
-						{!isClient || !user ? (
+						{!user ? (
 							<div className="flex items-center gap-3 p-3">
 								<Skeleton className="h-10 w-10 rounded-full" />
 								<div className="flex-1 space-y-2">
