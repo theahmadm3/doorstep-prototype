@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import PaystackPop from "@paystack/inline-js";
 import type {
 	User,
 	Order,
@@ -98,7 +99,11 @@ export default function CheckoutModal({
 	const [paymentState, setPaymentState] = useState<"idle" | "awaiting_payment">("idle");
 	const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 	const [pendingReference, setPendingReference] = useState<string | null>(null);
+	const [pendingAccessCode, setPendingAccessCode] = useState<string | null>(null);
 	const [pendingAuthorizationUrl, setPendingAuthorizationUrl] = useState<string | null>(null);
+
+	const paystackPopupRef = useRef<PaystackPop | null>(null);
+	const isPopupOpenRef = useRef(false);
 
 	const [isAddressModalOpen, setAddressModalOpen] = useState(false);
 
@@ -328,13 +333,18 @@ export default function CheckoutModal({
 	};
 
 	const handlePaymentSuccess = useCallback(
-		async (reference: string, orderId: string) => {
+		async (reference: string) => {
+			setPaymentState("idle");
 			try {
 				await verifyPayment(reference);
 			} catch {
 				/* non-blocking — webhook is source of truth */
 			}
-			updateOrderStatus(orderId, "Order Placed");
+			// Update the LOCAL cart order (client-side UUID), not the backend order id —
+			// this is what clears it from the cart badge and persisted storage
+			if (order) {
+				updateOrderStatus(order.id, "Order Placed");
+			}
 			toast({
 				title: "Order Placed!",
 				description: "Your order has been submitted. We're on it!",
@@ -346,19 +356,79 @@ export default function CheckoutModal({
 				navigate("/customer/orders");
 			}
 		},
-		[updateOrderStatus, toast, isSubscribed, onClose, navigate],
+		[order, updateOrderStatus, toast, isSubscribed, onClose, navigate],
 	);
+
+	// Opens the Paystack checkout as an in-page overlay (no redirect/new tab),
+	// resuming the transaction the backend already initialized via its access code.
+	const launchPaystackPopup = useCallback(
+		(accessCode: string, reference: string) => {
+			try {
+				const popup = new PaystackPop();
+				paystackPopupRef.current = popup;
+				isPopupOpenRef.current = true;
+				popup.resumeTransaction(accessCode, {
+					onSuccess: (transaction) => {
+						isPopupOpenRef.current = false;
+						void handlePaymentSuccess(transaction.reference || reference);
+					},
+					onCancel: () => {
+						isPopupOpenRef.current = false;
+						toast({
+							title: "Payment Not Completed",
+							description:
+								"Your order is saved. Resume the payment whenever you're ready.",
+						});
+					},
+					onError: (error) => {
+						isPopupOpenRef.current = false;
+						toast({
+							title: "Payment Window Error",
+							description:
+								error?.message ||
+								"We couldn't open the payment window. Please try again or use the payment page link.",
+							variant: "destructive",
+						});
+					},
+				});
+			} catch {
+				isPopupOpenRef.current = false;
+				toast({
+					title: "Payment Window Error",
+					description:
+						"We couldn't open the payment window. Please try again or use the payment page link.",
+					variant: "destructive",
+				});
+			}
+		},
+		[handlePaymentSuccess, toast],
+	);
+
+	// Close a dangling Paystack overlay if the modal unmounts mid-payment
+	useEffect(() => {
+		return () => {
+			if (isPopupOpenRef.current) {
+				try {
+					paystackPopupRef.current?.cancelTransaction();
+				} catch {
+					/* overlay may already be gone */
+				}
+				isPopupOpenRef.current = false;
+			}
+		};
+	}, []);
 
 	const triggerPaymentInitialization = useCallback(async () => {
 		if (!order || !user) return;
 
 		setIsPlacingOrder(true);
 		try {
-			// Step 1: initialize — gets reference + authorization_url
+			// Step 1: initialize — gets reference + access_code + authorization_url
 			// Backend expects whole Naira (integer) and converts to kobo before calling Paystack
-			const { reference, authorization_url } = await initializePayment({
-				amount: Math.round(total),
-			});
+			const { reference, authorization_url, access_code } =
+				await initializePayment({
+					amount: Math.round(total),
+				});
 
 			// Step 2: create the order, linked to that exact reference
 			const orderItemsPayload: OrderItemPayload[] = order.items.map((item) => ({
@@ -381,11 +451,14 @@ export default function CheckoutModal({
 
 			const createdOrder = await placeOrder(orderPayload);
 
-			// Step 3: switch to awaiting-payment UI so user can click the payment link
+			// Step 3: open the in-app Paystack overlay and keep the awaiting-payment
+			// screen behind it (with a resume button + hosted-page fallback)
 			setPendingOrderId(createdOrder.id);
 			setPendingReference(reference);
+			setPendingAccessCode(access_code);
 			setPendingAuthorizationUrl(authorization_url);
 			setPaymentState("awaiting_payment");
+			launchPaystackPopup(access_code, reference);
 		} catch (error) {
 			const message =
 				error instanceof Error
@@ -408,16 +481,23 @@ export default function CheckoutModal({
 		deliveryFee,
 		appliedDiscount,
 		toast,
+		launchPaystackPopup,
 	]);
 
-	// Poll /orders/<id>/ every 3 s until paid=true or 90 s timeout
+	// Poll /orders/<id>/ every 3 s as a safety net behind the Paystack overlay's
+	// own callbacks. The idle deadline keeps rolling while the overlay is open so
+	// we never navigate away mid-payment; it only counts down once it's closed.
 	useEffect(() => {
 		if (paymentState !== "awaiting_payment" || !pendingOrderId || !pendingReference || !isOpen) return;
 
 		const INTERVAL_MS = 3_000;
-		const deadline = Date.now() + 90_000;
+		const IDLE_TIMEOUT_MS = 90_000;
+		let deadline = Date.now() + IDLE_TIMEOUT_MS;
 
 		const timer = setInterval(async () => {
+			if (isPopupOpenRef.current) {
+				deadline = Date.now() + IDLE_TIMEOUT_MS;
+			}
 			if (Date.now() > deadline) {
 				clearInterval(timer);
 				setPaymentState("idle");
@@ -435,7 +515,7 @@ export default function CheckoutModal({
 				if (paid) {
 					clearInterval(timer);
 					setPaymentState("idle");
-					await handlePaymentSuccess(pendingReference, pendingOrderId);
+					await handlePaymentSuccess(pendingReference);
 				}
 			} catch {
 				// transient error — keep polling
@@ -543,6 +623,7 @@ export default function CheckoutModal({
 			setPaymentState("idle");
 			setPendingOrderId(null);
 			setPendingReference(null);
+			setPendingAccessCode(null);
 			setPendingAuthorizationUrl(null);
 			onClose();
 		}
@@ -586,22 +667,35 @@ export default function CheckoutModal({
 						<div className="space-y-1.5">
 							<h2 className="text-lg font-bold">Complete your payment</h2>
 							<p className="text-sm text-muted-foreground">
-								Click the button below to open the secure payment page. This screen will update automatically once your payment is confirmed.
+								Finish your payment in the secure Paystack window. This screen
+								will update automatically once your payment is confirmed.
 							</p>
 						</div>
 						<div className="flex flex-col gap-3 w-full">
-							<Button className="w-full" asChild>
-							<a
-								href={pendingAuthorizationUrl ?? "#"}
-								target="_blank"
-								rel="noopener noreferrer"
+							<Button
+								className="w-full"
+								onClick={() => {
+									if (pendingAccessCode && pendingReference) {
+										launchPaystackPopup(pendingAccessCode, pendingReference);
+									}
+								}}
+								disabled={!pendingAccessCode}
 							>
-								Open Payment Page
-							</a>
-						</Button>
+								Resume Payment
+							</Button>
 							<p className="text-xs text-muted-foreground">
 								Checking for confirmation automatically...
 							</p>
+							{pendingAuthorizationUrl && (
+								<a
+									href={pendingAuthorizationUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-xs text-muted-foreground underline underline-offset-2"
+								>
+									Having trouble? Open the payment page instead
+								</a>
+							)}
 						</div>
 					</div>
 				) : showPushPrompt ? (
