@@ -21,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { unsubscribeFromPushNotifications } from "@/lib/push-notifications";
 import { usePushStore } from "@/hooks/use-push-manager";
 import { clearAuth } from "@/lib/auth";
+import { logAuthEvent } from "@/lib/auth-log";
 
 export default function LogoutButton() {
 	const navigate = useNavigate();
@@ -54,6 +55,7 @@ export default function LogoutButton() {
 			usePushStore.setState({ isSubscribed: false, initialized: false });
 
 			// Clear all auth keys (tokens, user, role history) then app state.
+			logAuthEvent("manual_logout");
 			clearAuth();
 			clearUserOrders();
 			clearUIState();
