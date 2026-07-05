@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
+import { usePaymentReconciliation } from "@/hooks/use-payment-reconciliation";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { getStoredUser } from "@/lib/auth";
 
@@ -33,6 +34,7 @@ const customerNavLinks = [
 
 export default function CustomerLayout() {
 	useNotificationListener();
+	usePaymentReconciliation();
 	const [user, setUser] = useState<UserType | null>(null);
 	const { addresses, isAddressesLoading } = useAddresses();
 	const [isAddressModalRequired, setAddressModalRequired] = useState(false);

@@ -50,6 +50,10 @@ import {
 import AddressSelectionModal from "../location/address-selection-modal";
 import { haversineDistance } from "@/lib/utils";
 import { getStoredUser } from "@/lib/auth";
+import {
+	addPendingPayment,
+	removePendingPayment,
+} from "@/lib/pending-payments";
 import { orderItemOriginalTotal } from "@/lib/pricing";
 import { useCartStore } from "@/stores/useCartStore";
 import { useUIStore } from "@/stores/useUIStore";
@@ -239,7 +243,6 @@ export default function CheckoutModal({
 		subtotal,
 		taxes,
 		total,
-		totalInKobo,
 		discountDisplayAmount,
 		itemDiscountTotal,
 	} = useMemo(() => {
@@ -291,7 +294,6 @@ export default function CheckoutModal({
 			subtotal: sub,
 			taxes: tax,
 			total: grandTotal,
-			totalInKobo: Math.round(grandTotal * 100),
 			discountDisplayAmount: discountAmount,
 			itemDiscountTotal: itemDiscount,
 		};
@@ -363,6 +365,7 @@ export default function CheckoutModal({
 			if (order) {
 				updateOrderStatus(order.id, "Order Placed");
 			}
+			removePendingPayment(reference);
 			toast({
 				title: "Order Placed!",
 				description: "Your order has been submitted. We're on it!",
@@ -468,6 +471,14 @@ export default function CheckoutModal({
 			};
 
 			const createdOrder = await placeOrder(orderPayload);
+
+			// Persist the payment link so a refresh/slow transfer can still be
+			// reconciled against the backend order on the next app load
+			addPendingPayment({
+				localCartOrderId: order.id,
+				backendOrderId: createdOrder.id,
+				reference,
+			});
 
 			// Step 3: open the in-app Paystack overlay and keep the awaiting-payment
 			// screen behind it (with a resume button + hosted-page fallback)
