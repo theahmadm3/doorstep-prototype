@@ -297,6 +297,8 @@ const PayoutManagement = forwardRef((props, ref) => {
 									<Skeleton className="h-9 w-32" />
 								) : (
 									<p className="text-2xl xl:text-3xl font-bold tabular-nums break-words">
+
+
 										{formatCurrency(balance?.pending_balance)}
 									</p>
 								)}
