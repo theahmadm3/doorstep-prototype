@@ -73,9 +73,10 @@ import {
 	Trash2,
 } from "lucide-react";
 
-const formatCurrency = (value: number | undefined) => {
+const formatCurrency = (value: string | number | undefined) => {
 	if (value === undefined) return "₦0.00";
-	return `₦${value.toLocaleString("en-NG", {
+	const num = typeof value === "string" ? parseFloat(value) : value;
+	return `₦${num.toLocaleString("en-NG", {
 		minimumFractionDigits: 2,
 		maximumFractionDigits: 2,
 	})}`;
@@ -188,7 +189,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 	};
 
 	const onRequestPayoutSubmit = (data: InitiatePayoutPayload) => {
-		if (balance && data.amount > balance.withdrawable_balance) {
+		if (balance && data.amount > parseFloat(balance.withdrawable_balance)) {
 			toast({
 				title: "Insufficient Balance",
 				description:
@@ -243,7 +244,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 				{/* Left side */}
 				<div className="lg:col-span-2 space-y-8">
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 						<Card>
 							<CardHeader>
 								<CardTitle className="flex items-center gap-2">
@@ -256,7 +257,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 									<Skeleton className="h-12 w-48" />
 								) : (
 									<p className="text-4xl font-bold">
-										{formatCurrency(balance?.balance)}
+										{formatCurrency(balance?.total_balance)}
 									</p>
 								)}
 								<p className="text-sm text-muted-foreground mt-1">
@@ -281,6 +282,26 @@ const PayoutManagement = forwardRef((props, ref) => {
 								)}
 								<p className="text-sm text-muted-foreground mt-1">
 									Available for immediate payout.
+								</p>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2">
+									<Banknote className="h-6 w-6 text-yellow-500" />
+									Pending Balance
+								</CardTitle>
+							</CardHeader>
+							<CardContent>
+								{isBalanceLoading ? (
+									<Skeleton className="h-12 w-48" />
+								) : (
+									<p className="text-4xl font-bold">
+										{formatCurrency(balance?.pending_balance)}
+									</p>
+								)}
+								<p className="text-sm text-muted-foreground mt-1">
+									Awaiting settlement.
 								</p>
 							</CardContent>
 						</Card>

@@ -605,6 +605,20 @@ export async function initializePayment(
 	});
 }
 
+export async function cancelOrder(orderId: string): Promise<void> {
+	await fetcher<void>(`/customer/me/orders/${orderId}/cancel/`, {
+		method: "POST",
+	});
+}
+
+export async function verifyPayment(reference: string): Promise<{ paid: boolean; status: string }> {
+	return fetcher<{ paid: boolean; status: string }>(`/verify/${reference}/`);
+}
+
+export async function getOrderPaymentStatus(orderId: string): Promise<{ paid: boolean }> {
+	return fetcher<{ paid: boolean }>(`/orders/${orderId}/`);
+}
+
 // Push Notification API
 export async function subscribeToNotifications(
 	subscription: PushSubscription,

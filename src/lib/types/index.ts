@@ -289,6 +289,7 @@ export interface OrderPayload {
 	order_type: "delivery" | "pickup";
 	delivery_fee?: number;
 	discount_code?: string | null;
+	paystack_reference?: string;
 }
 
 export interface DiscountBreakdown {
@@ -582,8 +583,10 @@ export interface PlatformInfo {
 
 // Payout Types
 export interface WalletBalance {
-	balance: number;
-	withdrawable_balance: number;
+	pending_balance: string;
+	withdrawable_balance: string;
+	total_balance: string;
+	created_at: string;
 }
 
 export interface PayoutRecipient {
