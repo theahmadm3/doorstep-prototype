@@ -18,7 +18,7 @@ test.describe("Routing", () => {
   test("'/login' should show the login screen, not 404", async ({ page }) => {
     await goto(page, "/login");
     await expect(
-      page.getByRole("heading", { name: "Welcome Back!" }),
+      page.getByRole("heading", { name: "Welcome back" }),
     ).toBeVisible();
   });
 

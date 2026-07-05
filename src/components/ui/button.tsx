@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import MuiButton from "@mui/material/Button";
 import { cn } from "@/lib/utils";
 
 // Kept for callers that import buttonVariants to style links/anchors.
@@ -41,18 +40,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         />
       );
     }
-    // Default path: MUI Button, with Tailwind classes forwarded for fine-tuning.
-    // Cast props: our public API mirrors native button attributes (incl. the HTML
-    // `color` attr) which MUI Button's stricter prop types reject. The shadcn-style
-    // `variant`/`size` strings are intentionally passed through too. Behavior is
-    // unchanged; this only satisfies MUI's overload typing.
     return (
-      <MuiButton
+      <button
         ref={ref}
-        variant="text"
-        disableElevation
         className={cn(buttonVariants({ variant, size, className }))}
-        {...(props as React.ComponentProps<typeof MuiButton>)}
+        {...props}
       />
     );
   },

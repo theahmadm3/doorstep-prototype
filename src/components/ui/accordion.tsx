@@ -1,4 +1,3 @@
-"use client"
 
 import * as React from "react"
 import MuiAccordion from "@mui/material/Accordion"

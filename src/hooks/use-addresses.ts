@@ -1,16 +1,15 @@
 
-"use client";
 
 import { useQuery } from '@tanstack/react-query';
 import { getAddresses } from '@/lib/api';
+import { QUERY_KEYS } from '@/lib/query-keys';
 import { useUIStore } from '@/stores/useUIStore';
 import { useEffect } from 'react';
 
 export const useAddresses = () => {
     const { data, isLoading, isError, refetch } = useQuery({
-        queryKey: ['addresses'],
+        queryKey: QUERY_KEYS.addresses,
         queryFn: getAddresses,
-        refetchOnWindowFocus: false,
     });
 
     const setSelectedAddress = useUIStore(state => state.setSelectedAddress);

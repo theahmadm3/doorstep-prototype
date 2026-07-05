@@ -1,6 +1,5 @@
-"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
 	getCustomerOrders,
 	confirmOrderDelivery,
@@ -17,6 +16,7 @@ import {
 	AccordionContent,
 } from "@/components/ui/accordion";
 import { useCartStore } from "@/stores/useCartStore";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import CheckoutModal from "@/components/checkout/checkout-modal";
@@ -49,6 +49,13 @@ function displayStatus(status: OrderStatus): string {
 	if (status === "Delivered" || status === "Picked Up by Customer") return "Completed";
 	return status;
 }
+
+const PAST_ORDER_STATUSES: OrderStatus[] = [
+	"Delivered",
+	"Cancelled",
+	"Picked Up by Customer",
+	"Rejected",
+];
 
 const OrderSkeleton = () => (
 	<div className="space-y-3">
@@ -179,20 +186,23 @@ export default function CustomerOrdersPage() {
 		isFetching,
 		refetch,
 	} = useQuery({
-		queryKey: ["customerOrders"],
+		queryKey: QUERY_KEYS.customerOrders,
 		queryFn: getCustomerOrders,
-		refetchOnWindowFocus: false,
+		staleTime: 30_000,
 	});
 
-	const pastOrderStatuses: OrderStatus[] = [
-		"Delivered",
-		"Cancelled",
-		"Picked Up by Customer",
-		"Rejected",
-	];
-	const activeOrders = fetchedOrders.filter((o) => !pastOrderStatuses.includes(o.status));
-	const pastOrders = fetchedOrders.filter((o) => pastOrderStatuses.includes(o.status));
-	const unsubmittedOrders = unplacedOrders.filter((o) => o.status === "unsubmitted");
+	const activeOrders = useMemo(
+		() => fetchedOrders.filter((o) => !PAST_ORDER_STATUSES.includes(o.status)),
+		[fetchedOrders],
+	);
+	const pastOrders = useMemo(
+		() => fetchedOrders.filter((o) => PAST_ORDER_STATUSES.includes(o.status)),
+		[fetchedOrders],
+	);
+	const unsubmittedOrders = useMemo(
+		() => unplacedOrders.filter((o) => o.status === "unsubmitted"),
+		[unplacedOrders],
+	);
 
 	useEffect(() => {
 		if (isLoadingOrders || fetchedOrders.length === 0) return;
@@ -229,7 +239,7 @@ export default function CustomerOrdersPage() {
 		mutationFn: confirmOrderDelivery,
 		onSuccess: () => {
 			setConfirmingOrderId(null);
-			queryClient.invalidateQueries({ queryKey: ["customerOrders"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.customerOrders });
 			toast({ title: "Delivery Confirmed", description: "Thank you for confirming your delivery!" });
 		},
 		onError: (error) => {
@@ -273,7 +283,7 @@ export default function CustomerOrdersPage() {
 			/>
 
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="flex items-center justify-between p-4">
 				<h1 className="text-3xl font-bold font-headline">Your Orders</h1>
 				<Button
 					variant="outline"

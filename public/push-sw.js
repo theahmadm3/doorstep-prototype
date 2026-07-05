@@ -59,8 +59,8 @@ self.addEventListener('push', (event) => {
 
   const showPromise = self.registration.showNotification(title, {
     body,
-    icon: '/icon-192x192.png',
-    badge: '/icon-192x192.png',
+    icon: '/doorstep-logo-icon.png',
+    badge: '/doorstep-logo-icon.png',
     data,
   });
 

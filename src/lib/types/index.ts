@@ -61,6 +61,12 @@ export interface VerifyOtpResponse {
 	user: User;
 }
 
+export interface RefreshTokenResponse {
+	access: string;
+	refresh: string;
+	message: string;
+}
+
 // Legacy signup - keeping for other roles if needed
 export const signupSchema = z
 	.object({
@@ -283,6 +289,7 @@ export interface OrderPayload {
 	order_type: "delivery" | "pickup";
 	delivery_fee?: number;
 	discount_code?: string | null;
+	paystack_reference?: string;
 }
 
 export interface DiscountBreakdown {
@@ -576,8 +583,10 @@ export interface PlatformInfo {
 
 // Payout Types
 export interface WalletBalance {
-	balance: number;
-	withdrawable_balance: number;
+	pending_balance: string;
+	withdrawable_balance: string;
+	total_balance: string;
+	created_at: string;
 }
 
 export interface PayoutRecipient {
@@ -698,20 +707,33 @@ export interface DashboardResponse {
 // Search
 export interface SearchResultMenuItem {
 	id: string;
+	restaurant: string; // restaurant UUID
 	name: string;
-	description: string;
+	description: string | null;
 	price: string;
 	item_type: string;
 	image_url: string | null;
 	is_available: boolean;
-	restaurant_name: string;
-	restaurant_id: string;
+	category: { id: string; name: string; order_index: number };
+	options: {
+		extra: Array<{
+			id: string;
+			menu_item: string;
+			name: string;
+			type: string;
+			price_adjustment: string;
+			is_available: boolean;
+		}>;
+	};
+	active_discounts: unknown[];
+	created_at: string;
+	updated_at: string;
 }
 
 export interface SearchResultRestaurant {
 	id: string;
 	name: string;
-	description: string;
+	description: string | null;
 	address: {
 		id: string;
 		street_name: string;
@@ -721,6 +743,7 @@ export interface SearchResultRestaurant {
 	image_url: string | null;
 	rating: string;
 	is_active: boolean;
+	badge: null;
 	created_at: string;
 	updated_at: string;
 }

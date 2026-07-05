@@ -30,10 +30,38 @@ export function persistAuth(
 }
 
 /**
+ * Rotate access + refresh after a successful token refresh. Leaves the
+ * stored user and role untouched — this is a token rotation, not a login.
+ */
+export function updateAccessToken(tokens: {
+	access: string;
+	refresh: string;
+}): void {
+	localStorage.setItem(AUTH_KEYS.accessToken, tokens.access);
+	localStorage.setItem(AUTH_KEYS.refreshToken, tokens.refresh);
+}
+
+/**
  * Removes all auth-related keys. Call on logout and on unrecoverable 401.
  */
 export function clearAuth(): void {
 	Object.values(AUTH_KEYS).forEach((key) => localStorage.removeItem(key));
+}
+
+/**
+ * Update only the user blob — call after profile mutations so the stored
+ * object stays in sync without affecting tokens or role history.
+ */
+export function updateStoredUser(user: User): void {
+	localStorage.setItem(AUTH_KEYS.user, JSON.stringify(user));
+}
+
+/**
+ * Read the raw access token — use instead of localStorage.getItem("accessToken")
+ * so key names stay in one place.
+ */
+export function getStoredToken(): string | null {
+	return localStorage.getItem(AUTH_KEYS.accessToken);
 }
 
 /**

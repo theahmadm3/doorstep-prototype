@@ -1,5 +1,4 @@
 
-"use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -34,7 +33,6 @@ export default function PartnerSignupForm({ role }: PartnerSignupFormProps) {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-     console.log(`Submitting for ${role}:`, values);
     toast({
       title: "Thank you for your interest!",
       description: "We've received your submission and will be in touch shortly.",

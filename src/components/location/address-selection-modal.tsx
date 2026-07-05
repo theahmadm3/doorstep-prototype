@@ -1,5 +1,4 @@
 
-"use client";
 
 import { useUIStore } from "@/stores/useUIStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -15,7 +14,6 @@ import { AddressPostData } from "@/lib/types";
 import { useLoadScript } from "@react-google-maps/api";
 import usePlacesAutocomplete, {
   getGeocode,
-  getLatLng,
 } from "use-places-autocomplete";
 import { useAddresses } from "@/hooks/use-addresses";
 
@@ -26,7 +24,7 @@ interface AddressSelectionModalProps {
     onClose: () => void;
 }
 
-const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
+const GooglePlacesAutocomplete = ({ onPlaceSelect }: { onPlaceSelect: (place: google.maps.places.PlaceResult) => void }) => {
     const {
         ready,
         value,
@@ -42,14 +40,11 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
         setValue(e.target.value);
     };
 
-    const handleSelect = ({ description, place_id }) => () => {
+    const handleSelect = ({ description, place_id }: { description: string; place_id: string }) => () => {
         setValue(description, false);
         clearSuggestions();
 
-        getGeocode({ address: description }).then((results) => {
-            const { lat, lng } = getLatLng(results[0]);
-            console.log("📍 Coordinates: ", { lat, lng });
-
+        getGeocode({ address: description }).then(() => {
             // Fetch Place Details
             const service = new window.google.maps.places.PlacesService(document.createElement('div'));
             service.getDetails({ placeId: place_id }, (place, status) => {
@@ -59,6 +54,8 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect }) => {
                     console.error('Failed to fetch place details:', status);
                 }
             });
+        }).catch((err) => {
+            console.error('Failed to geocode selected address:', err);
         });
     };
 
@@ -305,7 +302,7 @@ export default function AddressSelectionModalWrapper(props: AddressSelectionModa
     });
     
     if (!apiKey) {
-        console.error("Google Maps API key is missing. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.");
+        console.error("Google Maps API key is missing. Please set VITE_GOOGLE_MAPS_API_KEY environment variable.");
         // Render a version without Google Maps functionality
         return <AddressSelectionContent {...props} />;
     }

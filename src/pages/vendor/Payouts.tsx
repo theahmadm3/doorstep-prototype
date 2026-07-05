@@ -1,5 +1,4 @@
 
-"use client";
 
 import PayoutManagement from "@/components/payouts/payout-management";
 import { Button } from "@/components/ui/button";

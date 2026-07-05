@@ -1,5 +1,4 @@
 
-"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -67,6 +66,7 @@ import {
 	uploadMenuItemImage,
 	getMenuCategories,
 } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { Skeleton } from "../ui/skeleton";
 import { format } from "date-fns";
 import {
@@ -102,7 +102,7 @@ export default function VendorItemManagement() {
 	const { data: categories = [], isLoading: isLoadingCategories } = useQuery<
 		MenuCategory[]
 	>({
-		queryKey: ["menuCategories"],
+		queryKey: QUERY_KEYS.menuCategories,
 		queryFn: getMenuCategories,
 	});
 
@@ -226,7 +226,7 @@ export default function VendorItemManagement() {
 			}
 
 			// Invalidate the query to refetch in other components
-			await queryClient.invalidateQueries({ queryKey: ["vendorMenuItems"] });
+			await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorMenuItems });
 			// Refetch local state for this component
 			await fetchItems();
 			setDialogOpen(false);
@@ -253,7 +253,7 @@ export default function VendorItemManagement() {
 		try {
 			await deleteVendorMenuItem(itemToDelete.id);
 			setItems(items.filter((item) => item.id !== itemToDelete.id));
-			queryClient.invalidateQueries({ queryKey: ["vendorMenuItems"] });
+			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorMenuItems });
 			toast({
 				title: "Item Deleted",
 				description: `${itemToDelete.name} has been removed from your menu.`,
@@ -601,7 +601,9 @@ export default function VendorItemManagement() {
 								<Select
 									name="category_id"
 									defaultValue={
-										editingItem?.category || ""
+										(typeof editingItem?.category === "object"
+											? editingItem?.category?.id
+											: editingItem?.category) || ""
 									}
 								>
 									<SelectTrigger>

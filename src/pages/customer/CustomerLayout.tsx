@@ -1,4 +1,3 @@
-"use client";
 
 import {
 	Sidebar,
@@ -22,7 +21,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAddresses } from "@/hooks/use-addresses";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
+import { usePaymentReconciliation } from "@/hooks/use-payment-reconciliation";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import { getStoredUser } from "@/lib/auth";
 
 const customerNavLinks = [
 	{ href: "/customer/dashboard", label: "Home", icon: Home },
@@ -33,19 +34,18 @@ const customerNavLinks = [
 
 export default function CustomerLayout() {
 	useNotificationListener();
+	usePaymentReconciliation();
 	const [user, setUser] = useState<UserType | null>(null);
 	const { addresses, isAddressesLoading } = useAddresses();
 	const [isAddressModalRequired, setAddressModalRequired] = useState(false);
-	const [isClient, setIsClient] = useState(false);
 	const pathname = useLocation().pathname;
 
 	const showHeader = pathname === "/customer/dashboard";
 
 	useEffect(() => {
-		setIsClient(true);
-		const storedUser = localStorage.getItem("user");
+		const storedUser = getStoredUser();
 		if (storedUser) {
-			setUser(JSON.parse(storedUser));
+			setUser(storedUser);
 		}
 	}, []);
 
@@ -98,7 +98,7 @@ export default function CustomerLayout() {
 					</SidebarContent>
 
 					<SidebarFooter className="p-4 border-t">
-						{!isClient || !user ? (
+						{!user ? (
 							<div className="flex items-center gap-3 p-3">
 								<Skeleton className="h-10 w-10 rounded-full" />
 								<div className="flex-1 space-y-2">
@@ -136,7 +136,7 @@ export default function CustomerLayout() {
 				<div className="flex-1 flex flex-col min-w-0">
 					{showHeader && <ClientHeader />}
 					<main className="flex-1 overflow-y-auto">
-						<div className="px-5 pb-28 md:px-6 md:pb-8 lg:px-8">
+						<div className="pb-28 md:px-6 md:pb-8 lg:px-8">
 							<Outlet />
 						</div>
 					</main>

@@ -1,7 +1,7 @@
 
-"use client";
 
 import { getDashboard } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import CustomerDashboardClient from "./Dashboard.client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -68,9 +68,8 @@ const EMPTY_DASHBOARD = {
 
 export default function CustomerDashboardPage() {
 	const { data, isLoading } = useQuery({
-		queryKey: ["dashboard"],
+		queryKey: QUERY_KEYS.dashboard,
 		queryFn: () => getDashboard(),
-		refetchOnWindowFocus: false,
 	});
 
 	if (isLoading) return <DashboardSkeleton />;

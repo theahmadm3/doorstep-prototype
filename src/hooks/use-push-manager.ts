@@ -1,4 +1,3 @@
-"use client";
 
 import { useEffect, useCallback } from "react";
 import { create } from "zustand";
@@ -47,8 +46,16 @@ function waitForActive(registration: ServiceWorkerRegistration): Promise<void> {
 	const target = registration.installing ?? registration.waiting;
 	if (!target) return Promise.resolve();
 	return new Promise<void>((resolve) => {
+		// A SW stuck in installing/waiting would otherwise strand this promise
+		// and its listener forever — resolve after 10s and let the subscription
+		// check downstream report the real state.
+		const timeout = setTimeout(() => {
+			target.removeEventListener("statechange", onStateChange);
+			resolve();
+		}, 10_000);
 		const onStateChange = () => {
 			if (target.state === "activated") {
+				clearTimeout(timeout);
 				target.removeEventListener("statechange", onStateChange);
 				resolve();
 			}

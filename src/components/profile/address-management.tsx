@@ -1,5 +1,4 @@
 
-"use client";
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Address, AddressFormData, AddressPostData } from "@/lib/types";
 import { PlusCircle, Edit, Home } from "lucide-react";
 import { updateAddress, deleteAddress } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { Skeleton } from "../ui/skeleton";
 import {
   AlertDialog,
@@ -37,7 +37,7 @@ import AddressSelectionModal from "../location/address-selection-modal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function AddressManagement() {
-  const { addresses, isAddressesLoading, refetchAddresses } = useAddresses();
+  const { addresses, isAddressesLoading } = useAddresses();
   const [addressToDelete, setAddressToDelete] = useState<Address | null>(null);
   const [addressToEdit, setAddressToEdit] = useState<Address | null>(null);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -55,7 +55,7 @@ export default function AddressManagement() {
       mutationFn: ({ id, payload }: { id: string; payload: Partial<AddressPostData> }) => updateAddress(id, payload),
       onSuccess: () => {
           toast({ title: "Address Updated", description: "Your address has been successfully updated." });
-          queryClient.invalidateQueries({ queryKey: ['addresses'] });
+          queryClient.invalidateQueries({ queryKey: QUERY_KEYS.addresses });
           setEditModalOpen(false);
           setAddressToEdit(null);
       },
@@ -68,17 +68,13 @@ export default function AddressManagement() {
       mutationFn: (id: string) => deleteAddress(id),
       onSuccess: () => {
           toast({ title: "Address Deleted", description: "The selected address has been removed." });
-          queryClient.invalidateQueries({ queryKey: ['addresses'] });
+          queryClient.invalidateQueries({ queryKey: QUERY_KEYS.addresses });
           setAddressToDelete(null);
       },
       onError: (error) => {
           toast({ title: "Error", description: error.message, variant: "destructive" });
       }
   });
-
-  useEffect(() => {
-    refetchAddresses();
-  }, [refetchAddresses]);
 
   useEffect(() => {
       if(addressToEdit) {
