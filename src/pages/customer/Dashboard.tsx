@@ -1,9 +1,7 @@
 
 
-import { getDashboard } from "@/lib/api";
-import { QUERY_KEYS } from "@/lib/query-keys";
 import CustomerDashboardClient from "./Dashboard.client";
-import { useQuery } from "@tanstack/react-query";
+import { useDashboard } from "@/hooks/use-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function DashboardSkeleton() {
@@ -67,12 +65,16 @@ const EMPTY_DASHBOARD = {
 };
 
 export default function CustomerDashboardPage() {
-	const { data, isLoading } = useQuery({
-		queryKey: QUERY_KEYS.dashboard,
-		queryFn: () => getDashboard(),
-	});
+	const { data, isLoading, coords } = useDashboard();
 
 	if (isLoading) return <DashboardSkeleton />;
 
-	return <CustomerDashboardClient data={data ?? EMPTY_DASHBOARD} />;
+	return (
+		<CustomerDashboardClient
+			// Remount when the address changes so the paginated list state
+			// reseeds from the fresh location-scoped payload
+			key={`${coords.lat ?? "none"},${coords.lon ?? "none"}`}
+			data={data ?? EMPTY_DASHBOARD}
+		/>
+	);
 }

@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { updateUserProfile } from "@/lib/auth-api";
 import { getStoredUser, updateStoredUser } from "@/lib/auth";
 import AddressManagement from "@/components/profile/address-management";
-import { Bell, ChevronRight, CreditCard, HelpCircle } from "lucide-react";
+import { Bell } from "lucide-react";
+// import { ChevronRight, CreditCard, HelpCircle } from "lucide-react"; // for the quick-links card below
 import LogoutButton from "@/components/auth/logout-button";
 import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
 
@@ -126,6 +127,8 @@ export default function CustomerProfilePage() {
                         </CardContent>
                     </Card>
 
+                    {/* Payment Methods + Support quick links: hidden until their
+                        screens exist — they were dead taps.
                     <Card>
                         <CardContent className="p-2">
                             <div className="space-y-1">
@@ -150,6 +153,7 @@ export default function CustomerProfilePage() {
                             </div>
                         </CardContent>
                     </Card>
+                    */}
 
                     <Card>
                         <CardContent className="p-4">

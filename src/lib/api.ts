@@ -54,33 +54,42 @@ if (!BASE_URL) {
 	throw new Error("Missing VITE_BASE_URL environment variable");
 }
 
+// "unauthorized" means the backend explicitly rejected the refresh token —
+// the session is truly dead. "transient" covers network errors and 5xx:
+// common when iOS resumes a suspended PWA before the network stack is ready,
+// and must NOT log the user out.
+type RefreshResult =
+	| { status: "success"; access: string }
+	| { status: "unauthorized" }
+	| { status: "transient" };
+
 // Dedupe concurrent 401s: multiple in-flight requests that hit 401 at once
 // share one refresh attempt instead of each firing their own.
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<RefreshResult> | null = null;
 
-async function refreshAccessToken(refresh: string): Promise<RefreshTokenResponse> {
-	const res = await fetch(`${BASE_URL}/auth/refresh_token/`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ refresh }),
-	});
-	if (!res.ok) {
-		throw new Error(`Refresh failed: ${res.status}`);
-	}
-	return res.json();
-}
-
-async function tryRefresh(): Promise<string | null> {
+async function tryRefresh(): Promise<RefreshResult> {
 	if (refreshPromise) return refreshPromise;
-	refreshPromise = (async () => {
+	refreshPromise = (async (): Promise<RefreshResult> => {
 		try {
 			const refresh = localStorage.getItem(AUTH_KEYS.refreshToken);
-			if (!refresh) return null;
-			const { access, refresh: newRefresh } = await refreshAccessToken(refresh);
+			if (!refresh) return { status: "unauthorized" };
+			const res = await fetch(`${BASE_URL}/auth/refresh_token/`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ refresh }),
+			});
+			if (res.status === 400 || res.status === 401 || res.status === 403) {
+				return { status: "unauthorized" };
+			}
+			if (!res.ok) {
+				return { status: "transient" };
+			}
+			const { access, refresh: newRefresh } =
+				(await res.json()) as RefreshTokenResponse;
 			updateAccessToken({ access, refresh: newRefresh });
-			return access;
+			return { status: "success", access };
 		} catch {
-			return null;
+			return { status: "transient" };
 		} finally {
 			refreshPromise = null;
 		}
@@ -125,11 +134,19 @@ async function fetcher<T>(
 			if (isRetry) {
 				handleUnrecoverable401();
 			}
-			const newAccess = await tryRefresh();
-			if (newAccess) {
+			const refreshResult = await tryRefresh();
+			if (refreshResult.status === "success") {
 				return fetcher<T>(url, options, true);
 			}
-			handleUnrecoverable401();
+			if (refreshResult.status === "unauthorized") {
+				handleUnrecoverable401();
+			}
+			// Transient refresh failure: fail this request but keep the session —
+			// React Query retries / the next user action will succeed once the
+			// network is back
+			throw new Error(
+				"Connection problem while refreshing your session. Please try again.",
+			);
 		}
 
 		const errorBody = await res.text();
