@@ -1,7 +1,9 @@
 
 import { Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { getStoredToken, getStoredUser } from "@/lib/auth";
+import { logAuthEvent } from "@/lib/auth-log";
 
 export type AuthRole = "customer" | "restaurant" | "driver" | "admin";
 
@@ -47,6 +49,14 @@ export default function RequireAuth({
 }) {
   const location = useLocation();
   const user = readAuth();
+  const isAuthed = user !== null;
+
+  // Effect (not render) so StrictMode double-renders don't double-log
+  useEffect(() => {
+    if (!isAuthed) {
+      logAuthEvent("guard_no_auth", location.pathname);
+    }
+  }, [isAuthed, location.pathname]);
 
   if (!user) {
     return (

@@ -46,6 +46,7 @@ import type {
 } from "./types/paystack";
 import type { RefreshTokenResponse } from "./types";
 import { AUTH_KEYS, clearAuth, updateAccessToken } from "./auth";
+import { logAuthEvent } from "./auth-log";
 import { format } from "date-fns";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -67,7 +68,7 @@ type RefreshResult =
 // share one refresh attempt instead of each firing their own.
 let refreshPromise: Promise<RefreshResult> | null = null;
 
-async function tryRefresh(): Promise<RefreshResult> {
+export async function tryRefresh(): Promise<RefreshResult> {
 	if (refreshPromise) return refreshPromise;
 	refreshPromise = (async (): Promise<RefreshResult> => {
 		try {
@@ -97,10 +98,15 @@ async function tryRefresh(): Promise<RefreshResult> {
 	return refreshPromise;
 }
 
-function handleUnrecoverable401(): never {
+function handleUnrecoverable401(
+	reason: "refresh_rejected" | "retry_401",
+): never {
+	logAuthEvent(
+		reason === "refresh_rejected" ? "logout_refresh_rejected" : "logout_retry_401",
+	);
 	clearAuth();
 	if (typeof window !== "undefined") {
-		window.location.href = "/?session_expired=true";
+		window.location.href = `/?session_expired=true&reason=${reason}`;
 	}
 	throw new Error("Session expired. Please log in again.");
 }
@@ -132,14 +138,14 @@ async function fetcher<T>(
 	if (!res.ok) {
 		if (res.status === 401 && typeof window !== "undefined") {
 			if (isRetry) {
-				handleUnrecoverable401();
+				handleUnrecoverable401("retry_401");
 			}
 			const refreshResult = await tryRefresh();
 			if (refreshResult.status === "success") {
 				return fetcher<T>(url, options, true);
 			}
 			if (refreshResult.status === "unauthorized") {
-				handleUnrecoverable401();
+				handleUnrecoverable401("refresh_rejected");
 			}
 			// Transient refresh failure: fail this request but keep the session —
 			// React Query retries / the next user action will succeed once the
