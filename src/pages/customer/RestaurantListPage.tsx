@@ -1,8 +1,6 @@
 
 import { useParams, useLocation, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { getDashboard } from "@/lib/api";
-import { QUERY_KEYS } from "@/lib/query-keys";
+import { useDashboard } from "@/hooks/use-dashboard";
 import type { DashboardRestaurant } from "@/lib/types";
 import { ArrowLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,13 +34,9 @@ export default function RestaurantListPage() {
 	const location = useLocation();
 	const stateRestaurants = (location.state as LocationState | null)?.restaurants;
 
-	const { data, isLoading } = useQuery({
-		// Same key as the dashboard page — both fetch page 1 of the same
-		// payload, so the section page can reuse the cached result
-		queryKey: QUERY_KEYS.dashboard,
-		queryFn: () => getDashboard(),
-		enabled: !stateRestaurants,
-	});
+	// Shares the dashboard page's location-scoped cache entry, so navigating
+	// here reuses the already-fetched payload
+	const { data, isLoading } = useDashboard({ enabled: !stateRestaurants });
 
 	const restaurants =
 		stateRestaurants ??

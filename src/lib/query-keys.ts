@@ -1,5 +1,6 @@
 export const QUERY_KEYS = {
-	dashboard: ["dashboard"] as const,
+	dashboard: (lat?: number, lon?: number) =>
+		["dashboard", lat ?? null, lon ?? null] as const,
 	search: (term: string) => ["search", term] as const,
 	addresses: ["addresses"] as const,
 	customerOrders: ["customerOrders"] as const,

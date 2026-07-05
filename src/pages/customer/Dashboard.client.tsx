@@ -6,6 +6,7 @@ import { getDashboard } from "@/lib/api";
 import type { DashboardData, DashboardPagination, DashboardRestaurant, DashboardComboItem } from "@/lib/types";
 import { getStoredUser } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useSelectedCoords } from "@/hooks/use-dashboard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -108,6 +109,7 @@ export default function CustomerDashboardClient({ data }: Props) {
 	const { popularNearYou, featuredSelections } = data;
 
 	const { toast } = useToast();
+	const coords = useSelectedCoords();
 	const [firstName, setFirstName] = useState<string | null>(null);
 	const [restaurants, setRestaurants] = useState<DashboardRestaurant[]>(data.allRestaurants);
 	const [pagination, setPagination] = useState<DashboardPagination>(data.pagination);
@@ -121,7 +123,10 @@ export default function CustomerDashboardClient({ data }: Props) {
 	const handleLoadMore = async () => {
 		setIsLoadingMore(true);
 		try {
-			const next = await getDashboard({ page: pagination.currentPage + 1 });
+			const next = await getDashboard({
+				...coords,
+				page: pagination.currentPage + 1,
+			});
 			setRestaurants((prev) => [...prev, ...next.allRestaurants]);
 			setPagination(next.pagination);
 		} catch {
