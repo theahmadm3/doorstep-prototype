@@ -17,6 +17,10 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+if (import.meta.env.DEV) {
+  import("eruda").then((m) => m.default.init());
+}
+
 async function bootstrap() {
   // If iOS wiped localStorage but the IndexedDB mirror survived, restore the
   // session BEFORE the router's auth guard runs its synchronous check.
