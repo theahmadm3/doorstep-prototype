@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -15,6 +15,6 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}"],
   },
   plugins: [react(), tsconfigPaths()],
-  server: { port: 9002 },
+  server: { port: 9002, host: true },
   build: { outDir: "dist" },
 });
