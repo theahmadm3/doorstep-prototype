@@ -28,6 +28,8 @@ import {
 	PayoutRecipient,
 	CreateRecipientPayload,
 	InitiatePayoutPayload,
+	Bank,
+	Withdrawal,
 	MenuCategory,
 	CategoryPayload,
 	OptionChoice,
@@ -658,7 +660,36 @@ export async function getWalletBalance(): Promise<WalletBalance> {
 }
 
 export async function getPayoutRecipients(): Promise<PayoutRecipient[]> {
-	return fetcher<PayoutRecipient[]>("/payout/recipients/");
+	try {
+		return await fetcher<PayoutRecipient[]>("/payout/recipients/");
+	} catch (e) {
+		// 404 means no recipients exist yet — treat as empty list
+		if (e instanceof Error && e.message.includes("404")) return [];
+		throw e;
+	}
+}
+
+export async function getBanks(): Promise<Bank[]> {
+	const data = await fetcher<Bank[] | PaginatedResponse<Bank>>("/banks/");
+	if (Array.isArray(data)) return data;
+	return (data as PaginatedResponse<Bank>).results ?? [];
+}
+
+export async function requestWithdrawal(payload: {
+	bank_account_id: number;
+}): Promise<void> {
+	await fetcher<unknown>("/withdrawals/request/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function getWithdrawals(): Promise<Withdrawal[]> {
+	const data = await fetcher<Withdrawal[] | PaginatedResponse<Withdrawal>>(
+		"/withdrawals/",
+	);
+	if (Array.isArray(data)) return data;
+	return (data as PaginatedResponse<Withdrawal>).results ?? [];
 }
 
 export async function createPayoutRecipient(

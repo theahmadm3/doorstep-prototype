@@ -618,6 +618,32 @@ export const requestPayoutSchema = z.object({
 
 export type InitiatePayoutPayload = z.infer<typeof requestPayoutSchema>;
 
+export interface Bank {
+	name: string;
+	code: string;
+}
+
+export type WithdrawalStatus =
+	| "PENDING"
+	| "APPROVED"
+	| "PROCESSING"
+	| "COMPLETED"
+	| "REJECTED"
+	| "FAILED";
+
+export interface Withdrawal {
+	id: string;
+	amount: string | null;
+	status: WithdrawalStatus;
+	reference: string;
+	bank_account_name: string;
+	bank_account_number: string;
+	bank_name: string;
+	admin_note: string;
+	created_at: string;
+	processed_at: string | null;
+}
+
 // Review
 export interface ReviewPayload {
     restaurant: string;
