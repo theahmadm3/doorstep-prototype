@@ -788,6 +788,7 @@ export default function CheckoutModal({
 									<div className="grid grid-cols-2 gap-3">
 										<button
 											onClick={() => setOrderType("delivery")}
+											aria-pressed={orderType === "delivery"}
 											className={cn(
 												"flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-colors",
 												orderType === "delivery"
@@ -795,11 +796,12 @@ export default function CheckoutModal({
 													: "border-border text-muted-foreground hover:bg-muted",
 											)}
 										>
-											<Truck className="h-4 w-4" />
+											<Truck className="h-4 w-4" aria-hidden="true" />
 											Delivery
 										</button>
 										<button
 											onClick={() => setOrderType("pickup")}
+											aria-pressed={orderType === "pickup"}
 											className={cn(
 												"flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 text-sm font-medium transition-colors",
 												orderType === "pickup"
@@ -807,7 +809,7 @@ export default function CheckoutModal({
 													: "border-border text-muted-foreground hover:bg-muted",
 											)}
 										>
-											<Package className="h-4 w-4" />
+											<Package className="h-4 w-4" aria-hidden="true" />
 											Pickup
 										</button>
 									</div>
@@ -841,10 +843,11 @@ export default function CheckoutModal({
 													<Button
 														variant="ghost"
 														size="icon"
+														aria-label="Change delivery address"
 														className="h-8 w-8 flex-shrink-0"
 														onClick={() => setAddressModalOpen(true)}
 													>
-														<Edit className="h-4 w-4" />
+														<Edit className="h-4 w-4" aria-hidden="true" />
 													</Button>
 												</div>
 											) : (
@@ -904,21 +907,23 @@ export default function CheckoutModal({
 																variant="outline"
 																size="icon"
 																className="h-6 w-6"
+																aria-label={`Decrease quantity of ${item.menuItem.name}`}
 																onClick={() => handleDecrease(item.cartItemId)}
 																disabled={item.quantity <= 1}
 															>
-																<Minus className="h-3 w-3" />
+																<Minus className="h-3 w-3" aria-hidden="true" />
 															</Button>
-															<span className="text-sm font-semibold w-4 text-center">
+															<span className="text-sm font-semibold w-4 text-center" aria-live="polite" aria-label={`${item.quantity} of ${item.menuItem.name}`}>
 																{item.quantity}
 															</span>
 															<Button
 																variant="outline"
 																size="icon"
 																className="h-6 w-6"
+																aria-label={`Increase quantity of ${item.menuItem.name}`}
 																onClick={() => handleIncrease(item.cartItemId)}
 															>
-																<Plus className="h-3 w-3" />
+																<Plus className="h-3 w-3" aria-hidden="true" />
 															</Button>
 														</div>
 													</div>
@@ -935,9 +940,10 @@ export default function CheckoutModal({
 															variant="ghost"
 															size="icon"
 															className="h-6 w-6 text-destructive"
+															aria-label={`Remove ${item.menuItem.name} from cart`}
 															onClick={() => handleRemoveItem(item.cartItemId)}
 														>
-															<Trash2 className="h-4 w-4" />
+															<Trash2 className="h-4 w-4" aria-hidden="true" />
 														</Button>
 													</div>
 												</div>

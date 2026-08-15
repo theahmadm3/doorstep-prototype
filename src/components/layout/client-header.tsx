@@ -57,13 +57,9 @@ export default function ClientHeader() {
 							disabled={
 								isSubscribed || isSubscribing || platformInfo.needsPWAInstall
 							}
-							title={
-								isSubscribed
-									? "Notifications enabled"
-									: "Enable notifications"
-							}
+							aria-label={isSubscribed ? "Notifications enabled" : "Enable notifications"}
 						>
-							<Bell className="h-5 w-5" />
+							<Bell className="h-5 w-5" aria-hidden="true" />
 							{isSubscribed && (
 								<span className="absolute top-2.5 right-2.5 flex h-2 w-2">
 									<span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>

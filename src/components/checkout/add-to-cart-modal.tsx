@@ -146,16 +146,17 @@ export default function AddToCartModal({
 						<Button
 							variant="outline"
 							size="icon"
+							aria-label="Decrease quantity"
 							onClick={decrementQuantity}
 							disabled={quantity <= 1}
 						>
-							<Minus className="h-4 w-4" />
+							<Minus className="h-4 w-4" aria-hidden="true" />
 						</Button>
-						<span className="text-xl font-bold w-12 text-center">
+						<span className="text-xl font-bold w-12 text-center" aria-live="polite" aria-label={`Quantity: ${quantity}`}>
 							{quantity}
 						</span>
-						<Button variant="outline" size="icon" onClick={incrementQuantity}>
-							<Plus className="h-4 w-4" />
+						<Button variant="outline" size="icon" aria-label="Increase quantity" onClick={incrementQuantity}>
+							<Plus className="h-4 w-4" aria-hidden="true" />
 						</Button>
 					</div>
 				</div>

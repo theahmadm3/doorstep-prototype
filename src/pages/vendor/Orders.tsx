@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getVendorOrders, updateVendorOrderStatus, getVendorRiders, assignRiderToOrder } from "@/lib/api";
 import { QUERY_KEYS } from "@/lib/query-keys";
-import { CheckCircle, Utensils, ThumbsUp, ThumbsDown, UserCheck, RefreshCw } from "lucide-react";
+import { CheckCircle, Utensils, ThumbsUp, ThumbsDown, UserCheck, RefreshCw, Eye, MapPin, Phone, Package } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { VendorOrder, Rider } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,7 +43,22 @@ import { useRefreshCooldown } from "@/hooks/use-refresh-cooldown";
 
 const ITEMS_PER_PAGE = 5;
 
-type OrderTableProps = {
+function getStatusClassName(status: string): string {
+    switch (status) {
+        case "Pending":       return "bg-orange-100 text-orange-700 border-orange-200";
+        case "Accepted":      return "bg-blue-100 text-blue-700 border-blue-200";
+        case "Preparing":     return "bg-purple-100 text-purple-700 border-purple-200";
+        case "Ready for Pickup": return "bg-emerald-100 text-emerald-700 border-emerald-200";
+        case "On the Way":    return "bg-sky-100 text-sky-700 border-sky-200";
+        case "Delivered":
+        case "Completed":     return "bg-emerald-600 text-white border-emerald-600";
+        case "Cancelled":
+        case "Rejected":      return "bg-red-100 text-red-700 border-red-200";
+        default:              return "bg-muted text-muted-foreground border-border";
+    }
+}
+
+type OrderListProps = {
     title: string;
     description?: string;
     orders: VendorOrder[];
@@ -53,43 +68,47 @@ type OrderTableProps = {
     totalPages: number;
     isLoading: boolean;
     showActions?: boolean;
+    onViewDetails: (order: VendorOrder) => void;
 };
-const OrderTable = ({ title, description, orders, actions, currentPage, onPageChange, totalPages, isLoading, showActions = true }: OrderTableProps) => {
+
+const OrderList = ({ title, description, orders, actions, currentPage, onPageChange, totalPages, isLoading, showActions = true, onViewDetails }: OrderListProps) => {
     if (isLoading) {
         return (
-             <Card>
+            <Card>
                 <CardHeader>
                     <CardTitle>{title}</CardTitle>
                     <CardDescription>{description}</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Order ID</TableHead>
-                                <TableHead>Customer</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Total</TableHead>
-                                {showActions && <TableHead>Actions</TableHead>}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {[...Array(3)].map((_, i) => (
-                                <TableRow key={i}>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                                    {showActions && <TableCell><Skeleton className="h-8 w-24" /></TableCell>}
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                <CardContent className="space-y-3">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="rounded-lg border bg-card p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Skeleton className="h-4 w-20" />
+                                    <Skeleton className="h-5 w-28" />
+                                </div>
+                                <div className="flex gap-2">
+                                    <Skeleton className="h-5 w-16 rounded-full" />
+                                    <Skeleton className="h-5 w-16 rounded-full" />
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Skeleton className="h-6 w-32 rounded-md" />
+                                <Skeleton className="h-6 w-24 rounded-md" />
+                                <Skeleton className="h-6 w-20 rounded-md" />
+                            </div>
+                            <div className="flex items-center justify-between pt-1 border-t">
+                                <Skeleton className="h-4 w-32" />
+                                <div className="flex gap-2">
+                                    <Skeleton className="h-8 w-8" />
+                                    <Skeleton className="h-8 w-24" />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </CardContent>
             </Card>
-        )
+        );
     }
 
     if (orders.length === 0) {
@@ -100,7 +119,10 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
                     <CardDescription>{description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground text-center py-8">No orders in this category.</p>
+                    <div className="flex flex-col items-center gap-3 py-12 text-muted-foreground">
+                        <Package className="h-8 w-8 opacity-40" />
+                        <p className="text-sm">No orders in this category.</p>
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -112,40 +134,88 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Order ID</TableHead>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Total</TableHead>
-                            {showActions && <TableHead>Actions</TableHead>}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {orders.map((order) => (
-                            <TableRow key={order.id}>
-                                <TableCell className="font-medium">#{order.id.slice(0, 8)}</TableCell>
-                                <TableCell>{order.customer_name}</TableCell>
-                                <TableCell>{order.created_at}</TableCell>
-                                <TableCell>
-                                    <Badge variant={order.status === 'Preparing' ? 'destructive' : 'secondary'}>{order.status}</Badge>
-                                </TableCell>
-                                <TableCell>₦{parseFloat(order.total_amount).toFixed(2)}</TableCell>
-                                {showActions && (
-                                    <TableCell className="space-x-2">
-                                        {actions(order)}
-                                    </TableCell>
-                                )}
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+            <CardContent className="space-y-3">
+                {orders.map((order) => {
+                    const visibleItems = order.items.slice(0, 3);
+                    const hiddenCount = order.items.length - visibleItems.length;
+                    return (
+                        <div key={order.id} className="rounded-lg border bg-card p-4 space-y-3 hover:shadow-sm transition-shadow">
+                            {/* Header row: ID, customer, badges */}
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-xs font-mono text-muted-foreground">
+                                            #{order.id.slice(0, 8)}
+                                        </span>
+                                        <span className="font-semibold text-sm truncate">{order.customer_name}</span>
+                                        {order.customer_phone && (
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                <Phone className="h-3 w-3" />{order.customer_phone}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${order.order_type === 'delivery' ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                                        {order.order_type === 'delivery' ? 'Delivery' : 'Pickup'}
+                                    </span>
+                                    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${getStatusClassName(order.status)}`}>
+                                        {order.status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Items row */}
+                            {order.items.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {visibleItems.map((item) => (
+                                        <span
+                                            key={item.id}
+                                            className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground"
+                                        >
+                                            <span className="text-muted-foreground font-normal">{item.quantity}×</span>
+                                            {item.item_name}
+                                        </span>
+                                    ))}
+                                    {hiddenCount > 0 && (
+                                        <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                                            +{hiddenCount} more
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Footer row: date, total, actions */}
+                            <div className="flex items-center justify-between gap-2 pt-1 border-t">
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                    <span>{order.created_at}</span>
+                                    <span className="font-semibold text-foreground text-sm">
+                                        ₦{parseFloat(order.total_amount).toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        aria-label="View order details"
+                                        onClick={() => onViewDetails(order)}
+                                        className="h-8 w-8"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                    </Button>
+                                    {showActions && (
+                                        <div className="flex items-center gap-2">
+                                            {actions(order)}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
             </CardContent>
-             {totalPages > 1 && (
-                <div className="flex items-center justify-end space-x-2 py-4 px-6">
+            {totalPages > 1 && (
+                <div className="flex items-center justify-end gap-2 py-4 px-6 border-t">
                     <Button
                         variant="outline"
                         size="sm"
@@ -154,8 +224,8 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
                     >
                         Previous
                     </Button>
-                    <span className="text-sm">
-                        Page {currentPage} of {totalPages}
+                    <span className="text-sm text-muted-foreground">
+                        {currentPage} / {totalPages}
                     </span>
                     <Button
                         variant="outline"
@@ -166,7 +236,7 @@ const OrderTable = ({ title, description, orders, actions, currentPage, onPageCh
                         Next
                     </Button>
                 </div>
-             )}
+            )}
         </Card>
     );
 };
@@ -193,6 +263,7 @@ export default function VendorOrdersPage() {
     }, [isError, toast]);
 
     const [isUpdating, setIsUpdating] = useState<string | null>(null);
+    const [detailOrder, setDetailOrder] = useState<VendorOrder | null>(null);
     
     // State for rider assignment modal
     const [isAssignModalOpen, setAssignModalOpen] = useState(false);
@@ -433,6 +504,59 @@ export default function VendorOrdersPage() {
                 </AlertDialogContent>
             </AlertDialog>
 
+            <Dialog open={!!detailOrder} onOpenChange={(open) => { if (!open) setDetailOrder(null); }}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Order #{detailOrder?.id.slice(0, 8)}</DialogTitle>
+                        <DialogDescription>{detailOrder?.customer_name} · {detailOrder?.customer_phone}</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        {detailOrder?.order_type === "delivery" && detailOrder.delivery_address_str && (
+                            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                                <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                                <span>{detailOrder.delivery_address_str}</span>
+                            </div>
+                        )}
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Item</TableHead>
+                                    <TableHead className="text-center">Qty</TableHead>
+                                    <TableHead>Options</TableHead>
+                                    <TableHead className="text-right">Price</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {detailOrder?.items.map((item) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-medium">{item.item_name}</TableCell>
+                                        <TableCell className="text-center">{item.quantity}</TableCell>
+                                        <TableCell className="text-muted-foreground text-sm">
+                                            {item.selected_options.length > 0 ? item.selected_options.join(", ") : "—"}
+                                        </TableCell>
+                                        <TableCell className="text-right">₦{parseFloat(item.item_price).toFixed(2)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        <div className="space-y-1 text-sm border-t pt-3">
+                            <div className="flex justify-between text-muted-foreground">
+                                <span>Subtotal</span>
+                                <span>₦{parseFloat(detailOrder?.subtotal_amount ?? "0").toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between text-muted-foreground">
+                                <span>Service fee</span>
+                                <span>₦{parseFloat(detailOrder?.service_fee ?? "0").toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between font-semibold">
+                                <span>Total</span>
+                                <span>₦{parseFloat(detailOrder?.total_amount ?? "0").toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h1 className="text-3xl font-bold font-headline">Manage Orders</h1>
                 <Button onClick={handleRefresh} variant="outline" disabled={isFetching || isCooldownActive}>
@@ -462,7 +586,7 @@ export default function VendorOrdersPage() {
                 </TabsList>
 
                 <TabsContent value="incoming">
-                     <OrderTable
+                     <OrderList
                         title="Incoming Orders"
                         description="New orders awaiting your confirmation."
                         orders={paginatedIncoming}
@@ -470,6 +594,7 @@ export default function VendorOrdersPage() {
                         totalPages={totalPages.incoming}
                         onPageChange={(p) => handlePageChange('incoming', p)}
                         isLoading={isLoading}
+                        onViewDetails={setDetailOrder}
                         actions={(order) => (
                             <>
                                 <Button variant="outline" size="sm" onClick={() => handleUpdateStatus(order.id, 'accept')} disabled={isUpdating === order.id}>
@@ -485,7 +610,7 @@ export default function VendorOrdersPage() {
                     />
                 </TabsContent>
                 <TabsContent value="ongoing">
-                    <OrderTable
+                    <OrderList
                         title="Ongoing Orders"
                         description="Orders you are currently preparing."
                         orders={paginatedOngoing}
@@ -493,6 +618,7 @@ export default function VendorOrdersPage() {
                         totalPages={totalPages.ongoing}
                         onPageChange={(p) => handlePageChange('ongoing', p)}
                         isLoading={isLoading}
+                        onViewDetails={setDetailOrder}
                         actions={(order) => (
                             order.status === 'Accepted' ? (
                                 <Button variant="outline" size="sm" onClick={() => handleUpdateStatus(order.id, 'preparing')} disabled={isUpdating === order.id}>
@@ -509,7 +635,7 @@ export default function VendorOrdersPage() {
                     />
                 </TabsContent>
                  <TabsContent value="ready">
-                    <OrderTable
+                    <OrderList
                         title="Ready for Pickup"
                         description="Orders waiting for pickup by rider or customer."
                         orders={paginatedReady}
@@ -517,6 +643,7 @@ export default function VendorOrdersPage() {
                         totalPages={totalPages.ready}
                         onPageChange={(p) => handlePageChange('ready', p)}
                         isLoading={isLoading}
+                        onViewDetails={setDetailOrder}
                         actions={(order) => 
                             order.order_type === 'pickup' ? (
                                 <Button variant="default" size="sm" onClick={() => { setOrderForPickup(order); setPickupModalOpen(true); }} disabled={isUpdating === order.id}>
@@ -530,7 +657,7 @@ export default function VendorOrdersPage() {
                     />
                 </TabsContent>
                  <TabsContent value="onTheWay">
-                    <OrderTable
+                    <OrderList
                         title="On the Way"
                         description="Orders currently out for delivery."
                         orders={paginatedOnTheWay}
@@ -538,6 +665,7 @@ export default function VendorOrdersPage() {
                         totalPages={totalPages.onTheWay}
                         onPageChange={(p) => handlePageChange('onTheWay', p)}
                         isLoading={isLoading}
+                        onViewDetails={setDetailOrder}
                         showActions={false}
                         actions={() => null}
                     />
@@ -545,7 +673,7 @@ export default function VendorOrdersPage() {
             </Tabs>
 
             <div className="mt-12">
-                 <OrderTable
+                 <OrderList
                     title="Past Orders"
                     description="Completed or cancelled orders."
                     orders={paginatedPast}
@@ -553,6 +681,7 @@ export default function VendorOrdersPage() {
                     totalPages={totalPages.past}
                     onPageChange={(p) => handlePageChange('past', p)}
                     isLoading={isLoading}
+                    onViewDetails={setDetailOrder}
                     showActions={false}
                     actions={(order) => (
                         <Badge variant={order.status === 'Delivered' ? 'default' : 'outline'} className={order.status === 'Delivered' ? 'bg-green-600' : ''}>{order.status}</Badge>

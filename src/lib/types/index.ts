@@ -364,13 +364,29 @@ export interface OrderDetail {
 	order_type: "delivery" | "pickup";
 }
 
+export interface VendorOrderItem {
+	id: string;
+	menu_item: string;
+	quantity: number;
+	item_name: string;
+	item_price: string;
+	selected_options: string[];
+	description: string;
+}
+
 export interface VendorOrder {
 	id: string;
 	customer_name: string;
+	customer_phone: string;
+	delivery_address_str: string;
+	subtotal_amount: string;
+	service_fee: string;
 	total_amount: string;
 	status: OrderStatus;
 	created_at: string;
 	order_type: "delivery" | "pickup";
+	paid: boolean;
+	items: VendorOrderItem[];
 }
 
 export interface AdminOrder {

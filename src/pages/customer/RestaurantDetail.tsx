@@ -311,16 +311,17 @@ export default function RestaurantMenuPage() {
 				<div className="absolute inset-0 bg-black/10" />
 				<button
 					onClick={() => navigate("/customer/dashboard")}
+					aria-label="Go back to dashboard"
 					className="absolute top-4 left-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md"
 				>
-					<ArrowLeft className="h-5 w-5" />
+					<ArrowLeft className="h-5 w-5" aria-hidden="true" />
 				</button>
 				<div className="absolute top-4 right-4 flex gap-2">
-					<button className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md">
-						<Heart className="h-5 w-5" />
+					<button aria-label="Save to favourites" className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md">
+						<Heart className="h-5 w-5" aria-hidden="true" />
 					</button>
-					<button className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md">
-						<Share2 className="h-5 w-5" />
+					<button aria-label="Share restaurant" className="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md">
+						<Share2 className="h-5 w-5" aria-hidden="true" />
 					</button>
 				</div>
 			</div>
@@ -370,23 +371,25 @@ export default function RestaurantMenuPage() {
 							<input
 								ref={searchInputRef}
 								type="text"
+								aria-label="Search menu items"
 								placeholder="Search menu..."
 								value={searchQuery}
 								onChange={(e) => setSearchQuery(e.target.value)}
 								className="border-0 shadow-none h-full p-2 outline-none w-full text-sm bg-transparent placeholder:text-muted-foreground"
 							/>
 							<div className="inline-flex items-center justify-center gap-2">
-								<button className="h-7 w-7 shrink-0" disabled>
+								<button className="h-7 w-7 shrink-0" disabled aria-hidden="true" tabIndex={-1}>
 									<Search className="" />
 								</button>
 								<button
 									className="h-7 w-7 shrink-0"
+									aria-label="Close menu search"
 									onClick={() => {
 										setSearchQuery("");
 										setIsSearchOpen(false);
 									}}
 								>
-									<X className="" />
+									<X className="" aria-hidden="true" />
 								</button>
 							</div>
 						</div>
@@ -401,6 +404,7 @@ export default function RestaurantMenuPage() {
 								<button
 									key={category}
 									onClick={() => setActiveCategory(category)}
+									aria-pressed={activeCategory === category}
 									className={cn(
 										"px-4 py-2 rounded-full text-sm whitespace-nowrap font-medium transition-colors flex-shrink-0",
 										activeCategory === category
