@@ -86,11 +86,6 @@ export type SignupPayload = Omit<
 >;
 export type SignupCredentials = z.infer<typeof signupSchema>;
 
-export interface SignupResponse {
-	user: User;
-	token: string;
-}
-
 export interface User {
 	id: string;
 	full_name: string;
