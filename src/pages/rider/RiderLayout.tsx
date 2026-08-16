@@ -69,7 +69,7 @@ export default function RiderLayout() {
             <Sidebar className="hidden md:flex md:flex-col">
             <SidebarHeader>
                 <div className="flex items-center gap-2">
-                <img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto" />
+                <img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto max-w-full" />
                 </div>
             </SidebarHeader>
             <SidebarContent>
@@ -87,13 +87,13 @@ export default function RiderLayout() {
                 </SidebarMenu>
             </SidebarContent>
             <SidebarFooter>
-                <div className="flex flex-col items-center gap-3 p-2 rounded-md bg-muted">
-                <div className="w-full flex items-center gap-3">
+                <div className="flex flex-col items-center gap-2 p-2 rounded-md bg-muted">
+                <div className="w-full flex items-center gap-2 min-w-0">
                     <Avatar>
                     <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Rider"} />
                     <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'R'}</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col min-w-0">
                     <span className="text-sm font-semibold truncate">{user?.full_name || "Rider User"}</span>
                     <span className="text-xs text-muted-foreground truncate">
                         {user?.email || "rider@doorstep.com"}

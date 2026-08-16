@@ -54,7 +54,7 @@ export default function AdminLayout() {
         <Sidebar className="hidden md:flex md:flex-col">
           <SidebarHeader>
             <div className="flex items-center gap-2">
-              <img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto" />
+              <img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto max-w-full" />
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -72,16 +72,18 @@ export default function AdminLayout() {
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
-            <div className="flex items-center gap-3 p-2 rounded-md bg-muted">
-              <Avatar>
-                <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Admin"} />
-                <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'A'}</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold">{user?.full_name || "Admin User"}</span>
-                <span className="text-xs text-muted-foreground">
-                  {user?.email || "admin@doorstep.com"}
-                </span>
+            <div className="flex flex-col items-center gap-2 p-2 rounded-md bg-muted">
+              <div className="w-full flex items-center gap-2 min-w-0">
+                <Avatar>
+                  <AvatarImage src={user?.avatar_url || "https://github.com/shadcn.png"} alt={user?.full_name || "Admin"} />
+                  <AvatarFallback>{user?.full_name?.[0]?.toUpperCase() || 'A'}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold truncate">{user?.full_name || "Admin User"}</span>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {user?.email || "admin@doorstep.com"}
+                  </span>
+                </div>
               </div>
               <LogoutButton />
             </div>
