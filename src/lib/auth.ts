@@ -13,6 +13,35 @@ export const AUTH_KEYS = {
 	currentUserRole: "currentUserRole",
 } as const;
 
+interface MemoryAuth {
+	access: string;
+	refresh: string;
+	user: string;
+	currentUserRole: string;
+}
+
+// iOS can evict localStorage while the current PWA document is still alive.
+// Keep the active session in memory so SPA navigation does not turn a storage
+// interruption into a logout. localStorage remains the durable copy.
+let memoryAuth: MemoryAuth | null = null;
+
+// Keep backup mutations ordered. Without this, a delayed mirror from before
+// logout could finish after clearAuth() and resurrect the old session later.
+let backupQueue = Promise.resolve();
+
+function cacheAuthFromStorage(): void {
+	if (typeof localStorage === "undefined") return;
+	const access = localStorage.getItem(AUTH_KEYS.accessToken);
+	const refresh = localStorage.getItem(AUTH_KEYS.refreshToken);
+	const user = localStorage.getItem(AUTH_KEYS.user);
+	const currentUserRole = localStorage.getItem(AUTH_KEYS.currentUserRole);
+	if (access && refresh && user && currentUserRole) {
+		memoryAuth = { access, refresh, user, currentUserRole };
+	}
+}
+
+cacheAuthFromStorage();
+
 /**
  * Mirror the current localStorage auth state into IndexedDB. iOS/WKWebView
  * can evict localStorage and IndexedDB independently, so a second copy lets
@@ -24,12 +53,17 @@ function mirrorAuthToBackup(): void {
 	const refresh = localStorage.getItem(AUTH_KEYS.refreshToken);
 	const user = localStorage.getItem(AUTH_KEYS.user);
 	if (!access || !refresh || !user) return;
-	void writeAuthBackup({
-		access,
-		refresh,
-		user,
-		currentUserRole: localStorage.getItem(AUTH_KEYS.currentUserRole),
-	}).catch(() => {});
+	const currentUserRole = localStorage.getItem(AUTH_KEYS.currentUserRole);
+	backupQueue = backupQueue
+		.then(() =>
+			writeAuthBackup({
+				access,
+				refresh,
+				user,
+				currentUserRole,
+			}),
+		)
+		.catch(() => {});
 }
 
 /**
@@ -42,6 +76,7 @@ export async function restoreAuthFromBackup(): Promise<boolean> {
 		localStorage.getItem(AUTH_KEYS.accessToken) &&
 		localStorage.getItem(AUTH_KEYS.refreshToken)
 	) {
+		cacheAuthFromStorage();
 		return false;
 	}
 	const snapshot = await readAuthBackup().catch(() => null);
@@ -52,6 +87,12 @@ export async function restoreAuthFromBackup(): Promise<boolean> {
 	if (snapshot.currentUserRole) {
 		localStorage.setItem(AUTH_KEYS.currentUserRole, snapshot.currentUserRole);
 	}
+	memoryAuth = {
+		access: snapshot.access,
+		refresh: snapshot.refresh,
+		user: snapshot.user,
+		currentUserRole: snapshot.currentUserRole ?? "",
+	};
 	logAuthEvent("restored_from_backup");
 	return true;
 }
@@ -67,6 +108,12 @@ export function persistAuth(
 	localStorage.setItem(AUTH_KEYS.refreshToken, tokens.refresh);
 	localStorage.setItem(AUTH_KEYS.user, JSON.stringify(user));
 	localStorage.setItem(AUTH_KEYS.currentUserRole, user.role);
+	memoryAuth = {
+		access: tokens.access,
+		refresh: tokens.refresh,
+		user: JSON.stringify(user),
+		currentUserRole: user.role,
+	};
 
 	mirrorAuthToBackup();
 
@@ -87,6 +134,9 @@ export function updateAccessToken(tokens: {
 }): void {
 	localStorage.setItem(AUTH_KEYS.accessToken, tokens.access);
 	localStorage.setItem(AUTH_KEYS.refreshToken, tokens.refresh);
+	if (memoryAuth) {
+		memoryAuth = { ...memoryAuth, access: tokens.access, refresh: tokens.refresh };
+	}
 	mirrorAuthToBackup();
 }
 
@@ -95,7 +145,8 @@ export function updateAccessToken(tokens: {
  */
 export function clearAuth(): void {
 	Object.values(AUTH_KEYS).forEach((key) => localStorage.removeItem(key));
-	void clearAuthBackup().catch(() => {});
+	memoryAuth = null;
+	backupQueue = backupQueue.then(() => clearAuthBackup()).catch(() => {});
 }
 
 /**
@@ -103,7 +154,15 @@ export function clearAuth(): void {
  * object stays in sync without affecting tokens or role history.
  */
 export function updateStoredUser(user: User): void {
-	localStorage.setItem(AUTH_KEYS.user, JSON.stringify(user));
+	const serializedUser = JSON.stringify(user);
+	localStorage.setItem(AUTH_KEYS.user, serializedUser);
+	if (memoryAuth) {
+		memoryAuth = {
+			...memoryAuth,
+			user: serializedUser,
+			currentUserRole: user.role,
+		};
+	}
 	mirrorAuthToBackup();
 }
 
@@ -134,14 +193,23 @@ export function getTokenExpiryMs(token: string): number | null {
  * so key names stay in one place.
  */
 export function getStoredToken(): string | null {
-	return localStorage.getItem(AUTH_KEYS.accessToken);
+	return localStorage.getItem(AUTH_KEYS.accessToken) ?? memoryAuth?.access ?? null;
+}
+
+/** Read the refresh token, falling back to the active in-memory session. */
+export function getStoredRefreshToken(): string | null {
+	return localStorage.getItem(AUTH_KEYS.refreshToken) ?? memoryAuth?.refresh ?? null;
 }
 
 /**
  * Fast role read — avoids JSON.parse of the full user object for rerouting.
  */
 export function getStoredRole(): string | null {
-	return localStorage.getItem(AUTH_KEYS.currentUserRole);
+	return (
+		localStorage.getItem(AUTH_KEYS.currentUserRole) ??
+		memoryAuth?.currentUserRole ??
+		null
+	);
 }
 
 /**
@@ -149,7 +217,7 @@ export function getStoredRole(): string | null {
  */
 export function getStoredUser(): User | null {
 	try {
-		const raw = localStorage.getItem(AUTH_KEYS.user);
+		const raw = localStorage.getItem(AUTH_KEYS.user) ?? memoryAuth?.user;
 		return raw ? (JSON.parse(raw) as User) : null;
 	} catch {
 		return null;

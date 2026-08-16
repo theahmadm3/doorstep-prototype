@@ -47,7 +47,12 @@ import type {
 	InitializePaymentResponse,
 } from "./types/paystack";
 import type { RefreshTokenResponse } from "./types";
-import { AUTH_KEYS, clearAuth, updateAccessToken } from "./auth";
+import {
+	clearAuth,
+	getStoredRefreshToken,
+	getStoredToken,
+	updateAccessToken,
+} from "./auth";
 import { logAuthEvent } from "./auth-log";
 import { format } from "date-fns";
 
@@ -74,7 +79,7 @@ export async function tryRefresh(): Promise<RefreshResult> {
 	if (refreshPromise) return refreshPromise;
 	refreshPromise = (async (): Promise<RefreshResult> => {
 		try {
-			const refresh = localStorage.getItem(AUTH_KEYS.refreshToken);
+			const refresh = getStoredRefreshToken();
 			if (!refresh) return { status: "unauthorized" };
 			const res = await fetch(`${BASE_URL}/auth/refresh_token/`, {
 				method: "POST",
@@ -118,10 +123,7 @@ async function fetcher<T>(
 	options: RequestInit = {},
 	isRetry = false,
 ): Promise<T> {
-	const token =
-		typeof window !== "undefined"
-			? localStorage.getItem(AUTH_KEYS.accessToken)
-			: null;
+	const token = typeof window !== "undefined" ? getStoredToken() : null;
 
 	const isFormData = options.body instanceof FormData;
 
