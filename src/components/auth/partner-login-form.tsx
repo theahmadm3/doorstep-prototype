@@ -54,22 +54,20 @@ export default function PartnerLoginForm() {
       });
 
       // Step 6: Redirect based on role
-      setTimeout(() => {
-        switch (user.role) {
-          case "restaurant":
-            navigate("/vendor/dashboard");
-            break;
-          case "driver":
-            navigate("/rider/dashboard");
-            break;
-          case "admin":
-            navigate("/admin/dashboard");
-            break;
-          default:
-            // If a customer somehow logs in here, send them to the main login.
-            navigate("/login");
-        }
-      }, 100);
+      switch (user.role) {
+        case "restaurant":
+          navigate("/vendor/dashboard");
+          break;
+        case "driver":
+          navigate("/rider/dashboard");
+          break;
+        case "admin":
+          navigate("/admin/dashboard");
+          break;
+        default:
+          // If a customer somehow logs in here, send them to the main login.
+          navigate("/login");
+      }
 
     } catch (error) {
       const message = error instanceof Error ? error.message : "Login failed. Please check your credentials.";

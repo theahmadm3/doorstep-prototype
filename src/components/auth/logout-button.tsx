@@ -21,6 +21,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { unsubscribeFromPushNotifications } from "@/lib/push-notifications";
 import { usePushStore } from "@/hooks/use-push-manager";
 import { clearAuth } from "@/lib/auth";
+import { logoutUser } from "@/lib/auth-api";
 import { logAuthEvent } from "@/lib/auth-log";
 
 export default function LogoutButton() {
@@ -33,8 +34,7 @@ export default function LogoutButton() {
 
 	const handleLogout = async () => {
 		try {
-			// In a real app, you might call an API endpoint to invalidate the token on the server.
-			// await logoutUser();
+			await logoutUser();
 		} catch (error) {
 			console.error("An error occurred during API logout:", error);
 			toast({

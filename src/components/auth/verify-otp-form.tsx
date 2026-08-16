@@ -135,24 +135,22 @@ export default function VerifyOtpForm() {
       });
 
       // Step 7: Redirect based on role
-      setTimeout(() => {
-        switch (user.role) {
-          case "customer":
-            navigate("/customer/dashboard");
-            break;
-          case "restaurant":
-            navigate("/vendor/dashboard");
-            break;
-          case "driver":
-            navigate("/rider/dashboard");
-            break;
-          case "admin":
-            navigate("/admin/dashboard");
-            break;
-          default:
-            navigate("/login");
-        }
-      }, 100);
+      switch (user.role) {
+        case "customer":
+          navigate("/customer/dashboard");
+          break;
+        case "restaurant":
+          navigate("/vendor/dashboard");
+          break;
+        case "driver":
+          navigate("/rider/dashboard");
+          break;
+        case "admin":
+          navigate("/admin/dashboard");
+          break;
+        default:
+          navigate("/login");
+      }
 
     } catch (error) {
       const message = error instanceof Error 
