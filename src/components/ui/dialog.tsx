@@ -83,7 +83,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
         if (reason === "escapeKeyDown" && onEscapeKeyDown) return
         setOpen(false)
       }}
-      maxWidth={false}
+      maxWidth="sm"
       slotProps={{
         paper: {
           className: cn(
