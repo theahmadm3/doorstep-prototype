@@ -11,7 +11,6 @@ export const AUTH_KEYS = {
 	refreshToken: "refreshToken",
 	user: "user",
 	currentUserRole: "currentUserRole",
-	lastUserRole: "lastUserRole",
 } as const;
 
 /**
@@ -58,8 +57,7 @@ export async function restoreAuthFromBackup(): Promise<boolean> {
 }
 
 /**
- * Persists tokens + user after a successful login. Tracks role history so
- * the app can reroute returning users without parsing the full user object.
+ * Persists tokens + user after a successful login.
  */
 export function persistAuth(
 	tokens: { access: string; refresh: string },
@@ -68,13 +66,6 @@ export function persistAuth(
 	localStorage.setItem(AUTH_KEYS.accessToken, tokens.access);
 	localStorage.setItem(AUTH_KEYS.refreshToken, tokens.refresh);
 	localStorage.setItem(AUTH_KEYS.user, JSON.stringify(user));
-
-	// Rotate role history: if someone switches accounts, `lastUserRole` tells
-	// us what kind of user was here before.
-	const prev = localStorage.getItem(AUTH_KEYS.currentUserRole);
-	if (prev && prev !== user.role) {
-		localStorage.setItem(AUTH_KEYS.lastUserRole, prev);
-	}
 	localStorage.setItem(AUTH_KEYS.currentUserRole, user.role);
 
 	mirrorAuthToBackup();
