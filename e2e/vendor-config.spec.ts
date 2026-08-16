@@ -48,10 +48,18 @@ test.describe("Vendor Config (authenticated)", () => {
 
   test("renders all four section cards", async ({ page }) => {
     await goto(page, "/vendor/config");
-    await expect(page.getByText("Menu Categories")).toBeVisible();
-    await expect(page.getByText("Menu Options")).toBeVisible();
-    await expect(page.getByText("Your Menu Items")).toBeVisible();
-    await expect(page.getByText("Your Riders")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Menu Categories" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Menu Options" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Your Menu Items" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Your Riders" }),
+    ).toBeVisible();
   });
 
   test("Add Category button opens the dialog", async ({ page }) => {

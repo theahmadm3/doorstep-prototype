@@ -57,12 +57,15 @@ test.describe("Customer (authenticated)", () => {
     const item = page.getByText("Jollof Rice & Chicken").first();
     await expect(item).toBeVisible();
 
-    await item.click();
+    await page
+      .getByRole("button", { name: /Add.*to cart/i })
+      .first()
+      .click();
     const addButton = page.getByRole("button", { name: /Add to Cart - ₦/ });
     await expect(addButton).toBeVisible();
     await addButton.click();
 
-    await expect(page.getByText("View Order")).toBeVisible();
+    await expect(page.getByText("View Cart")).toBeVisible();
   });
 
   test("orders page shows active orders", async ({ page }) => {
