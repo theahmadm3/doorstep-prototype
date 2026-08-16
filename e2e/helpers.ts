@@ -1,4 +1,4 @@
-import { Page, expect } from "@playwright/test";
+import { Page } from "@playwright/test";
 
 export const SECRET_LOGIN_PATH = "/secret/non-accessible/to/customers/login";
 
@@ -9,16 +9,6 @@ export const SECRET_LOGIN_PATH = "/secret/non-accessible/to/customers/login";
  */
 export async function goto(page: Page, path: string) {
   return page.goto(path, { waitUntil: "domcontentloaded" });
-}
-
-/**
- * The home (`/`) and `/signup` pages gate the real form behind a WhatsApp
- * onboarding step. This clicks "Continue" to reveal the underlying form.
- */
-export async function passWhatsappGate(page: Page) {
-  const continueBtn = page.getByRole("button", { name: "Continue" });
-  await expect(continueBtn).toBeVisible();
-  await continueBtn.click();
 }
 
 /** Collect uncaught page errors and console.error messages during a test. */
