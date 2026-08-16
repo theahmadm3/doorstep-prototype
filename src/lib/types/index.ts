@@ -378,6 +378,8 @@ export interface VendorOrder {
 	id: string;
 	customer_name: string;
 	customer_phone: string;
+	driver_name?: string;
+	driver_phone?: string;
 	delivery_address_str: string;
 	subtotal_amount: string;
 	service_fee: string;
