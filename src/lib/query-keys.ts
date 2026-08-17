@@ -11,4 +11,7 @@ export const QUERY_KEYS = {
 	menuCategories: ["menuCategories"] as const,
 	menuOptions: ["menuOptions"] as const,
 	vendorDiscounts: ["vendorDiscounts"] as const,
+	vendorRiders: ["vendorRiders"] as const,
+	vendorProfile: ["vendorProfile"] as const,
+	vendorAnalytics: ["vendorAnalytics"] as const,
 } as const;

@@ -82,8 +82,6 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
 export default function VendorItemManagement() {
-	const [items, setItems] = useState<MenuItem[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
 	const [isDialogOpen, setDialogOpen] = useState(false);
 	const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 	const { toast } = useToast();
@@ -106,30 +104,13 @@ export default function VendorItemManagement() {
 		queryFn: getMenuCategories,
 	});
 
-	const fetchItems = async () => {
-		setIsLoading(true);
-		try {
-			const fetchedItems = await getVendorMenuItems();
-			setItems(fetchedItems);
-		} catch (error) {
-			toast({
-				title: "Error fetching menu",
-				description:
-					"Could not retrieve your menu items. Please try again later.",
-				variant: "destructive",
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
-
-	useEffect(() => {
-		fetchItems();
-	}, []);
+	const { data: items = [], isLoading } = useQuery<MenuItem[]>({
+		queryKey: QUERY_KEYS.vendorMenuItems,
+		queryFn: getVendorMenuItems,
+	});
 
 	useEffect(() => {
 		if (!isDialogOpen) {
-			// Reset state when modal is closed
 			setEditingItem(null);
 			setSelectedImage(null);
 			setPreviewImage(null);
@@ -227,8 +208,6 @@ export default function VendorItemManagement() {
 
 			// Invalidate the query to refetch in other components
 			await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorMenuItems });
-			// Refetch local state for this component
-			await fetchItems();
 			setDialogOpen(false);
 		} catch (error) {
 			const message =
@@ -252,7 +231,6 @@ export default function VendorItemManagement() {
 
 		try {
 			await deleteVendorMenuItem(itemToDelete.id);
-			setItems(items.filter((item) => item.id !== itemToDelete.id));
 			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorMenuItems });
 			toast({
 				title: "Item Deleted",
@@ -276,9 +254,11 @@ export default function VendorItemManagement() {
 		available: boolean,
 	) => {
 		setUpdatingStatus((prev) => ({ ...prev, [itemId]: "updating" }));
-		const originalItems = [...items];
-		setItems((prevItems) =>
-			prevItems.map((item) =>
+
+		// Optimistic update
+		const previousItems = queryClient.getQueryData<MenuItem[]>(QUERY_KEYS.vendorMenuItems);
+		queryClient.setQueryData<MenuItem[]>(QUERY_KEYS.vendorMenuItems, (old) =>
+			old?.map((item) =>
 				item.id === itemId ? { ...item, is_available: available } : item,
 			),
 		);
@@ -291,7 +271,8 @@ export default function VendorItemManagement() {
 				description: `Item is now ${available ? "available" : "unavailable"}.`,
 			});
 		} catch (error) {
-			setItems(originalItems);
+			// Rollback
+			queryClient.setQueryData(QUERY_KEYS.vendorMenuItems, previousItems);
 			setUpdatingStatus((prev) => ({ ...prev, [itemId]: "error" }));
 			const message =
 				error instanceof Error
