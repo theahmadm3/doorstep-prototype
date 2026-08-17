@@ -22,7 +22,7 @@ import CustomerRestaurantList from "@/pages/customer/RestaurantListPage";
 
 import VendorLayout from "@/pages/vendor/VendorLayout";
 import VendorDashboard from "@/pages/vendor/Dashboard";
-import VendorOrders from "@/pages/vendor/Orders";
+import VendorOrders from "@/pages/vendor/orders";
 import VendorAnalytics from "@/pages/vendor/Analytics";
 import VendorConfig from "@/pages/vendor/Config";
 import VendorPayouts from "@/pages/vendor/Payouts";
@@ -56,7 +56,7 @@ export const router = createBrowserRouter([
   { path: "/signup/vendor", element: <SignupVendor /> },
   { path: "/rider/signup", element: <RiderSignup /> },
   { path: "/restaurants/:restaurantId", element: <RestaurantDetail /> },
-  { path: "/secret/non-accessible/to/customers/login", element: <SecretLogin /> },
+  { path: "/partner-login", element: <SecretLogin /> },
   {
     path: "/customer",
     element: (
