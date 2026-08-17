@@ -588,7 +588,7 @@ export async function getRiderOrders(): Promise<RiderOrder[]> {
 
 export async function performRiderAction(
 	orderId: string,
-	action: string,
+	action: "assign" | "pickup" | "deliver" | "accept" | "reject" | "arrived_restaurant" | "pickedup" | "arrived_destination",
 	payload?: object,
 ): Promise<RiderOrder> {
 	const response = await fetcher<{ data: RiderOrder }>(

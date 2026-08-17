@@ -510,11 +510,7 @@ export interface VendorProfile {
 export interface VendorProfileUpdatePayload {
 	name?: string;
 	description?: string;
-	address?: {
-		street_name: string | null;
-		latitude: number;
-		longitude: number;
-	};
+	address?: VendorProfileAddress;
 }
 
 // Rider Module
@@ -744,7 +740,7 @@ export interface SearchResultMenuItem {
 			is_available: boolean;
 		}>;
 	};
-	active_discounts: unknown[];
+	active_discounts: ActiveDiscount[];
 	created_at: string;
 	updated_at: string;
 }
