@@ -195,4 +195,61 @@ test.describe("Vendor (authenticated)", () => {
     await page.getByRole("tab", { name: /Ongoing/i }).click();
     await expect(page.getByText("Chidi Customer")).toBeVisible();
   });
+
+  test("shows empty state on Incoming tab when no pending orders", async ({ page }) => {
+    await mockApi(page, [
+      { method: "GET", path: "/restaurants/me/", json: vendorProfile() },
+      {
+        method: "GET",
+        path: "/restaurants/me/orders/",
+        json: paginated([]),
+      },
+    ]);
+    await goto(page, "/vendor/orders");
+
+    await expect(
+      page.getByText("No orders in this category.").first(),
+    ).toBeVisible();
+  });
+
+  test("tab transitions: switching between Incoming and Ongoing", async ({ page }) => {
+    await mockApi(page, [
+      { method: "GET", path: "/restaurants/me/", json: vendorProfile() },
+      {
+        method: "GET",
+        path: "/restaurants/me/orders/",
+        json: paginated([
+          vendorOrder({ customer_name: "Incoming Customer", status: "Pending", order_type: "pickup" }),
+          vendorOrder({ id: "order-2", customer_name: "Ongoing Customer", status: "Accepted", order_type: "pickup" }),
+        ]),
+      },
+    ]);
+    await goto(page, "/vendor/orders");
+
+    await expect(page.getByText("Incoming Customer")).toBeVisible();
+    await expect(page.getByText("Ongoing Customer")).not.toBeVisible();
+
+    await page.getByRole("tab", { name: /Ongoing/i }).click();
+    await expect(page.getByText("Ongoing Customer")).toBeVisible();
+    await expect(page.getByText("Incoming Customer")).not.toBeVisible();
+
+    await page.getByRole("tab", { name: /Incoming/i }).click();
+    await expect(page.getByText("Incoming Customer")).toBeVisible();
+  });
+
+  test("order shows correct status badge", async ({ page }) => {
+    await mockApi(page, [
+      { method: "GET", path: "/restaurants/me/", json: vendorProfile() },
+      {
+        method: "GET",
+        path: "/restaurants/me/orders/",
+        json: paginated([
+          vendorOrder({ status: "Pending", order_type: "pickup" }),
+        ]),
+      },
+    ]);
+    await goto(page, "/vendor/orders");
+
+    await expect(page.getByText("Pending", { exact: true })).toBeVisible();
+  });
 });

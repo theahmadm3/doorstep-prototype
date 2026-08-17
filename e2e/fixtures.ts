@@ -190,7 +190,6 @@ export function adminOrder(over: Record<string, unknown> = {}) {
   };
 }
 
-/** Minimal dashboard response shape for /dashboard/ */
 export function dashboardData(over: Record<string, unknown> = {}) {
   const rest = {
     id: "rest-1",
@@ -213,6 +212,36 @@ export function dashboardData(over: Record<string, unknown> = {}) {
       comboDeals: [],
       pagination: { currentPage: 1, totalPages: 1, totalItems: 1, itemsPerPage: 10, hasMore: false },
     },
+    ...over,
+  };
+}
+
+export function vendorCategory(over: Record<string, unknown> = {}) {
+  return {
+    id: "cat-1",
+    name: "Mains",
+    order_index: 0,
+    ...over,
+  };
+}
+
+export function vendorOptionGroup(over: Record<string, unknown> = {}) {
+  return {
+    id: "opt-1",
+    name: "Spice Level",
+    menu_item: "item-1",
+    options: [
+      { id: "opt-val-1", name: "Mild", price_adjustment: "0.00", is_available: true },
+    ],
+    ...over,
+  };
+}
+
+export function vendorRider(over: Record<string, unknown> = {}) {
+  return {
+    name: "Tunde Rider",
+    email: "tunde@doorstep.com",
+    phone: "08098765432",
     ...over,
   };
 }
