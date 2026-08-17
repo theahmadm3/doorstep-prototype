@@ -143,6 +143,23 @@ export interface ActiveDiscount {
 	description: string;
 }
 
+export interface MenuCategoryItem {
+	id: string;
+	name: string;
+	description: string | null;
+	price: string;
+	item_type: "single" | "combo";
+	image_url: string | null;
+	is_available: boolean;
+}
+
+export interface MenuByCategoryGroup {
+	id: string;
+	name: string;
+	order_index: number;
+	items: MenuCategoryItem[];
+}
+
 export interface MenuItem {
 	id: string;
 	restaurant: string;

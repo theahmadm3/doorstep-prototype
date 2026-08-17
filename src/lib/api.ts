@@ -31,6 +31,7 @@ import {
 	Bank,
 	Withdrawal,
 	MenuCategory,
+	MenuByCategoryGroup,
 	CategoryPayload,
 	OptionChoice,
 	OptionPayload,
@@ -336,6 +337,13 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
 }
 
 // Vendor API Calls
+export async function getMenuByCategory(): Promise<MenuByCategoryGroup[]> {
+	const data = await fetcher<PaginatedResponse<MenuByCategoryGroup>>(
+		"/restaurants/menu-by-category/",
+	);
+	return data.results;
+}
+
 export async function getVendorMenuItems(): Promise<MenuItem[]> {
 	const data = await fetcher<PaginatedResponse<MenuItem>>(
 		"/restaurants/me/menu/",

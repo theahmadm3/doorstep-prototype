@@ -8,6 +8,7 @@ export const QUERY_KEYS = {
 	riderOrders: ["riderOrders"] as const,
 	availableRiderOrders: ["availableRiderOrders"] as const,
 	vendorMenuItems: ["vendorMenuItems"] as const,
+	vendorMenuByCategory: ["vendorMenuByCategory"] as const,
 	menuCategories: ["menuCategories"] as const,
 	menuOptions: ["menuOptions"] as const,
 	vendorDiscounts: ["vendorDiscounts"] as const,
