@@ -92,6 +92,7 @@ export default function VendorItemManagement() {
 	const [isSaving, setIsSaving] = useState(false);
 	const [savingStep, setSavingStep] = useState("");
 	const [selectedImage, setSelectedImage] = useState<File | null>(null);
+	const [isAvailable, setIsAvailable] = useState(true);
 	const [previewImage, setPreviewImage] = useState<string | null>(null);
 	const [imageError, setImageError] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,6 +116,7 @@ export default function VendorItemManagement() {
 			setSelectedImage(null);
 			setPreviewImage(null);
 			setImageError(null);
+			setIsAvailable(true);
 		}
 	}, [isDialogOpen]);
 
@@ -157,7 +159,7 @@ export default function VendorItemManagement() {
 			name: formData.get("name") as string,
 			description: formData.get("description") as string,
 			price: String(parseFloat(formData.get("price") as string)),
-			is_available: formData.get("is_available") === "on",
+			is_available: isAvailable,
 			category_id: formData.get("category_id") as string,
 			item_type: formData.get("item_type") as "single" | "combo",
 		};
@@ -475,6 +477,7 @@ export default function VendorItemManagement() {
 														<DropdownMenuItem
 															onClick={() => {
 																setEditingItem(item);
+																setIsAvailable(item.is_available);
 																setDialogOpen(true);
 															}}
 														>
@@ -626,8 +629,8 @@ export default function VendorItemManagement() {
 								<div className="flex items-center space-x-2">
 									<Switch
 										id="is_available"
-										name="is_available"
-										defaultChecked={editingItem?.is_available ?? true}
+										checked={isAvailable}
+										onCheckedChange={setIsAvailable}
 									/>
 									<Label htmlFor="is_available">Available for purchase</Label>
 								</div>

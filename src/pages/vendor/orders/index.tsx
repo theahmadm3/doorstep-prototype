@@ -217,6 +217,7 @@ export default function VendorOrdersPage() {
 			toast({
 				title: "Error",
 				description: "Could not fetch your list of riders.",
+				variant: "destructive",
 			});
 		}
 	};
