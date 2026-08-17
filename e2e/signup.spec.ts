@@ -5,7 +5,7 @@ test.describe("Customer signup (/signup)", () => {
   test("renders heading and shows the form directly", async ({ page }) => {
     await goto(page, "/signup");
     await expect(
-      page.getByRole("heading", { name: "Create a Customer Account" }),
+      page.getByRole("heading", { name: "Get started" }),
     ).toBeVisible();
     await expect(page.getByLabel("Full Name")).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();

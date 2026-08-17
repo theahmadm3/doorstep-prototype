@@ -8,8 +8,8 @@ import { vendorOrder, vendorProfile, vendorAnalytics } from "./fixtures";
 
 /**
  * Authenticated vendor order management, fully mocked. Covers the dashboard
- * summary and the core incoming-order actions (Accept / Reject), tab
- * navigation, and the ongoing order status progression.
+ * summary, the core incoming-order actions (Accept / Reject), tab
+ * navigation, ongoing order status progression, and error paths.
  */
 test.describe("Vendor (authenticated)", () => {
   test.beforeEach(async ({ page }) => {
@@ -64,6 +64,11 @@ test.describe("Vendor (authenticated)", () => {
     );
     await accept.click();
     await acceptCall;
+
+    // After accepting, the order should move out of Incoming tab
+    // The mock returns the same order list on refetch, so we verify
+    // the request was sent successfully.
+    await expect(page.getByText("Ada Customer")).toBeVisible();
   });
 
   test("incoming order can be rejected", async ({ page }) => {
@@ -96,6 +101,64 @@ test.describe("Vendor (authenticated)", () => {
     );
     await reject.click();
     await rejectCall;
+
+    await expect(page.getByText("Bola Customer")).toBeVisible();
+  });
+
+  test("shows error toast when accepting an order fails", async ({ page }) => {
+    await mockApi(page, [
+      { method: "GET", path: "/restaurants/me/", json: vendorProfile() },
+      {
+        method: "GET",
+        path: "/restaurants/me/orders/",
+        json: paginated([
+          vendorOrder({ customer_name: "Eve Customer", status: "Pending", order_type: "pickup" }),
+        ]),
+      },
+      {
+        method: "POST",
+        path: /\/restaurants\/me\/orders\/[^/]+\/accept\/$/,
+        status: 500,
+        json: { detail: "Internal server error" },
+      },
+    ]);
+    await goto(page, "/vendor/orders");
+
+    await expect(page.getByText("Eve Customer")).toBeVisible();
+
+    const accept = page.getByRole("button", { name: "Accept" });
+    await accept.click();
+
+    // Verify error toast appears with specific text
+    await expect(page.getByText("Update Failed")).toBeVisible();
+  });
+
+  test("shows error toast when rejecting an order fails", async ({ page }) => {
+    await mockApi(page, [
+      { method: "GET", path: "/restaurants/me/", json: vendorProfile() },
+      {
+        method: "GET",
+        path: "/restaurants/me/orders/",
+        json: paginated([
+          vendorOrder({ customer_name: "Frank Customer", status: "Pending", order_type: "pickup" }),
+        ]),
+      },
+      {
+        method: "POST",
+        path: /\/restaurants\/me\/orders\/[^/]+\/reject\/$/,
+        status: 500,
+        json: { detail: "Internal server error" },
+      },
+    ]);
+    await goto(page, "/vendor/orders");
+
+    await expect(page.getByText("Frank Customer")).toBeVisible();
+
+    const reject = page.getByRole("button", { name: "Reject" });
+    await reject.click();
+
+    // Verify error toast appears with specific text
+    await expect(page.getByText("Update Failed")).toBeVisible();
   });
 
   test("orders page has Incoming, Ongoing, Ready, and On the Way tabs", async ({

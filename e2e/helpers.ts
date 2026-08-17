@@ -1,6 +1,6 @@
 import { Page } from "@playwright/test";
 
-export const SECRET_LOGIN_PATH = "/secret/non-accessible/to/customers/login";
+export const SECRET_LOGIN_PATH = "/partner-login";
 
 /**
  * Navigate and wait only for DOM content. Several pages keep network

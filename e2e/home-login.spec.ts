@@ -6,7 +6,7 @@ test.describe("Customer login (/)", () => {
     await goto(page, "/");
     await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Get login code" }),
+      page.getByRole("button", { name: "Continue with phone" }),
     ).toBeVisible();
     await expect(page.getByPlaceholder("08012345678")).toBeVisible();
   });
@@ -36,7 +36,7 @@ test.describe("Customer login (/)", () => {
 
     await goto(page, "/");
     await page.getByRole("link", { name: "Partner login" }).click();
-    await expect(page).toHaveURL(/\/secret\/non-accessible\/to\/customers\/login$/);
+    await expect(page).toHaveURL(/\/partner-login$/);
   });
 
   test("redirects already-authenticated customer to dashboard", async ({

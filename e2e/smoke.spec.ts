@@ -7,7 +7,7 @@ const publicPages = [
   { name: "Signup", path: "/signup" },
   { name: "Rider signup", path: "/signup/rider" },
   { name: "Vendor signup", path: "/signup/vendor" },
-  { name: "Partner login", path: "/secret/non-accessible/to/customers/login" },
+  { name: "Partner login", path: "/partner-login" },
 ];
 
 test.describe("Smoke: public pages load without JS errors", () => {
