@@ -28,6 +28,7 @@ import BottomNavigation from "@/components/layout/bottom-navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
 import { Link, Outlet } from "react-router-dom";
 import { getStoredUser } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const vendorNavLinks = [
 	{ href: "/vendor/dashboard", label: "Dashboard", icon: Home },
@@ -41,6 +42,7 @@ const vendorNavLinks = [
 
 export default function VendorLayout() {
 	useNotificationListener();
+	const { toast } = useToast();
 	const [user, setUser] = useState<UserType | null>(null);
 	const [showAddressModal, setShowAddressModal] = useState(false);
 	const [restaurantImage, setRestaurantImage] = useState<string | null>(null);
@@ -53,8 +55,11 @@ export default function VendorLayout() {
 				setShowAddressModal(true);
 			}
 		} catch (error) {
-			console.error("Failed to fetch vendor profile:", error);
-			// Handle error, maybe show a toast
+			toast({
+				title: "Error",
+				description: "Failed to load restaurant profile. Some features may be unavailable.",
+				variant: "destructive",
+			});
 		}
 	}, []);
 

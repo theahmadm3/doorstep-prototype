@@ -88,6 +88,9 @@ export default function PickupConfirmationModal({ isOpen, onClose, orderId, onSu
                   <FormControl>
                     <Input 
                       placeholder="123456" 
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
                       {...field}
                       onChange={(e) => {
                         const numericValue = e.target.value.replace(/\D/g, '');

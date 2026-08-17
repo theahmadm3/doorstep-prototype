@@ -19,6 +19,7 @@ import {
 	type VendorDiscountPayload,
 	type MenuItem,
 	type MenuCategory,
+	RESTAURANT_SCOPES,
 } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,9 +56,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Tag } from "lucide-react";
-
-const RESTAURANT_SCOPES = ["item", "category", "all_menu_items"] as const;
-const DOORSTEP_SCOPES = ["order", "delivery", "service_fee"] as const;
+import { parseNumber } from "@/lib/format";
 
 const SCOPE_LABELS: Record<string, string> = {
 	order: "Order Subtotal",
@@ -153,12 +152,10 @@ function DiscountFormDialog({
 
 	// Reset scope_type when funded_by changes
 	useEffect(() => {
-		const validScopes =
-			fundedBy === "restaurant" ? RESTAURANT_SCOPES : DOORSTEP_SCOPES;
-		if (!(validScopes as readonly string[]).includes(scopeType)) {
-			setValue("scope_type", validScopes[0]);
+		if (!(RESTAURANT_SCOPES as string[]).includes(scopeType)) {
+			setValue("scope_type", RESTAURANT_SCOPES[0]);
 		}
-	}, [fundedBy, scopeType, setValue]);
+	}, [scopeType, setValue]);
 
 	// Fetch menu items / categories only when needed
 	const { data: menuItems = [] } = useQuery<MenuItem[]>({
@@ -173,8 +170,7 @@ function DiscountFormDialog({
 		enabled: open && scopeType === "category",
 	});
 
-	const availableScopes =
-		fundedBy === "restaurant" ? RESTAURANT_SCOPES : DOORSTEP_SCOPES;
+	const availableScopes = RESTAURANT_SCOPES;
 
 	const handleFormSubmit = (data: VendorDiscountPayload) => {
 		onSubmit({
@@ -416,7 +412,7 @@ function DiscountFormDialog({
 																className="text-sm cursor-pointer"
 															>
 																{item.name} — ₦
-																{safeParseFloat(item.price).toLocaleString()}
+																{parseNumber(item.price).toLocaleString()}
 															</label>
 														</div>
 													))}
@@ -553,10 +549,10 @@ function DiscountRow({
 				<p className="text-sm text-muted-foreground">
 					{discount.discount_type === "percentage"
 						? `${discount.value}% off`
-						: `₦${safeParseFloat(discount.value).toLocaleString()} off`}{" "}
+						: `₦${parseNumber(discount.value).toLocaleString()} off`}{" "}
 					— {SCOPE_LABELS[discount.scope_type]}
-					{safeParseFloat(discount.min_order_value) > 0 &&
-						` · min ₦${safeParseFloat(discount.min_order_value).toLocaleString()}`}
+					{parseNumber(discount.min_order_value) > 0 &&
+						` · min ₦${parseNumber(discount.min_order_value).toLocaleString()}`}
 				</p>
 
 				<p className="text-xs text-muted-foreground">
@@ -592,11 +588,6 @@ function DiscountRow({
 		</div>
 	);
 }
-
-const safeParseFloat = (v: string | number | undefined | null): number => {
-	const n = parseFloat(String(v ?? "0"));
-	return isNaN(n) ? 0 : n;
-};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
