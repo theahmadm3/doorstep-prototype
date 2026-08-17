@@ -1,6 +1,5 @@
 import React from "react";
 import type { VendorOrder } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	formatOrderDate,

@@ -1,9 +1,12 @@
 import { useToast } from "@/hooks/use-toast";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import useMediaQuery from "@mui/material/useMediaQuery";
 
 export function Toaster() {
   const { toasts, dismiss } = useToast();
+  const isLargeScreen = useMediaQuery("(min-width:768px)");
+
   return (
     <>
       {toasts.map(({ id, title, description, variant, open, action }) => (
@@ -12,7 +15,10 @@ export function Toaster() {
           open={open}
           autoHideDuration={5000}
           onClose={(_, reason) => { if (reason !== "clickaway") dismiss(id); }}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          anchorOrigin={{
+            vertical: "top",
+            horizontal: isLargeScreen ? "center" : "right",
+          }}
         >
           <Alert
             severity={variant === "destructive" ? "error" : "success"}

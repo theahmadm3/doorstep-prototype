@@ -1,4 +1,3 @@
-import React from "react";
 import { safeParseFloat, ITEMS_PER_PAGE, displayStatus } from "./helpers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
