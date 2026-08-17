@@ -31,7 +31,7 @@ test.describe("Customer (authenticated)", () => {
       },
       {
         method: "GET",
-        path: "/get-customer-order",
+        path: "/get-customer-order/",
         json: paginated([customerOrder()]),
       },
     ]);

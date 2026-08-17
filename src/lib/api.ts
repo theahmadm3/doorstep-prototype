@@ -297,7 +297,7 @@ export async function placeOrder(
 
 export async function getCustomerOrders(): Promise<CustomerOrder[]> {
 	const response = await fetcher<PaginatedResponse<CustomerOrder>>(
-		"/get-customer-order",
+		"/get-customer-order/",
 	);
 	return response.results.map((order) => ({
 		...order,
