@@ -1,5 +1,5 @@
 import type { VendorOrderItem } from "@/lib/types";
-import { safeParseFloat } from "./helpers";
+import { safeParseFloat } from "@/lib/format";
 
 type OrderItemListProps = {
 	items: VendorOrderItem[];

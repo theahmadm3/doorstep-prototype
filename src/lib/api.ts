@@ -455,10 +455,6 @@ export async function createMenuCategory(
 	});
 }
 
-export async function getMenuCategory(id: string): Promise<MenuCategory> {
-	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}/`);
-}
-
 export async function updateMenuCategory(
 	id: string,
 	payload: CategoryPayload,
@@ -626,12 +622,6 @@ export async function initializePayment(
 	return fetcher<InitializePaymentResponse>("/initialize/", {
 		method: "POST",
 		body: JSON.stringify(payload),
-	});
-}
-
-export async function cancelOrder(orderId: string): Promise<void> {
-	await fetcher<void>(`/customer/me/orders/${orderId}/cancel/`, {
-		method: "POST",
 	});
 }
 

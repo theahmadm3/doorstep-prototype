@@ -169,8 +169,6 @@ function DiscountFormDialog({
 		enabled: open && scopeType === "category",
 	});
 
-	const availableScopes = RESTAURANT_SCOPES;
-
 	const handleFormSubmit = (data: VendorDiscountPayload) => {
 		onSubmit({
 			...data,
@@ -227,7 +225,7 @@ function DiscountFormDialog({
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												{availableScopes.map((s) => (
+												{RESTAURANT_SCOPES.map((s) => (
 													<SelectItem key={s} value={s}>
 														{SCOPE_LABELS[s]}
 													</SelectItem>

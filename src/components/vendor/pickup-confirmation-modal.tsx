@@ -57,7 +57,7 @@ export default function PickupConfirmationModal({ isOpen, onClose, orderId, onSu
       });
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       const message = "Unable to confirm pickup. Please check the OTP and try again.";
       toast({
         title: "Confirmation Failed",

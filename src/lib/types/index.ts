@@ -80,12 +80,6 @@ export const signupSchema = z
 		path: ["confirmPassword"],
 	});
 
-export type SignupPayload = Omit<
-	z.infer<typeof signupSchema>,
-	"confirmPassword"
->;
-export type SignupCredentials = z.infer<typeof signupSchema>;
-
 export interface User {
 	id: string;
 	full_name: string;
@@ -265,11 +259,6 @@ export interface Order {
 	deliveryFee?: number;
 }
 
-export interface GuestCart {
-	restaurantId: string | null;
-	items: OrderItem[];
-}
-
 export interface OrderItemPayload {
 	menu_item_id: string;
 	quantity: number;
@@ -437,12 +426,6 @@ export const profileSchema = z.object({
 	),
 });
 export type ProfileFormData = z.infer<typeof profileSchema>;
-
-export const passwordSchema = z.object({
-	currentPassword: z.string().min(1, "Current password is required."),
-	newPassword: z.string().min(8, "New password must be at least 8 characters."),
-});
-export type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export interface ProfileUpdatePayload {
 	full_name: string;
@@ -738,11 +721,6 @@ export interface DashboardData {
 	allRestaurants: DashboardRestaurant[];
 	comboDeals: DashboardComboItem[];
 	pagination: DashboardPagination;
-}
-
-export interface DashboardResponse {
-	success: boolean;
-	data: DashboardData;
 }
 
 // Search

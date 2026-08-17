@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import {
 	formatOrderDate,
 	safeParseFloat,
+} from "@/lib/format";
+import {
 	getStatusClassName,
 	RIDER_ASSIGNED_STATUSES,
 	displayStatus,

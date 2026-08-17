@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 
 export type VendorPlaceResult = { street_name: string; latitude: number; longitude: number };
 
+export const GOOGLE_MAPS_LIBRARIES: ("places")[] = ["places"];
+
 export const GooglePlacesAutocomplete = ({
     onPlaceSelect,
     onClearSelection,

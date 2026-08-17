@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LocateFixed } from "lucide-react";
 import { useLoadScript } from "@react-google-maps/api";
-import { GooglePlacesAutocomplete } from "./google-places-autocomplete";
+import { GooglePlacesAutocomplete, GOOGLE_MAPS_LIBRARIES } from "./google-places-autocomplete";
 import { useAddressForm } from "./use-address-form";
 import { useToast } from "@/hooks/use-toast";
 import { updateRestaurantProfile } from "@/lib/api";
@@ -18,9 +18,11 @@ interface VendorAddressModalProps {
   onAddressSaved: () => void;
 }
 
-const libraries: ("places")[] = ['places'];
+interface VendorAddressModalContentProps {
+  onAddressSaved: () => void;
+}
 
-function VendorAddressModalContent({ onAddressSaved }: VendorAddressModalProps) {
+function VendorAddressModalContent({ onAddressSaved }: VendorAddressModalContentProps) {
     const {
         addressState, setAddressState,
         isGpsLocated,
@@ -100,7 +102,7 @@ export default function VendorAddressModal({ isOpen, onAddressSaved }: VendorAdd
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: apiKey || "",
-        libraries,
+        libraries: GOOGLE_MAPS_LIBRARIES,
     });
 
     if (!isLoaded && isOpen) {
@@ -124,7 +126,7 @@ export default function VendorAddressModal({ isOpen, onAddressSaved }: VendorAdd
                     <DialogTitle>Set Your Restaurant Address</DialogTitle>
                     <DialogDescription>Please provide your restaurant's location to continue. You cannot proceed without setting an address.</DialogDescription>
                 </DialogHeader>
-                <VendorAddressModalContent isOpen={isOpen} onAddressSaved={onAddressSaved} />
+                <VendorAddressModalContent onAddressSaved={onAddressSaved} />
             </DialogContent>
         </Dialog>
     );
