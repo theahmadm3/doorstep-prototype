@@ -395,10 +395,7 @@ export async function getVendorOrders(): Promise<VendorOrder[]> {
 	const data = await fetcher<PaginatedResponse<VendorOrder>>(
 		"/restaurants/me/orders/",
 	);
-	return data.results.map((order) => ({
-		...order,
-		created_at: format(new Date(order.created_at), "dd MMM yyyy, hh:mm a"),
-	}));
+	return data.results;
 }
 
 export async function updateVendorOrderStatus(
