@@ -406,6 +406,7 @@ export interface PickupConfirmationPayload {
 export interface Rider {
 	name: string;
 	phone: string;
+	email: string;
 }
 
 export interface RiderListResponse {
@@ -417,6 +418,7 @@ export const riderSchema = z.object({
 	phone: z
 		.string()
 		.regex(nigerianPhoneRegex, "Please enter a valid Nigerian phone number."),
+	email: z.string().email("Please enter a valid email address."),
 });
 
 export type RiderPayload = z.infer<typeof riderSchema>;
@@ -825,7 +827,7 @@ export interface VendorDiscount {
 	updated_at: string;
 }
 
-const RESTAURANT_SCOPES: DiscountScopeType[] = ["item", "category", "all_menu_items"];
+export const RESTAURANT_SCOPES: DiscountScopeType[] = ["item", "category", "all_menu_items"];
 const DOORSTEP_SCOPES: DiscountScopeType[] = ["order", "delivery", "service_fee"];
 
 export const vendorDiscountSchema = z
