@@ -78,6 +78,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "../ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 
 type ItemUpdateStatus = "idle" | "updating" | "success" | "error";
 type ViewMode = "grouped" | "all";
@@ -487,188 +488,51 @@ export default function VendorItemManagement() {
 						</DialogTrigger>
 					</div>
 				</CardHeader>
-				<CardContent>
-					{isLoading ? (
-						viewMode === "grouped" ? (
-							<div className="space-y-6">
-								{Array.from({ length: 2 }).map((_, gi) => (
-									<div key={`group-skeleton-${gi}`}>
-										<Skeleton className="h-6 w-32 mb-3" />
-										<Table>
-											<TableHeader>
-												<TableRow>
-													<TableHead className="hidden w-[100px] sm:table-cell">
-														Image
-													</TableHead>
-													<TableHead>Name</TableHead>
-													<TableHead>Price</TableHead>
-													<TableHead>Availability</TableHead>
-													<TableHead>Actions</TableHead>
+			<CardContent>
+				{isLoading ? (
+					viewMode === "grouped" ? (
+						<div className="space-y-6">
+							{Array.from({ length: 2 }).map((_, gi) => (
+								<div key={`group-skeleton-${gi}`}>
+									<Skeleton className="h-6 w-32 mb-3" />
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead className="hidden w-[100px] sm:table-cell">
+													Image
+												</TableHead>
+												<TableHead>Name</TableHead>
+												<TableHead>Price</TableHead>
+												<TableHead>Availability</TableHead>
+												<TableHead>Actions</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{Array.from({ length: 3 }).map((_, i) => (
+												<TableRow key={`item-skeleton-${gi}-${i}`}>
+													<TableCell className="hidden sm:table-cell">
+														<Skeleton className="h-16 w-16 rounded-md" />
+													</TableCell>
+													<TableCell>
+														<Skeleton className="h-5 w-32" />
+													</TableCell>
+													<TableCell>
+														<Skeleton className="h-5 w-16" />
+													</TableCell>
+													<TableCell>
+														<Skeleton className="h-6 w-20" />
+													</TableCell>
+													<TableCell>
+														<Skeleton className="h-8 w-8" />
+													</TableCell>
 												</TableRow>
-											</TableHeader>
-											<TableBody>
-												{Array.from({ length: 3 }).map((_, i) => (
-													<TableRow key={`item-skeleton-${gi}-${i}`}>
-														<TableCell className="hidden sm:table-cell">
-															<Skeleton className="h-16 w-16 rounded-md" />
-														</TableCell>
-														<TableCell>
-															<Skeleton className="h-5 w-32" />
-														</TableCell>
-														<TableCell>
-															<Skeleton className="h-5 w-16" />
-														</TableCell>
-														<TableCell>
-															<Skeleton className="h-6 w-20" />
-														</TableCell>
-														<TableCell>
-															<Skeleton className="h-8 w-8" />
-														</TableCell>
-													</TableRow>
-												))}
-											</TableBody>
-										</Table>
-									</div>
-								))}
-							</div>
-						) : (
-							<Table>
-								<TableHeader>
-									<TableRow>
-										<TableHead className="hidden w-[100px] sm:table-cell">
-											Image
-										</TableHead>
-										<TableHead>Name</TableHead>
-										<TableHead>Price</TableHead>
-										<TableHead>Availability</TableHead>
-										<TableHead>Date Added</TableHead>
-										<TableHead>Actions</TableHead>
-									</TableRow>
-								</TableHeader>
-								<TableBody>
-									{Array.from({ length: 5 }).map((_, i) => (
-										<TableRow key={`menu-item-skeleton-${i}`}>
-											<TableCell className="hidden sm:table-cell">
-												<Skeleton className="h-16 w-16 rounded-md" />
-											</TableCell>
-											<TableCell>
-												<Skeleton className="h-5 w-32" />
-											</TableCell>
-											<TableCell>
-												<Skeleton className="h-5 w-16" />
-											</TableCell>
-											<TableCell>
-												<Skeleton className="h-6 w-20" />
-											</TableCell>
-											<TableCell>
-												<Skeleton className="h-5 w-24" />
-											</TableCell>
-											<TableCell>
-												<Skeleton className="h-8 w-8" />
-											</TableCell>
-										</TableRow>
-									))}
-								</TableBody>
-							</Table>
-						)
-					) : viewMode === "grouped" ? (
-						// Grouped view
-						categoryGroups.length === 0 ? (
-							<div className="text-center py-12">
-								<p className="text-muted-foreground mb-4">
-									No menu items available. Please add a new item.
-								</p>
-								<DialogTrigger asChild>
-									<Button>
-										<PlusCircle className="mr-2 h-4 w-4" /> Add Your First Item
-									</Button>
-								</DialogTrigger>
-							</div>
-						) : (
-							<div className="space-y-8">
-								{categoryGroups.map((group) => (
-									<div key={group.id}>
-										<h3 className="text-lg font-semibold mb-3">{group.name}</h3>
-										{group.items.length === 0 ? (
-											<p className="text-sm text-muted-foreground py-4">
-												No items in this category.
-											</p>
-										) : (
-											<Table>
-												<TableHeader>
-													<TableRow>
-														<TableHead className="hidden w-[100px] sm:table-cell">
-															Image
-														</TableHead>
-														<TableHead>Name</TableHead>
-														<TableHead>Price</TableHead>
-														<TableHead>Availability</TableHead>
-														<TableHead>Actions</TableHead>
-													</TableRow>
-												</TableHeader>
-												<TableBody>
-													{group.items.map((item) => (
-														<TableRow key={item.id}>
-															<TableCell className="hidden sm:table-cell">
-																{renderItemImage(item.image_url, item.name)}
-															</TableCell>
-															<TableCell className="font-medium">
-																{item.name}
-															</TableCell>
-															<TableCell>
-																₦{parseFloat(item.price).toFixed(2)}
-															</TableCell>
-															<TableCell>
-																{renderAvailabilityToggle(item.id, item.is_available)}
-															</TableCell>
-															<TableCell>
-																<DropdownMenu>
-																	<DropdownMenuTrigger asChild>
-																		<Button variant="ghost" className="h-8 w-8 p-0">
-																			<span className="sr-only">Open menu</span>
-																			<MoreHorizontal className="h-4 w-4" />
-																		</Button>
-																	</DropdownMenuTrigger>
-																	<DropdownMenuContent align="end">
-																		<DropdownMenuItem
-																			onClick={() =>
-																				openEditFromGrouped(item, group.id)
-																			}
-																		>
-																			<Edit className="mr-2 h-4 w-4" /> Edit
-																		</DropdownMenuItem>
-																		<DropdownMenuItem
-																			onClick={() => openDeleteFromGrouped(item)}
-																			className="text-red-600"
-																		>
-																			<Trash2 className="mr-2 h-4 w-4" /> Delete
-																		</DropdownMenuItem>
-																	</DropdownMenuContent>
-																</DropdownMenu>
-															</TableCell>
-														</TableRow>
-													))}
-												</TableBody>
-											</Table>
-										)}
-									</div>
-								))}
-							</div>
-						)
-					) : items?.length === 0 ? (
-						// All view - empty
-						<div className="text-center py-12">
-							<p className="text-muted-foreground mb-4">
-								No menu items available. Please add a new item.
-							</p>
-							<DialogTrigger asChild>
-								<Button>
-									<PlusCircle className="mr-2 h-4 w-4" /> Add Your First Item
-								</Button>
-							</DialogTrigger>
+											))}
+										</TableBody>
+									</Table>
+								</div>
+							))}
 						</div>
 					) : (
-						// All view - table
 						<Table>
 							<TableHeader>
 								<TableRow>
@@ -683,57 +547,197 @@ export default function VendorItemManagement() {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{items?.map((item) => (
-									<TableRow key={item.id}>
+								{Array.from({ length: 5 }).map((_, i) => (
+									<TableRow key={`menu-item-skeleton-${i}`}>
 										<TableCell className="hidden sm:table-cell">
-											{renderItemImage(item.image_url, item.name)}
-										</TableCell>
-										<TableCell className="font-medium">{item.name}</TableCell>
-										<TableCell>
-											₦{parseFloat(item.price).toFixed(2)}
+											<Skeleton className="h-16 w-16 rounded-md" />
 										</TableCell>
 										<TableCell>
-											{renderAvailabilityToggle(item.id, item.is_available)}
+											<Skeleton className="h-5 w-32" />
 										</TableCell>
 										<TableCell>
-											{item.created_at &&
-											!isNaN(new Date(item.created_at).getTime())
-												? new Date(item.created_at).toLocaleDateString("en-GB", {
-														day: "2-digit",
-														month: "short",
-														year: "numeric",
-												  })
-												: "—"}
+											<Skeleton className="h-5 w-16" />
 										</TableCell>
 										<TableCell>
-											<DropdownMenu>
-												<DropdownMenuTrigger asChild>
-													<Button variant="ghost" className="h-8 w-8 p-0">
-														<span className="sr-only">Open menu</span>
-														<MoreHorizontal className="h-4 w-4" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent align="end">
-													<DropdownMenuItem
-														onClick={() => openEditDialog(item)}
-													>
-														<Edit className="mr-2 h-4 w-4" /> Edit
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={() => setItemToDelete(item)}
-														className="text-red-600"
-													>
-														<Trash2 className="mr-2 h-4 w-4" /> Delete
-													</DropdownMenuItem>
-												</DropdownMenuContent>
-											</DropdownMenu>
+											<Skeleton className="h-6 w-20" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="h-5 w-24" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="h-8 w-8" />
 										</TableCell>
 									</TableRow>
 								))}
 							</TableBody>
 						</Table>
-					)}
-				</CardContent>
+					)
+				) : viewMode === "grouped" ? (
+					categoryGroups.length === 0 ? (
+						<div className="text-center py-12">
+							<p className="text-muted-foreground mb-4">
+								No menu items available. Please add a new item.
+							</p>
+							<DialogTrigger asChild>
+								<Button>
+									<PlusCircle className="mr-2 h-4 w-4" /> Add Your First Item
+								</Button>
+							</DialogTrigger>
+						</div>
+					) : (
+						<Tabs defaultValue={categoryGroups[0]?.id}>
+							<TabsList className="mb-4">
+								{categoryGroups.map((group) => (
+									<TabsTrigger key={group.id} value={group.id}>
+										{group.name}
+									</TabsTrigger>
+								))}
+							</TabsList>
+							{categoryGroups.map((group) => (
+								<TabsContent key={group.id} value={group.id}>
+									{group.items.length === 0 ? (
+										<p className="text-sm text-muted-foreground py-4">
+											No items in this category.
+										</p>
+									) : (
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead className="hidden w-[100px] sm:table-cell">
+														Image
+													</TableHead>
+													<TableHead>Name</TableHead>
+													<TableHead>Price</TableHead>
+													<TableHead>Availability</TableHead>
+													<TableHead>Actions</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{group.items.map((item) => (
+													<TableRow key={item.id}>
+														<TableCell className="hidden sm:table-cell">
+															{renderItemImage(item.image_url, item.name)}
+														</TableCell>
+														<TableCell className="font-medium">
+															{item.name}
+														</TableCell>
+														<TableCell>
+															₦{parseFloat(item.price).toFixed(2)}
+														</TableCell>
+														<TableCell>
+															{renderAvailabilityToggle(item.id, item.is_available)}
+														</TableCell>
+														<TableCell>
+															<DropdownMenu>
+																<DropdownMenuTrigger asChild>
+																	<Button variant="ghost" className="h-8 w-8 p-0">
+																		<span className="sr-only">Open menu</span>
+																		<MoreHorizontal className="h-4 w-4" />
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent align="end">
+																	<DropdownMenuItem
+																		onClick={() =>
+																			openEditFromGrouped(item, group.id)
+																		}
+																	>
+																		<Edit className="mr-2 h-4 w-4" /> Edit
+																	</DropdownMenuItem>
+																	<DropdownMenuItem
+																		onClick={() => openDeleteFromGrouped(item)}
+																		className="text-red-600"
+																	>
+																		<Trash2 className="mr-2 h-4 w-4" /> Delete
+																	</DropdownMenuItem>
+																</DropdownMenuContent>
+															</DropdownMenu>
+														</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+									)}
+								</TabsContent>
+							))}
+						</Tabs>
+					)
+				) : items?.length === 0 ? (
+					<div className="text-center py-12">
+						<p className="text-muted-foreground mb-4">
+							No menu items available. Please add a new item.
+						</p>
+						<DialogTrigger asChild>
+							<Button>
+								<PlusCircle className="mr-2 h-4 w-4" /> Add Your First Item
+							</Button>
+						</DialogTrigger>
+					</div>
+				) : (
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead className="hidden w-[100px] sm:table-cell">
+									Image
+								</TableHead>
+								<TableHead>Name</TableHead>
+								<TableHead>Price</TableHead>
+								<TableHead>Availability</TableHead>
+								<TableHead>Date Added</TableHead>
+								<TableHead>Actions</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{items?.map((item) => (
+								<TableRow key={item.id}>
+									<TableCell className="hidden sm:table-cell">
+										{renderItemImage(item.image_url, item.name)}
+									</TableCell>
+									<TableCell className="font-medium">{item.name}</TableCell>
+									<TableCell>
+										₦{parseFloat(item.price).toFixed(2)}
+									</TableCell>
+									<TableCell>
+										{renderAvailabilityToggle(item.id, item.is_available)}
+									</TableCell>
+									<TableCell>
+										{item.created_at &&
+										!isNaN(new Date(item.created_at).getTime())
+											? new Date(item.created_at).toLocaleDateString("en-GB", {
+													day: "2-digit",
+													month: "short",
+													year: "numeric",
+											  })
+											: "—"}
+									</TableCell>
+									<TableCell>
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button variant="ghost" className="h-8 w-8 p-0">
+													<span className="sr-only">Open menu</span>
+													<MoreHorizontal className="h-4 w-4" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end">
+												<DropdownMenuItem
+													onClick={() => openEditDialog(item)}
+												>
+													<Edit className="mr-2 h-4 w-4" /> Edit
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onClick={() => setItemToDelete(item)}
+													className="text-red-600"
+												>
+													<Trash2 className="mr-2 h-4 w-4" /> Delete
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+										</DropdownMenu>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				)}
+			</CardContent>
 			</Card>
 
 			<DialogContent className="sm:max-w-[500px]">

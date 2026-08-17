@@ -130,13 +130,12 @@ test.describe("Vendor Menu Items - View Toggle", () => {
     // Grouped toggle should be active by default
     await expect(page.getByTestId("view-grouped")).toHaveAttribute("data-testid", "view-grouped");
 
-    // Should show category headings from grouped API
-    await expect(page.getByRole("heading", { name: "Mains" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Drinks" })).toBeVisible();
+    // Should show category tabs from grouped API
+    await expect(page.getByRole("tab", { name: "Mains" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Drinks" })).toBeVisible();
 
-    // Should show items under their categories
+    // Should show items under the first category tab
     await expect(page.getByText("Jollof Rice")).toBeVisible();
-    await expect(page.getByText("Water")).toBeVisible();
   });
 
   test("can switch to all items view", async ({ page }) => {
@@ -157,7 +156,7 @@ test.describe("Vendor Menu Items - View Toggle", () => {
     await expect(page.getByText("Jollof Rice & Chicken")).toBeVisible();
 
     // Category headings from grouped view should not be visible
-    await expect(page.getByRole("heading", { name: "Mains" })).not.toBeVisible();
+    await expect(page.getByRole("tab", { name: "Mains" })).not.toBeVisible();
   });
 
   test("can switch back to grouped view", async ({ page }) => {
@@ -175,9 +174,9 @@ test.describe("Vendor Menu Items - View Toggle", () => {
     await page.getByTestId("view-all").click();
     await page.getByTestId("view-grouped").click();
 
-    // Should show category headings again
-    await expect(page.getByRole("heading", { name: "Mains" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Drinks" })).toBeVisible();
+    // Should show category tabs again
+    await expect(page.getByRole("tab", { name: "Mains" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Drinks" })).toBeVisible();
   });
 
   test("grouped view shows empty state when no categories", async ({ page }) => {
@@ -213,7 +212,7 @@ test.describe("Vendor Menu Items - View Toggle", () => {
     ]);
     await goto(page, "/vendor/config");
 
-    await expect(page.getByRole("heading", { name: "Empty Cat" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Empty Cat" })).toBeVisible();
     await expect(page.getByText("No items in this category.")).toBeVisible();
   });
 });
