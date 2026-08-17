@@ -42,50 +42,23 @@ import {
 	ChartTooltipContent,
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
 
-
 const chartConfig = {
-	revenue: {
-		label: "Revenue",
-		color: "hsl(var(--chart-1))",
-	},
-	orders: {
+	count: {
 		label: "Orders",
-		color: "hsl(var(--chart-2))",
+		color: "hsl(var(--chart-1))",
 	},
 };
 
-// Mock data for the revenue chart
-const mockRevenueData = [
-	{ date: "Mon", revenue: 4000 },
-	{ date: "Tue", revenue: 3000 },
-	{ date: "Wed", revenue: 5000 },
-	{ date: "Thu", revenue: 4500 },
-	{ date: "Fri", revenue: 6000 },
-	{ date: "Sat", revenue: 7500 },
-	{ date: "Sun", revenue: 7000 },
-];
-
 export default function VendorDashboardPage() {
-	const [analytics, setAnalytics] = useState < VendorAnalyticsData | null > (null);
-	const [recentOrders, setRecentOrders] = useState < VendorOrder[] > ([]);
-	const [profile, setProfile] = useState < VendorProfile | null > (null);
+	const [analytics, setAnalytics] = useState<VendorAnalyticsData | null>(null);
+	const [recentOrders, setRecentOrders] = useState<VendorOrder[]>([]);
+	const [profile, setProfile] = useState<VendorProfile | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isToggleUpdating, setToggleUpdating] = useState(false);
 	const { toast } = useToast();
-	const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const navigate = useNavigate();
+	const navigate = useNavigate();
 
 	const fetchData = useCallback(async () => {
 		try {
@@ -95,9 +68,8 @@ export default function VendorDashboardPage() {
 				getRestaurantProfile(),
 			]);
 			setAnalytics(analyticsData);
-			setRecentOrders(ordersData.slice(0, 5)); // Get latest 5
+			setRecentOrders(ordersData.slice(0, 5));
 			setProfile(profileData);
-			localStorage.setItem('restaurant_is_open', String(profileData.is_open));
 		} catch (error) {
 			toast({
 				title: "Error fetching dashboard data",
@@ -105,49 +77,37 @@ export default function VendorDashboardPage() {
 				variant: "destructive",
 			});
 		} finally {
-			if (isLoading) {
-				setIsLoading(false);
-			}
+			setIsLoading(false);
 		}
-	}, [toast, isLoading]);
+	}, [toast]);
 
 	useEffect(() => {
 		fetchData();
-		const interval = setInterval(fetchData, 60000); // Fetch data every 60 seconds
+		const interval = setInterval(fetchData, 60000);
 		return () => clearInterval(interval);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
 	const handleStatusToggle = async () => {
 		if (!profile) return;
-		
+
 		setToggleUpdating(true);
-		
-		// Optimistic update of local state
+
 		const originalProfile = profile;
 		const newStatus = !profile.is_open;
 		setProfile({ ...profile, is_open: newStatus });
-        localStorage.setItem('restaurant_is_open', String(newStatus));
 
 		try {
-			// API call to the new endpoint
 			const updatedProfile = await toggleRestaurantOpenStatus();
-			
-			// Sync state with server response
 			setProfile(updatedProfile);
-			localStorage.setItem('restaurant_is_open', String(updatedProfile.is_open));
-
 			toast({
 				title: `Restaurant is now ${updatedProfile.is_open ? "Open" : "Closed"}`,
 				description: `You are now ${
-          			updatedProfile.is_open ? "accepting" : "not accepting"
-        		} new orders.`,
+					updatedProfile.is_open ? "accepting" : "not accepting"
+				} new orders.`,
 			});
 		} catch (error) {
-			// Revert on failure
 			setProfile(originalProfile);
-			localStorage.setItem('restaurant_is_open', String(originalProfile.is_open));
-			
 			const message =
 				error instanceof Error ? error.message : "Failed to update status.";
 			toast({ title: "Update Failed", description: message, variant: "destructive" });
@@ -158,33 +118,28 @@ export default function VendorDashboardPage() {
 
 	const formatCurrency = (value: string | number | undefined) => {
 		if (value === undefined || value === null) return "₦0.00";
-		return `₦${parseFloat(String(value)).toLocaleString("en-NG", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+		const num = parseFloat(String(value));
+		if (isNaN(num)) return "₦0.00";
+		return `₦${num.toLocaleString("en-NG", {
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2,
+		})}`;
 	};
 
 	const handleGoToOrders = () => {
-        navigate('/vendor/orders');
-    }
+		navigate("/vendor/orders");
+	};
+
+	const orderBreakdownData = analytics
+		? [
+				{ label: "Delivered", count: analytics.delivered_orders },
+				{ label: "Active", count: analytics.active_orders },
+				{ label: "Cancelled", count: analytics.cancelled_orders },
+		  ]
+		: [];
 
 	return (
 		<div className="space-y-8">
-			<AlertDialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Navigate to Orders?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will take you to the order management page. Do you want to continue?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleGoToOrders}>Go to Orders</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
 			{/* Header Section */}
 			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 				<div>
@@ -212,8 +167,8 @@ export default function VendorDashboardPage() {
 							<div className="flex items-center space-x-2">
 								<span
 									className={`relative flex h-3 w-3 rounded-full ${
-                    profile.is_open ? "bg-green-500" : "bg-red-500"
-                  }`}
+										profile.is_open ? "bg-green-500" : "bg-red-500"
+									}`}
 								>
 									{profile.is_open && (
 										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -249,9 +204,6 @@ export default function VendorDashboardPage() {
 								{formatCurrency(analytics?.total_revenue)}
 							</div>
 						)}
-						<p className="text-xs text-muted-foreground">
-							+20.1% from last month
-						</p>
 					</CardContent>
 				</Card>
 				<Card>
@@ -264,16 +216,16 @@ export default function VendorDashboardPage() {
 							<Skeleton className="h-8 w-1/2" />
 						) : (
 							<div className="text-2xl font-bold">
-								{analytics?.total_orders.toLocaleString()}
+								{analytics?.total_orders?.toLocaleString() ?? '—'}
 							</div>
 						)}
-						<p className="text-xs text-muted-foreground">
-							+180.1% from last month
-						</p>
 					</CardContent>
 				</Card>
-				
-				<Card className="transition-all hover:shadow-md cursor-pointer" onClick={() => setShowConfirmModal(true)}>
+
+				<Card
+					className="transition-all hover:shadow-md cursor-pointer"
+					onClick={handleGoToOrders}
+				>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Active Orders</CardTitle>
 						<ShoppingBag className="h-4 w-4 text-blue-500" />
@@ -283,7 +235,7 @@ export default function VendorDashboardPage() {
 							<Skeleton className="h-8 w-1/2" />
 						) : (
 							<div className="text-2xl font-bold">
-								+{analytics?.active_orders.toLocaleString()}
+								{analytics?.active_orders?.toLocaleString() ?? '—'}
 							</div>
 						)}
 						<p className="text-xs text-muted-foreground">
@@ -291,7 +243,7 @@ export default function VendorDashboardPage() {
 						</p>
 					</CardContent>
 				</Card>
-			
+
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
@@ -304,24 +256,20 @@ export default function VendorDashboardPage() {
 							<Skeleton className="h-8 w-1/2" />
 						) : (
 							<div className="text-2xl font-bold">
-								{analytics?.delivered_orders.toLocaleString()}
+								{analytics?.delivered_orders?.toLocaleString() ?? '—'}
 							</div>
 						)}
-						<p className="text-xs text-muted-foreground">
-							+19% from last month
-						</p>
 					</CardContent>
 				</Card>
 			</div>
 
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-				{/* Revenue Chart & Top Items */}
 				<div className="lg:col-span-2 space-y-8">
 					<Card>
 						<CardHeader>
-							<CardTitle>Revenue Overview</CardTitle>
+							<CardTitle>Order Breakdown</CardTitle>
 							<CardDescription>
-								Your revenue trend for the past week.
+								Delivered, active, and cancelled orders.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
@@ -332,10 +280,10 @@ export default function VendorDashboardPage() {
 									config={chartConfig}
 									className="min-h-[250px] w-full"
 								>
-									<BarChart accessibilityLayer data={mockRevenueData}>
+									<BarChart accessibilityLayer data={orderBreakdownData}>
 										<CartesianGrid vertical={false} />
 										<XAxis
-											dataKey="date"
+											dataKey="label"
 											tickLine={false}
 											tickMargin={10}
 											axisLine={false}
@@ -346,8 +294,8 @@ export default function VendorDashboardPage() {
 											content={<ChartTooltipContent />}
 										/>
 										<Bar
-											dataKey="revenue"
-											fill="var(--color-revenue)"
+											dataKey="count"
+											fill="var(--color-count)"
 											radius={8}
 										/>
 									</BarChart>
@@ -408,6 +356,7 @@ export default function VendorDashboardPage() {
 							<TableHeader>
 								<TableRow>
 									<TableHead>Customer</TableHead>
+									<TableHead>Items</TableHead>
 									<TableHead>Amount</TableHead>
 									<TableHead>Status</TableHead>
 									<TableHead>Date</TableHead>
@@ -418,6 +367,9 @@ export default function VendorDashboardPage() {
 									<TableRow key={i}>
 										<TableCell>
 											<Skeleton className="h-5 w-24" />
+										</TableCell>
+										<TableCell>
+											<Skeleton className="h-5 w-32" />
 										</TableCell>
 										<TableCell>
 											<Skeleton className="h-5 w-16" />
@@ -437,24 +389,50 @@ export default function VendorDashboardPage() {
 							<TableHeader>
 								<TableRow>
 									<TableHead>Customer</TableHead>
+									<TableHead>Items</TableHead>
 									<TableHead>Amount</TableHead>
 									<TableHead>Status</TableHead>
 									<TableHead>Date</TableHead>
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{recentOrders.map((order) => (
-									<TableRow key={order.id}>
-										<TableCell className="font-medium">
-											{order.customer_name}
-										</TableCell>
-										<TableCell>{formatCurrency(order.total_amount)}</TableCell>
-										<TableCell>
-											<Badge variant="secondary">{order.status}</Badge>
-										</TableCell>
-										<TableCell>{order.created_at}</TableCell>
-									</TableRow>
-								))}
+								{recentOrders.map((order) => {
+									const visibleItems = order.items?.slice(0, 2) ?? [];
+									const hiddenCount = (order.items?.length ?? 0) - visibleItems.length;
+									return (
+										<TableRow key={order.id}>
+											<TableCell className="font-medium">
+												{order.customer_name}
+											</TableCell>
+											<TableCell>
+												{visibleItems.length > 0 ? (
+													<div className="flex flex-wrap gap-1">
+														{visibleItems.map((item) => (
+															<span
+																key={item.id}
+																className="bg-muted rounded-md px-2 py-0.5 text-xs whitespace-nowrap"
+															>
+																{item.quantity}× {item.item_name}
+															</span>
+														))}
+														{hiddenCount > 0 && (
+															<span className="text-xs text-muted-foreground">
+																+{hiddenCount} more
+															</span>
+														)}
+													</div>
+												) : (
+													<span className="text-muted-foreground">—</span>
+												)}
+											</TableCell>
+											<TableCell>{formatCurrency(order.total_amount)}</TableCell>
+											<TableCell>
+												<Badge variant="secondary">{order.status}</Badge>
+											</TableCell>
+											<TableCell>{order.created_at}</TableCell>
+										</TableRow>
+									);
+								})}
 							</TableBody>
 						</Table>
 					) : (

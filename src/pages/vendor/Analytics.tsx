@@ -32,9 +32,9 @@ export default function VendorAnalyticsPage() {
                 variant: "destructive"
             });
         } finally {
-            if (isLoading) setIsLoading(false);
+            setIsLoading(false);
         }
-    }, [toast, isLoading]);
+    }, [toast]);
 
     useEffect(() => {
         fetchAnalytics();
@@ -45,7 +45,9 @@ export default function VendorAnalyticsPage() {
 
     const formatCurrency = (value: string | number | undefined) => {
         if (value === undefined || value === null) return "₦0.00";
-        return `₦${parseFloat(String(value)).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const num = parseFloat(String(value));
+        if (isNaN(num)) return "₦0.00";
+        return `₦${num.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
     return (
@@ -55,7 +57,7 @@ export default function VendorAnalyticsPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle>Total Revenue</CardTitle>
-                        <CardDescription>All time revenue</CardDescription>
+                        <CardDescription>Your cumulative revenue</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {isLoading ? <Skeleton className="h-10 w-3/4" /> : <p className="text-4xl font-bold">{formatCurrency(analytics?.total_revenue)}</p>}
@@ -64,16 +66,16 @@ export default function VendorAnalyticsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Total Orders</CardTitle>
-                        <CardDescription>All time orders</CardDescription>
+                        <CardDescription>Your total completed orders</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {isLoading ? <Skeleton className="h-10 w-1/2" /> : <p className="text-4xl font-bold">{analytics?.total_orders.toLocaleString()}</p>}
+                        {isLoading ? <Skeleton className="h-10 w-1/2" /> : <p className="text-4xl font-bold">{analytics?.total_orders?.toLocaleString() ?? '—'}</p>}
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader>
                         <CardTitle>Average Order Value</CardTitle>
-                        <CardDescription>All time average</CardDescription>
+                        <CardDescription>Per order average</CardDescription>
                     </CardHeader>
                     <CardContent>
                          {isLoading || !analytics || analytics.total_orders === 0 ? 

@@ -278,6 +278,7 @@ export default function SearchPage() {
 					<SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
 					<input
 						type="text"
+						aria-label="Search for restaurants or food"
 						placeholder="Search for restaurants or food..."
 						className="pl-10 pr-10 h-11 outline-none w-full rounded-lg border bg-background placeholder:text-muted-foreground"
 						value={searchTerm}

@@ -1,6 +1,6 @@
 
 
-import { LoginResponse, SignupPayload, SignupResponse, User, ProfileUpdatePayload, CustomerSignupPayload, OtpVerificationPayload, VerifyOtpResponse, PartnerLoginCredentials } from "./types";
+import { LoginResponse, User, ProfileUpdatePayload, CustomerSignupPayload, OtpVerificationPayload, VerifyOtpResponse, PartnerLoginCredentials } from "./types";
 import { fetcher } from "./api";
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -109,6 +109,5 @@ export async function updateUserProfile(data: ProfileUpdatePayload): Promise<Use
 
 
 export async function logoutUser(): Promise<void> {
-    // This function is kept for potential future use where a backend logout endpoint is used.
-    // Currently, logout is handled purely on the client-side by clearing local storage and state.
+    await fetcher<void>("/auth/logout/", { method: "POST" });
 }

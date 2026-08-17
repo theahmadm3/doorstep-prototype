@@ -68,7 +68,7 @@ export default function SignupForm() {
       
       toast({
         title: "OTP Sent!",
-        description: "We've sent a verification code to you via WhatsApp.",
+        description: "We've sent a verification code to your phone.",
       });
       
       navigate("/verify-otp");

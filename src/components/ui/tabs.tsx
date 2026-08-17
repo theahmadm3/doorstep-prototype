@@ -74,16 +74,18 @@ interface TabsTriggerProps {
   value: string
   className?: string
   disabled?: boolean
+  style?: React.CSSProperties
   children?: React.ReactNode
 }
 
 const TabsTrigger = React.forwardRef<HTMLDivElement, TabsTriggerProps>(
-  ({ value, className, disabled, children, ...props }, ref) => (
+  ({ value, className, disabled, style, children, ...props }, ref) => (
     <MuiTab
       ref={ref as React.Ref<HTMLDivElement>}
       value={value}
       label={children}
       disabled={disabled}
+      style={style}
       className={cn(className)}
       {...props}
     />

@@ -1,5 +1,3 @@
-
-
 import {
 	Sidebar,
 	SidebarHeader,
@@ -18,7 +16,7 @@ import {
 	ShoppingBag,
 	Tag,
 	User,
-    CreditCard,
+	CreditCard,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LogoutButton from "@/components/auth/logout-button";
@@ -36,7 +34,7 @@ const vendorNavLinks = [
 	{ href: "/vendor/orders", label: "Orders", icon: ShoppingBag },
 	{ href: "/vendor/analytics", label: "Analytics", icon: LineChart },
 	{ href: "/vendor/config", label: "Config", icon: Settings },
-    { href: "/vendor/payouts", label: "Payouts", icon: CreditCard },
+	{ href: "/vendor/payouts", label: "Payouts", icon: CreditCard },
 	{ href: "/vendor/discounts", label: "Discounts", icon: Tag },
 	{ href: "/vendor/profile", label: "Profile", icon: User },
 ];
@@ -45,10 +43,12 @@ export default function VendorLayout() {
 	useNotificationListener();
 	const [user, setUser] = useState<UserType | null>(null);
 	const [showAddressModal, setShowAddressModal] = useState(false);
+	const [restaurantImage, setRestaurantImage] = useState<string | null>(null);
 
 	const checkVendorAddress = useCallback(async () => {
 		try {
 			const profile = await getRestaurantProfile();
+			setRestaurantImage(profile.image_url);
 			if (!profile.address) {
 				setShowAddressModal(true);
 			}
@@ -56,6 +56,13 @@ export default function VendorLayout() {
 			console.error("Failed to fetch vendor profile:", error);
 			// Handle error, maybe show a toast
 		}
+	}, []);
+
+	useEffect(() => {
+		document.title = "Doorstep - Vendor";
+		return () => {
+			document.title = "Doorstep";
+		};
 	}, []);
 
 	useEffect(() => {
@@ -82,7 +89,11 @@ export default function VendorLayout() {
 				<Sidebar className="hidden md:flex md:flex-col">
 					<SidebarHeader>
 						<div className="flex items-center gap-2">
-							<img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto" />
+							<img
+								src="/doorstep-logo.png"
+								alt="Doorstep"
+								className="h-8 w-auto max-w-full"
+							/>
 						</div>
 					</SidebarHeader>
 					<SidebarContent>
@@ -100,22 +111,26 @@ export default function VendorLayout() {
 						</SidebarMenu>
 					</SidebarContent>
 					<SidebarFooter className="mt-auto">
-						<div className="flex flex-col items-center gap-3 p-2 rounded-md bg-muted">
-							<div className="w-full flex items-center gap-2">
+						<div className="flex flex-col items-center gap-2 p-2 rounded-md bg-muted">
+							<div className="w-full flex items-center gap-2 min-w-0">
 								<Avatar>
 									<AvatarImage
-										src={user?.avatar_url || "https://github.com/shadcn.png"}
+										src={
+											restaurantImage?.startsWith("http")
+												? restaurantImage
+												: undefined
+										}
 										alt={user?.full_name || "Vendor"}
 									/>
 									<AvatarFallback>
 										{user?.full_name?.[0]?.toUpperCase() || "V"}
 									</AvatarFallback>
 								</Avatar>
-								<div className="flex flex-col">
-									<span className="text-sm font-semibold">
+								<div className="flex flex-col min-w-0">
+									<span className="text-sm font-semibold truncate">
 										{user?.full_name || ""}
 									</span>
-									<span className="text-xs text-muted-foreground">
+									<span className="text-xs text-muted-foreground truncate">
 										{user?.email || ""}
 									</span>
 								</div>
@@ -129,7 +144,7 @@ export default function VendorLayout() {
 						<SidebarTrigger />
 						<h1 className="text-lg font-semibold">Vendor Panel</h1>
 					</div>
-					<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
+					<main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8 max-w-6xl w-full">
 						<Outlet />
 					</main>
 					<BottomNavigation links={vendorNavLinks} />

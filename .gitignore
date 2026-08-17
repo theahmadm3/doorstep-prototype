@@ -24,6 +24,9 @@
 /build
 /dist
 
+# local docs
+auth-architecture.md
+
 # misc
 .DS_Store
 *.pem
@@ -51,4 +54,21 @@ next-env.d.ts
 public/sw.js.map
 public/workbox-*.js
 public/workbox-*.js.map
+
+# ---- Local AI design skills & tooling (kept out of git) ----
+# Skill payloads installed by impeccable, ui-ux-pro-max, playwright-cli,
+# and skillui are machine-local by choice (see .claude, .opencode).
+/.claude/skills/
+/.opencode/skills/
+/.claude/settings.local.json
+
+# Impeccable ephemeral output / runtime state
+/.impeccable/
+
+# Playwright CLI workspace + snapshot output
+/.playwright/
+/.playwright-cli/
+
+# local docs (internal reference, not committed)
+/auth-structure.md
 

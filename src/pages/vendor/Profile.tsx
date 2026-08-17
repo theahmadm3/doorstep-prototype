@@ -38,9 +38,16 @@ const StarRating = ({ rating }: { rating: number }) => {
 };
 
 type VendorPlaceResult = { street_name: string; latitude: number; longitude: number };
-type PlaceSelectFn = (place: VendorPlaceResult | null, rawText?: string) => void;
 
-const GooglePlacesAutocomplete = ({ onPlaceSelect, initialValue = "" }: { onPlaceSelect: PlaceSelectFn; initialValue?: string }) => {
+const GooglePlacesAutocomplete = ({
+    onPlaceSelect,
+    onClearSelection,
+    initialValue = "",
+}: {
+    onPlaceSelect: (place: VendorPlaceResult) => void;
+    onClearSelection?: () => void;
+    initialValue?: string;
+}) => {
     const {
         ready,
         value,
@@ -48,30 +55,35 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect, initialValue = "" }: { onPlac
         setValue,
         clearSuggestions,
     } = usePlacesAutocomplete({
-        requestOptions: { /* Define search scope here */ },
+        requestOptions: {},
         debounce: 300,
         defaultValue: initialValue,
     });
+    const { toast } = useToast();
 
     const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         setValue(e.target.value);
-        onPlaceSelect(null, e.target.value);
+        onClearSelection?.();
     };
 
     const handleSelect = (suggestion: { description: string }) => () => {
         setValue(suggestion.description, false);
         clearSuggestions();
 
-        getGeocode({ address: suggestion.description }).then((results) => {
-            const { lat, lng } = getLatLng(results[0]);
-            onPlaceSelect({
-                street_name: suggestion.description,
-                latitude: lat,
-                longitude: lng,
+        getGeocode({ address: suggestion.description })
+            .then((results) => {
+                const { lat, lng } = getLatLng(results[0]);
+                onPlaceSelect({
+                    street_name: suggestion.description,
+                    latitude: lat,
+                    longitude: lng,
+                });
+            })
+            .catch(() => {
+                toast({ title: "Location Error", description: "Could not get coordinates for this address. Please try another.", variant: "destructive" });
             });
-        });
     };
-    
+
     return (
         <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -83,7 +95,7 @@ const GooglePlacesAutocomplete = ({ onPlaceSelect, initialValue = "" }: { onPlac
                 className="pl-10"
             />
             {status === "OK" && (
-                 <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg">
+                <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg">
                     <ScrollArea className="h-auto max-h-60">
                         {data.map((suggestion) => (
                             <div key={suggestion.place_id} onClick={handleSelect(suggestion)} className="p-3 hover:bg-muted cursor-pointer text-sm">
@@ -102,7 +114,7 @@ function VendorProfilePage() {
     const [profile, setProfile] = useState<VendorProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     // State for modals
     const [isInfoModalOpen, setInfoModalOpen] = useState(false);
     const [isAddressModalOpen, setAddressModalOpen] = useState(false);
@@ -111,13 +123,14 @@ function VendorProfilePage() {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [addressState, setAddressState] = useState<{ street_name: string | null; latitude: number; longitude: number; }>({ street_name: null, latitude: 0, longitude: 0 });
+    const [isGpsLocated, setIsGpsLocated] = useState(false);
+    const [addressLabelError, setAddressLabelError] = useState(false);
 
     // State for image upload
     const profileImageInputRef = useRef<HTMLInputElement>(null);
     const [selectedProfileImage, setSelectedProfileImage] = useState<File | null>(null);
     const [previewProfileImage, setPreviewProfileImage] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
-
 
     // Push notification state and handler from central hook
     const { isSupported, isSubscribed, isSubscribing, platformInfo } = usePushStore();
@@ -146,17 +159,19 @@ function VendorProfilePage() {
     useEffect(() => {
         fetchProfile();
     }, [fetchProfile]);
-    
+
     const openInfoModal = () => {
         if (!profile) return;
         setName(profile.name);
         setDescription(profile.description || "");
         setInfoModalOpen(true);
     };
-    
+
     const openAddressModal = () => {
         if (!profile) return;
         setAddressState(profile.address || { street_name: null, latitude: 0, longitude: 0 });
+        setIsGpsLocated(false);
+        setAddressLabelError(false);
         setAddressModalOpen(true);
     };
 
@@ -169,65 +184,71 @@ function VendorProfilePage() {
             if (description !== profile.description) payload.description = description;
 
             await updateRestaurantProfile(payload);
-            toast({ title: "Success", description: "Restaurant information updated."});
-            await fetchProfile(); // Refetch data
+            toast({ title: "Success", description: "Restaurant information updated." });
+            await fetchProfile();
             setInfoModalOpen(false);
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-            toast({ title: "Update Failed", description: message, variant: "destructive"});
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-    
-    const handleAddressSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!profile) return;
-        setIsSubmitting(true);
-        try {
-            const payload: VendorProfileUpdatePayload = {
-                name: profile.name,
-                address: addressState
-            };
-            await updateRestaurantProfile(payload);
-            toast({ title: "Success", description: "Address updated."});
-            await fetchProfile(); // Refetch data
-            setAddressModalOpen(false);
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-            toast({ title: "Update Failed", description: message, variant: "destructive"});
+            toast({ title: "Update Failed", description: message, variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handlePlaceSelect = (place: { street_name: string; latitude: number; longitude: number } | null, manualStreetName?: string) => {
-        if (place) {
-            setAddressState({
-                street_name: place.street_name,
-                latitude: Number(place.latitude.toFixed(6)),
-                longitude: Number(place.longitude.toFixed(6))
+    const handleAddressSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!profile) return;
+        if (addressState.latitude === 0 && addressState.longitude === 0) {
+            toast({
+                title: "Address not located",
+                description: "Please select an address from the suggestions or use the GPS button.",
+                variant: "destructive",
             });
-        } else {
-            // Manual input
-            setAddressState(prev => ({
-                ...prev,
-                street_name: manualStreetName || "",
-                latitude: 0,
-                longitude: 0,
-            }));
+            return;
         }
+        if (isGpsLocated && !addressState.street_name?.trim()) {
+            setAddressLabelError(true);
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const payload: VendorProfileUpdatePayload = { address: addressState };
+            await updateRestaurantProfile(payload);
+            toast({ title: "Success", description: "Address updated." });
+            await fetchProfile();
+            setAddressModalOpen(false);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unexpected error occurred.";
+            toast({ title: "Update Failed", description: message, variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handlePlaceSelect = (place: VendorPlaceResult) => {
+        setAddressState({
+            street_name: place.street_name,
+            latitude: Number(place.latitude.toFixed(6)),
+            longitude: Number(place.longitude.toFixed(6)),
+        });
+        setIsGpsLocated(false);
+    };
+
+    const handleClearAddressSelection = () => {
+        setAddressState(prev => ({ ...prev, latitude: 0, longitude: 0 }));
+        setIsGpsLocated(false);
     };
 
     const handleUseCurrentLocation = () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
                 setAddressState({
-                    street_name: "Current Location",
+                    street_name: "",
                     latitude: Number(position.coords.latitude.toFixed(6)),
-                    longitude: Number(position.coords.longitude.toFixed(6))
+                    longitude: Number(position.coords.longitude.toFixed(6)),
                 });
-                toast({ title: "Location Updated", description: "Current location captured. Save to confirm." });
+                setIsGpsLocated(true);
+                toast({ title: "Location captured", description: "Enter an address label below to identify this location." });
             }, () => {
                 toast({ title: "Geolocation Error", description: "Unable to retrieve your location.", variant: "destructive" });
             });
@@ -237,21 +258,13 @@ function VendorProfilePage() {
     const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+            const MAX_SIZE = 5 * 1024 * 1024;
             if (file.size > MAX_SIZE) {
-                toast({
-                    title: "File too large",
-                    description: "Image size should not exceed 5MB.",
-                    variant: "destructive",
-                });
+                toast({ title: "File too large", description: "Image size should not exceed 5MB.", variant: "destructive" });
                 return;
             }
             if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
-                toast({
-                    title: "Invalid file type",
-                    description: "Please upload a JPG or PNG image.",
-                    variant: "destructive",
-                });
+                toast({ title: "Invalid file type", description: "Please upload a JPG or PNG image.", variant: "destructive" });
                 return;
             }
 
@@ -270,19 +283,12 @@ function VendorProfilePage() {
         try {
             const updatedProfile = await uploadRestaurantProfileImage(selectedProfileImage);
             setProfile(prevProfile => ({ ...prevProfile!, ...updatedProfile }));
-            toast({
-                title: "Success",
-                description: "Profile image updated successfully.",
-            });
+            toast({ title: "Success", description: "Profile image updated successfully." });
             setPreviewProfileImage(null);
             setSelectedProfileImage(null);
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
-            toast({
-                title: "Upload Failed",
-                description: message,
-                variant: "destructive",
-            });
+            toast({ title: "Upload Failed", description: message, variant: "destructive" });
         } finally {
             setIsUploading(false);
         }
@@ -291,7 +297,7 @@ function VendorProfilePage() {
     if (isLoading) {
         return (
             <div className="space-y-8">
-                 <h1 className="text-3xl font-bold font-headline">Your Restaurant Profile</h1>
+                <h1 className="text-3xl font-bold font-headline">Your Restaurant Profile</h1>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-8">
                         <Skeleton className="h-96 w-full" />
@@ -304,10 +310,10 @@ function VendorProfilePage() {
             </div>
         );
     }
-    
+
     if (!profile) {
         return (
-             <div className="text-center">
+            <div className="text-center">
                 <p>Could not load restaurant profile.</p>
             </div>
         );
@@ -376,12 +382,17 @@ function VendorProfilePage() {
                                 <div className="flex-1 space-y-4 min-w-0">
                                     <h2 className="text-2xl font-bold truncate">{profile.name}</h2>
                                     <p className="text-muted-foreground line-clamp-3">{profile.description}</p>
-                                    <StarRating rating={parseFloat(profile.rating)} />
-                                     <div className="flex items-center space-x-2">
-                                        <Switch id="is_open" checked={profile.is_open} disabled />
-                                        <Label htmlFor="is_open">
-                                            {profile.is_open ? "Actively taking orders" : "Currently closed"}
-                                        </Label>
+                                    <StarRating rating={parseFloat(profile.rating) || 0} />
+                                    <div className="space-y-1">
+                                        <div className="flex items-center space-x-2">
+                                            <Switch id="is_open" checked={profile.is_open} disabled />
+                                            <Label htmlFor="is_open">
+                                                {profile.is_open ? "Actively taking orders" : "Currently closed"}
+                                            </Label>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground pl-[3.25rem]">
+                                            Manage your open/closed status from the Dashboard.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -389,9 +400,9 @@ function VendorProfilePage() {
                     </Card>
 
                     {/* Address Card */}
-                     <Card>
+                    <Card>
                         <CardHeader className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                           <div>
+                            <div>
                                 <CardTitle>Address</CardTitle>
                                 <CardDescription>Your restaurant's location.</CardDescription>
                             </div>
@@ -464,9 +475,9 @@ function VendorProfilePage() {
                 {/* Owner Info Card */}
                 <div className="lg:col-span-1 space-y-8">
                     <Card>
-                         <CardHeader>
-                             <CardTitle>Owner Information</CardTitle>
-                             <CardDescription>Your personal account details.</CardDescription>
+                        <CardHeader>
+                            <CardTitle>Owner Information</CardTitle>
+                            <CardDescription>Your personal account details.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center gap-4 min-w-0">
@@ -497,7 +508,7 @@ function VendorProfilePage() {
                     </Card>
                 </div>
             </div>
-            
+
             {/* Modals */}
             <Dialog open={isInfoModalOpen} onOpenChange={setInfoModalOpen}>
                 <DialogContent>
@@ -521,25 +532,56 @@ function VendorProfilePage() {
                 </DialogContent>
             </Dialog>
 
-             <Dialog open={isAddressModalOpen} onOpenChange={setAddressModalOpen}>
+            <Dialog open={isAddressModalOpen} onOpenChange={setAddressModalOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Address</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleAddressSubmit} className="space-y-4 py-4">
-                         <div className="space-y-2">
-                            <Label>Search for an address or enter manually</Label>
-                            <GooglePlacesAutocomplete onPlaceSelect={handlePlaceSelect} initialValue={profile.address?.street_name || ""} />
+                        <div className="space-y-2">
+                            <Label>Search for your address</Label>
+                            <GooglePlacesAutocomplete
+                                onPlaceSelect={handlePlaceSelect}
+                                onClearSelection={handleClearAddressSelection}
+                                initialValue={profile.address?.street_name || ""}
+                            />
                         </div>
                         <Button type="button" variant="outline" className="w-full" onClick={handleUseCurrentLocation}>
                             <LocateFixed className="mr-2 h-4 w-4" /> Use current location
                         </Button>
-                         <p className="text-sm text-muted-foreground">
-                            Selected Address: <span className="font-medium text-foreground">{addressState?.street_name || "None"}</span>
-                         </p>
+                        {isGpsLocated && (
+                            <div className="space-y-2">
+                                <Label htmlFor="address-label">Address label</Label>
+                                <Input
+                                    id="address-label"
+                                    placeholder="e.g. 14 Adeola Odeku Street, Victoria Island"
+                                    value={addressState.street_name || ""}
+                                    onChange={(e) => {
+                                        setAddressState(prev => ({ ...prev, street_name: e.target.value }));
+                                        setAddressLabelError(false);
+                                    }}
+                                    className={addressLabelError ? "border-destructive" : ""}
+                                />
+                                {addressLabelError ? (
+                                    <p className="text-xs text-destructive">Address label is required.</p>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground">GPS coordinates captured. Enter a readable address label.</p>
+                                )}
+                            </div>
+                        )}
+                        {!isGpsLocated && addressState.latitude !== 0 && (
+                            <p className="text-sm text-muted-foreground">
+                                Selected: <span className="font-medium text-foreground">{addressState.street_name}</span>
+                            </p>
+                        )}
                         <DialogFooter>
                             <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Address"}</Button>
+                            <Button
+                                type="submit"
+                                disabled={isSubmitting || addressState.latitude === 0}
+                            >
+                                {isSubmitting ? "Saving..." : "Save Address"}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -554,10 +596,10 @@ export default function VendorProfilePageWrapper() {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
     const { isLoaded } = useLoadScript({
-      googleMapsApiKey: apiKey || "",
-      libraries,
+        googleMapsApiKey: apiKey || "",
+        libraries,
     });
-    
+
     if (!apiKey) {
         console.error("Google Maps API key is missing. Address search will not work.");
         return <VendorProfilePage />;
@@ -575,5 +617,3 @@ export default function VendorProfilePageWrapper() {
 
     return <VendorProfilePage />;
 }
-
-    

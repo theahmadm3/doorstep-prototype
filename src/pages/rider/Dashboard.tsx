@@ -283,19 +283,21 @@ export default function RiderDashboardPage() {
 																		variant="outline"
 																		size="icon"
 																		className="mr-2 border-green-500 text-green-500 hover:bg-green-50 hover:text-green-600"
+																		aria-label={`Accept order from ${order.customer_name}`}
 																		onClick={() => handleAccept(order.id)}
 																		disabled={actionMutation.isPending}
 																	>
-																		<Check className="h-4 w-4" />
+																		<Check className="h-4 w-4" aria-hidden="true" />
 																	</Button>
 																	<Button
 																		variant="outline"
 																		size="icon"
 																		className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
+																		aria-label={`Reject order from ${order.customer_name}`}
 																		onClick={() => handleReject(order.id)}
 																		disabled={actionMutation.isPending}
 																	>
-																		<X className="h-4 w-4" />
+																		<X className="h-4 w-4" aria-hidden="true" />
 																	</Button>
 																</TableCell>
 															</TableRow>

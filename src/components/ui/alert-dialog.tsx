@@ -75,7 +75,7 @@ const AlertDialogContent = React.forwardRef<
     <MuiDialog
       open={open}
       onClose={() => setOpen(false)}
-      maxWidth={false}
+      maxWidth="sm"
       slotProps={{
         paper: {
           className: cn(

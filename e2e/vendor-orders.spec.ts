@@ -41,7 +41,7 @@ test.describe("Vendor (authenticated)", () => {
         method: "GET",
         path: "/restaurants/me/orders/",
         json: paginated([
-          vendorOrder({ customer_name: "Ada Customer", status: "Pending" }),
+          vendorOrder({ customer_name: "Ada Customer", status: "Pending", order_type: "pickup" }),
         ]),
       },
       {
@@ -73,7 +73,7 @@ test.describe("Vendor (authenticated)", () => {
         method: "GET",
         path: "/restaurants/me/orders/",
         json: paginated([
-          vendorOrder({ customer_name: "Bola Customer", status: "Pending" }),
+          vendorOrder({ customer_name: "Bola Customer", status: "Pending", order_type: "pickup" }),
         ]),
       },
       {
@@ -123,7 +123,7 @@ test.describe("Vendor (authenticated)", () => {
         method: "GET",
         path: "/restaurants/me/orders/",
         json: paginated([
-          vendorOrder({ customer_name: "Chidi Customer", status: "Accepted" }),
+          vendorOrder({ customer_name: "Chidi Customer", status: "Accepted", order_type: "pickup" }),
         ]),
       },
     ]);

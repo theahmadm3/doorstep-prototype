@@ -1,27 +1,20 @@
 import { test, expect } from "@playwright/test";
-import { goto, passWhatsappGate } from "./helpers";
+import { goto } from "./helpers";
 
 test.describe("Customer signup (/signup)", () => {
-  test("renders heading and gates the form behind onboarding", async ({
-    page,
-  }) => {
+  test("renders heading and shows the form directly", async ({ page }) => {
     await goto(page, "/signup");
     await expect(
       page.getByRole("heading", { name: "Create a Customer Account" }),
     ).toBeVisible();
-    // WhatsApp message is displayed in the onboarding card.
-    await expect(page.getByText("Join opposite-tank")).toBeVisible();
-    // Signup form fields are hidden until the gate is passed.
-    await expect(page.getByLabel("Full Name")).toHaveCount(0);
-  });
-
-  test("reveals the signup form after onboarding", async ({ page }) => {
-    await goto(page, "/signup");
-    await passWhatsappGate(page);
-
     await expect(page.getByLabel("Full Name")).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.getByLabel("Phone Number")).toBeVisible();
+  });
+
+  test("shows the submit button", async ({ page }) => {
+    await goto(page, "/signup");
+
     await expect(
       page.getByRole("button", { name: /Create Account|Sign Up/i }),
     ).toBeVisible();
@@ -29,7 +22,6 @@ test.describe("Customer signup (/signup)", () => {
 
   test("validates name and email (client-side)", async ({ page }) => {
     await goto(page, "/signup");
-    await passWhatsappGate(page);
 
     await page.getByLabel("Full Name").fill("A");
     await page.getByLabel("Full Name").blur();

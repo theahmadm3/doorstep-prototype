@@ -28,6 +28,8 @@ import {
 	PayoutRecipient,
 	CreateRecipientPayload,
 	InitiatePayoutPayload,
+	Bank,
+	Withdrawal,
 	MenuCategory,
 	CategoryPayload,
 	OptionChoice,
@@ -45,7 +47,12 @@ import type {
 	InitializePaymentResponse,
 } from "./types/paystack";
 import type { RefreshTokenResponse } from "./types";
-import { AUTH_KEYS, clearAuth, updateAccessToken } from "./auth";
+import {
+	clearAuth,
+	getStoredRefreshToken,
+	getStoredToken,
+	updateAccessToken,
+} from "./auth";
 import { logAuthEvent } from "./auth-log";
 import { format } from "date-fns";
 
@@ -72,7 +79,7 @@ export async function tryRefresh(): Promise<RefreshResult> {
 	if (refreshPromise) return refreshPromise;
 	refreshPromise = (async (): Promise<RefreshResult> => {
 		try {
-			const refresh = localStorage.getItem(AUTH_KEYS.refreshToken);
+			const refresh = getStoredRefreshToken();
 			if (!refresh) return { status: "unauthorized" };
 			const res = await fetch(`${BASE_URL}/auth/refresh_token/`, {
 				method: "POST",
@@ -116,10 +123,7 @@ async function fetcher<T>(
 	options: RequestInit = {},
 	isRetry = false,
 ): Promise<T> {
-	const token =
-		typeof window !== "undefined"
-			? localStorage.getItem(AUTH_KEYS.accessToken)
-			: null;
+	const token = typeof window !== "undefined" ? getStoredToken() : null;
 
 	const isFormData = options.body instanceof FormData;
 
@@ -658,7 +662,36 @@ export async function getWalletBalance(): Promise<WalletBalance> {
 }
 
 export async function getPayoutRecipients(): Promise<PayoutRecipient[]> {
-	return fetcher<PayoutRecipient[]>("/payout/recipients/");
+	try {
+		return await fetcher<PayoutRecipient[]>("/payout/recipients/");
+	} catch (e) {
+		// 404 means no recipients exist yet — treat as empty list
+		if (e instanceof Error && e.message.includes("404")) return [];
+		throw e;
+	}
+}
+
+export async function getBanks(): Promise<Bank[]> {
+	const data = await fetcher<Bank[] | PaginatedResponse<Bank>>("/banks/");
+	if (Array.isArray(data)) return data;
+	return (data as PaginatedResponse<Bank>).results ?? [];
+}
+
+export async function requestWithdrawal(payload: {
+	bank_account_id: number;
+}): Promise<void> {
+	await fetcher<unknown>("/withdrawals/request/", {
+		method: "POST",
+		body: JSON.stringify(payload),
+	});
+}
+
+export async function getWithdrawals(): Promise<Withdrawal[]> {
+	const data = await fetcher<Withdrawal[] | PaginatedResponse<Withdrawal>>(
+		"/withdrawals/",
+	);
+	if (Array.isArray(data)) return data;
+	return (data as PaginatedResponse<Withdrawal>).results ?? [];
 }
 
 export async function createPayoutRecipient(

@@ -86,11 +86,6 @@ export type SignupPayload = Omit<
 >;
 export type SignupCredentials = z.infer<typeof signupSchema>;
 
-export interface SignupResponse {
-	user: User;
-	token: string;
-}
-
 export interface User {
 	id: string;
 	full_name: string;
@@ -364,13 +359,31 @@ export interface OrderDetail {
 	order_type: "delivery" | "pickup";
 }
 
+export interface VendorOrderItem {
+	id: string;
+	menu_item: string;
+	quantity: number;
+	item_name: string;
+	item_price: string;
+	selected_options: string[];
+	description: string;
+}
+
 export interface VendorOrder {
 	id: string;
 	customer_name: string;
+	customer_phone: string;
+	driver_name?: string;
+	driver_phone?: string;
+	delivery_address_str: string;
+	subtotal_amount: string;
+	service_fee: string;
 	total_amount: string;
 	status: OrderStatus;
 	created_at: string;
 	order_type: "delivery" | "pickup";
+	paid: boolean;
+	items: VendorOrderItem[];
 }
 
 export interface AdminOrder {
@@ -617,6 +630,32 @@ export const requestPayoutSchema = z.object({
 });
 
 export type InitiatePayoutPayload = z.infer<typeof requestPayoutSchema>;
+
+export interface Bank {
+	name: string;
+	code: string;
+}
+
+export type WithdrawalStatus =
+	| "PENDING"
+	| "APPROVED"
+	| "PROCESSING"
+	| "COMPLETED"
+	| "REJECTED"
+	| "FAILED";
+
+export interface Withdrawal {
+	id: string;
+	amount: string | null;
+	status: WithdrawalStatus;
+	reference: string;
+	bank_account_name: string;
+	bank_account_number: string;
+	bank_name: string;
+	admin_note: string;
+	created_at: string;
+	processed_at: string | null;
+}
 
 // Review
 export interface ReviewPayload {

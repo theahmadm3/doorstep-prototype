@@ -216,7 +216,6 @@ function DiscountFormDialog({
 											</SelectTrigger>
 											<SelectContent>
 												<SelectItem value="restaurant">Restaurant</SelectItem>
-												<SelectItem value="doorstep">Doorstep</SelectItem>
 											</SelectContent>
 										</Select>
 									)}
@@ -417,7 +416,7 @@ function DiscountFormDialog({
 																className="text-sm cursor-pointer"
 															>
 																{item.name} — ₦
-																{parseFloat(item.price).toLocaleString()}
+																{safeParseFloat(item.price).toLocaleString()}
 															</label>
 														</div>
 													))}
@@ -554,10 +553,10 @@ function DiscountRow({
 				<p className="text-sm text-muted-foreground">
 					{discount.discount_type === "percentage"
 						? `${discount.value}% off`
-						: `₦${parseFloat(discount.value).toLocaleString()} off`}{" "}
+						: `₦${safeParseFloat(discount.value).toLocaleString()} off`}{" "}
 					— {SCOPE_LABELS[discount.scope_type]}
-					{parseFloat(discount.min_order_value) > 0 &&
-						` · min ₦${parseFloat(discount.min_order_value).toLocaleString()}`}
+					{safeParseFloat(discount.min_order_value) > 0 &&
+						` · min ₦${safeParseFloat(discount.min_order_value).toLocaleString()}`}
 				</p>
 
 				<p className="text-xs text-muted-foreground">
@@ -593,6 +592,11 @@ function DiscountRow({
 		</div>
 	);
 }
+
+const safeParseFloat = (v: string | number | undefined | null): number => {
+	const n = parseFloat(String(v ?? "0"));
+	return isNaN(n) ? 0 : n;
+};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 

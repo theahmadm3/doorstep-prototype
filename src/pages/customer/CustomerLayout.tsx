@@ -78,7 +78,7 @@ export default function CustomerLayout() {
 				<Sidebar className="hidden md:flex md:flex-col">
 					<SidebarHeader className="p-4 border-b">
 						<div className="flex items-center gap-2">
-							<img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto" />
+							<img src="/doorstep-logo.png" alt="Doorstep" className="h-8 w-auto max-w-full" />
 						</div>
 					</SidebarHeader>
 
@@ -97,19 +97,19 @@ export default function CustomerLayout() {
 						</SidebarMenu>
 					</SidebarContent>
 
-					<SidebarFooter className="p-4 border-t">
+					<SidebarFooter className="p-2 border-t">
 						{!user ? (
-							<div className="flex items-center gap-3 p-3">
-								<Skeleton className="h-10 w-10 rounded-full" />
+							<div className="flex items-center gap-3 p-2">
+								<Skeleton className="h-8 w-8 rounded-full" />
 								<div className="flex-1 space-y-2">
 									<Skeleton className="h-4 w-24" />
 									<Skeleton className="h-3 w-32" />
 								</div>
 							</div>
 						) : (
-							<div className="flex flex-col gap-3 p-3 rounded-lg bg-muted">
-								<div className="flex items-center gap-3">
-									<Avatar className="h-10 w-10">
+							<div className="flex flex-col gap-2 p-2 rounded-lg bg-muted">
+								<div className="flex items-center gap-2">
+									<Avatar className="h-8 w-8">
 										<AvatarImage
 											src={`https://robohash.org/${user.full_name}`}
 											alt={user.full_name || "Customer"}

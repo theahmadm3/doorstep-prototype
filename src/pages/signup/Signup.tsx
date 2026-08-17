@@ -5,12 +5,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
-import WhatsappOnboarding from "@/components/auth/whatsapp-onboarding";
 
 export default function SignupPage() {
-  const [hasOnboarded, setHasOnboarded] = useState(false);
-
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -24,17 +20,11 @@ export default function SignupPage() {
                     <CardHeader className="text-center">
                         <CardTitle className="text-2xl font-headline">Create a Customer Account</CardTitle>
                         <CardDescription>
-                            {hasOnboarded 
-                                ? "Sign up to start ordering your favorite meals." 
-                                : "First, join our WhatsApp channel to get started."}
+                            Sign up to start ordering your favorite meals.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {hasOnboarded ? (
-                            <SignupForm />
-                        ) : (
-                            <WhatsappOnboarding onConfirm={() => setHasOnboarded(true)} />
-                        )}
+                        <SignupForm />
                         <div className="mt-4 text-center text-sm">
                             Already have an account?{" "}
                             <Link to="/" className="underline text-primary">

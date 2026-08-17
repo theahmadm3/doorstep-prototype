@@ -7,18 +7,20 @@ import {
 	getWalletBalance,
 	getPayoutRecipients,
 	createPayoutRecipient,
-	initiatePayout,
 	deletePayoutRecipient,
+	getBanks,
+	requestWithdrawal,
+	getWithdrawals,
 } from "@/lib/api";
 import {
 	WalletBalance,
 	PayoutRecipient,
 	CreateRecipientPayload,
 	createRecipientSchema,
-	InitiatePayoutPayload,
-	requestPayoutSchema,
+	Bank,
+	Withdrawal,
+	WithdrawalStatus,
 } from "@/lib/types";
-import { nigerianBanks } from "@/lib/banks";
 import { useToast } from "@/hooks/use-toast";
 import {
 	Card,
@@ -71,6 +73,8 @@ import {
 	Wallet,
 	Eye,
 	Trash2,
+	ArrowDownToLine,
+	Clock,
 } from "lucide-react";
 
 const formatCurrency = (value: string | number | undefined) => {
@@ -82,11 +86,47 @@ const formatCurrency = (value: string | number | undefined) => {
 	})}`;
 };
 
-const PayoutManagement = forwardRef((props, ref) => {
+const WITHDRAWAL_STATUS_CONFIG: Record<
+	WithdrawalStatus,
+	{ label: string; className: string }
+> = {
+	PENDING: {
+		label: "Pending",
+		className: "bg-yellow-100 text-yellow-800",
+	},
+	APPROVED: {
+		label: "Approved",
+		className: "bg-blue-100 text-blue-800",
+	},
+	PROCESSING: {
+		label: "Processing",
+		className: "bg-blue-100 text-blue-800",
+	},
+	COMPLETED: {
+		label: "Completed",
+		className: "bg-green-100 text-green-800",
+	},
+	REJECTED: {
+		label: "Rejected",
+		className: "bg-red-100 text-red-800",
+	},
+	FAILED: {
+		label: "Failed",
+		className: "bg-red-100 text-red-800",
+	},
+};
+
+const OPEN_STATUSES: WithdrawalStatus[] = ["PENDING", "APPROVED", "PROCESSING"];
+
+const PayoutManagement = forwardRef((_props, ref) => {
 	const { toast } = useToast();
 	const queryClient = useQueryClient();
 	const [isAddRecipientOpen, setAddRecipientOpen] = useState(false);
-	const [recipientToDelete, setRecipientToDelete] = useState<PayoutRecipient | null>(null);
+	const [recipientToDelete, setRecipientToDelete] =
+		useState<PayoutRecipient | null>(null);
+	const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
+		null,
+	);
 
 	const {
 		data: balance,
@@ -99,7 +139,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 	});
 
 	const {
-		data: recipients,
+		data: recipients = [],
 		isLoading: isRecipientsLoading,
 		refetch: refetchRecipients,
 	} = useQuery<PayoutRecipient[], Error>({
@@ -108,10 +148,27 @@ const PayoutManagement = forwardRef((props, ref) => {
 		refetchOnReconnect: false,
 	});
 
+	const { data: banks = [] } = useQuery<Bank[], Error>({
+		queryKey: ["banks"],
+		queryFn: getBanks,
+		staleTime: Infinity,
+	});
+
+	const {
+		data: withdrawals = [],
+		isLoading: isWithdrawalsLoading,
+		refetch: refetchWithdrawals,
+	} = useQuery<Withdrawal[], Error>({
+		queryKey: ["withdrawals"],
+		queryFn: getWithdrawals,
+		refetchOnReconnect: false,
+	});
+
 	useImperativeHandle(ref, () => ({
 		refetch() {
 			refetchBalance();
 			refetchRecipients();
+			refetchWithdrawals();
 		},
 	}));
 
@@ -120,17 +177,12 @@ const PayoutManagement = forwardRef((props, ref) => {
 		defaultValues: { name: "", account_number: "", bank_code: "" },
 	});
 
-	const requestPayoutForm = useForm<InitiatePayoutPayload>({
-		resolver: zodResolver(requestPayoutSchema),
-		defaultValues: { amount: 1000, recipient_code: "" },
-	});
-
 	const createRecipientMutation = useMutation({
 		mutationFn: createPayoutRecipient,
 		onSuccess: () => {
 			toast({
 				title: "Account Added",
-				description: "Your payout destination has been saved.",
+				description: "Your bank account has been saved.",
 			});
 			queryClient.invalidateQueries({ queryKey: ["payoutRecipients"] });
 			setAddRecipientOpen(false);
@@ -145,19 +197,21 @@ const PayoutManagement = forwardRef((props, ref) => {
 		},
 	});
 
-	const initiatePayoutMutation = useMutation({
-		mutationFn: initiatePayout,
-		onSuccess: (data) => {
+	const requestWithdrawalMutation = useMutation({
+		mutationFn: requestWithdrawal,
+		onSuccess: () => {
 			toast({
-				title: "Payout Initiated",
-				description: data.message,
+				title: "Withdrawal Requested",
+				description:
+					"Your request has been submitted and is awaiting admin review.",
 			});
+			queryClient.invalidateQueries({ queryKey: ["withdrawals"] });
 			queryClient.invalidateQueries({ queryKey: ["walletBalance"] });
-			requestPayoutForm.reset();
+			setSelectedAccountId(null);
 		},
 		onError: (error) => {
 			toast({
-				title: "Payout Failed",
+				title: "Withdrawal Failed",
 				description: error.message,
 				variant: "destructive",
 			});
@@ -168,15 +222,15 @@ const PayoutManagement = forwardRef((props, ref) => {
 		mutationFn: (recipientCode: string) => deletePayoutRecipient(recipientCode),
 		onSuccess: () => {
 			toast({
-				title: "Recipient Deleted",
-				description: "The payout destination has been removed.",
+				title: "Account Removed",
+				description: "The bank account has been removed.",
 			});
 			queryClient.invalidateQueries({ queryKey: ["payoutRecipients"] });
 			setRecipientToDelete(null);
 		},
 		onError: (error) => {
 			toast({
-				title: "Deletion Failed",
+				title: "Removal Failed",
 				description: error.message,
 				variant: "destructive",
 			});
@@ -184,33 +238,28 @@ const PayoutManagement = forwardRef((props, ref) => {
 		},
 	});
 
+	const withdrawableBalance = parseFloat(balance?.withdrawable_balance ?? "0");
+	const canWithdraw = withdrawableBalance >= 100;
+	const hasOpenRequest = withdrawals.some((w) =>
+		OPEN_STATUSES.includes(w.status),
+	);
+
+	const getBankName = (bankCode: string) =>
+		banks.find((b) => b.code === bankCode)?.name ?? bankCode;
+
 	const onAddRecipientSubmit = (data: CreateRecipientPayload) => {
 		createRecipientMutation.mutate(data);
 	};
 
-	const onRequestPayoutSubmit = (data: InitiatePayoutPayload) => {
-		if (balance && data.amount > parseFloat(balance.withdrawable_balance)) {
-			toast({
-				title: "Insufficient Balance",
-				description:
-					"You cannot request a payout greater than your withdrawable balance.",
-				variant: "destructive",
-			});
-			return;
-		}
-		initiatePayoutMutation.mutate(data);
+	const handleRequestWithdrawal = () => {
+		if (!selectedAccountId) return;
+		requestWithdrawalMutation.mutate({ bank_account_id: selectedAccountId });
 	};
 
 	const handleDeleteRecipient = () => {
 		if (recipientToDelete) {
 			deleteRecipientMutation.mutate(recipientToDelete.recipient_code);
 		}
-	};
-
-	const getBankName = (bankCode: string) => {
-		return (
-			nigerianBanks.find((b) => b.code === bankCode)?.name || "Unknown Bank"
-		);
 	};
 
 	return (
@@ -221,10 +270,10 @@ const PayoutManagement = forwardRef((props, ref) => {
 			>
 				<AlertDialogContent>
 					<AlertDialogHeader>
-						<AlertDialogTitle>Are you sure?</AlertDialogTitle>
+						<AlertDialogTitle>Remove bank account?</AlertDialogTitle>
 						<AlertDialogDescription>
-							This action will permanently delete the selected payout destination.
-							This cannot be undone.
+							This will permanently delete the selected bank account. This cannot
+							be undone.
 						</AlertDialogDescription>
 					</AlertDialogHeader>
 					<AlertDialogFooter>
@@ -235,15 +284,16 @@ const PayoutManagement = forwardRef((props, ref) => {
 							onClick={handleDeleteRecipient}
 							disabled={deleteRecipientMutation.isPending}
 						>
-							{deleteRecipientMutation.isPending ? "Deleting..." : "Delete"}
+							{deleteRecipientMutation.isPending ? "Removing..." : "Remove"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
 
 			<div className="flex flex-col lg:flex-row gap-8">
-				{/* Left side */}
+				{/* Left column */}
 				<div className="flex flex-col gap-8 w-full min-w-0 lg:flex-[2]">
+					{/* Balance cards */}
 					<div className="flex flex-col sm:flex-row sm:flex-wrap gap-4">
 						<Card className="flex-1 sm:min-w-[220px]">
 							<CardHeader className="pb-3">
@@ -281,7 +331,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 									</p>
 								)}
 								<p className="text-sm text-muted-foreground mt-1">
-									Available for immediate payout.
+									Available for withdrawal.
 								</p>
 							</CardContent>
 						</Card>
@@ -297,8 +347,6 @@ const PayoutManagement = forwardRef((props, ref) => {
 									<Skeleton className="h-9 w-32" />
 								) : (
 									<p className="text-2xl xl:text-3xl font-bold tabular-nums break-words">
-
-
 										{formatCurrency(balance?.pending_balance)}
 									</p>
 								)}
@@ -309,88 +357,143 @@ const PayoutManagement = forwardRef((props, ref) => {
 						</Card>
 					</div>
 
+					{/* Withdrawal request */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Request Payout</CardTitle>
+							<CardTitle>Request Withdrawal</CardTitle>
 							<CardDescription>
-								Transfer funds from your wallet to a saved bank account.
+								Withdrawals transfer your full eligible balance to your bank
+								account. Minimum withdrawable balance is ₦100.
 							</CardDescription>
 						</CardHeader>
-						<CardContent>
-							<Form {...requestPayoutForm}>
-								<form
-									onSubmit={requestPayoutForm.handleSubmit(
-										onRequestPayoutSubmit,
-									)}
-									className="space-y-4"
+						<CardContent className="space-y-4">
+							{hasOpenRequest && (
+								<div className="flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+									<Clock className="h-4 w-4 shrink-0" />
+									<span>
+										You have an open withdrawal request. Only one is allowed at a
+										time.
+									</span>
+								</div>
+							)}
+							{!canWithdraw && !hasOpenRequest && !isBalanceLoading && (
+								<p className="text-sm text-muted-foreground">
+									Your withdrawable balance must be at least ₦100.00 to request a
+									withdrawal.
+								</p>
+							)}
+							<div className="space-y-2">
+								<label className="text-sm font-medium leading-none">
+									Bank Account
+								</label>
+								<Select
+									value={selectedAccountId ? String(selectedAccountId) : ""}
+									onValueChange={(v) => setSelectedAccountId(Number(v))}
+									disabled={isRecipientsLoading || recipients.length === 0}
 								>
-									<FormField
-										control={requestPayoutForm.control}
-										name="recipient_code"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Select Account</FormLabel>
-												<Select
-													onValueChange={field.onChange}
-													defaultValue={field.value}
-													disabled={
-														isRecipientsLoading || !recipients?.length
-													}
-												>
-													<FormControl>
-														<SelectTrigger>
-															<SelectValue placeholder="Choose a bank account" />
-														</SelectTrigger>
-													</FormControl>
-													<SelectContent>
-														{recipients?.map((r) => (
-															<SelectItem
-																key={r.recipient_code}
-																value={r.recipient_code}
-															>
-																{getBankName(r.bank_code)} - ****
-																{r.account_number.slice(-4)}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<FormField
-										control={requestPayoutForm.control}
-										name="amount"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Amount (NGN)</FormLabel>
-												<FormControl>
-													<Input type="number" placeholder="1000" {...field} />
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-									<Button
-										type="submit"
-										disabled={initiatePayoutMutation.isPending}
-									>
-										{initiatePayoutMutation.isPending
-											? "Requesting..."
-											: "Request Payout"}
-									</Button>
-								</form>
-							</Form>
+									<SelectTrigger>
+										<SelectValue
+											placeholder={
+												recipients.length === 0
+													? "No accounts saved — add one first"
+													: "Choose a bank account"
+											}
+										/>
+									</SelectTrigger>
+									<SelectContent>
+										{recipients.map((r) => (
+											<SelectItem key={r.id} value={String(r.id)}>
+												{getBankName(r.bank_code)} — ****
+												{r.account_number.slice(-4)} · {r.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<Button
+								onClick={handleRequestWithdrawal}
+								disabled={
+									!selectedAccountId ||
+									!canWithdraw ||
+									hasOpenRequest ||
+									requestWithdrawalMutation.isPending
+								}
+								className="w-full"
+							>
+								<ArrowDownToLine className="mr-2 h-4 w-4" />
+								{requestWithdrawalMutation.isPending
+									? "Submitting..."
+									: "Request Withdrawal"}
+							</Button>
+						</CardContent>
+					</Card>
+
+					{/* Withdrawal history */}
+					<Card>
+						<CardHeader>
+							<CardTitle>Withdrawal History</CardTitle>
+						</CardHeader>
+						<CardContent>
+							{isWithdrawalsLoading ? (
+								<div className="space-y-3">
+									{[...Array(2)].map((_, i) => (
+										<Skeleton key={i} className="h-20 w-full" />
+									))}
+								</div>
+							) : withdrawals.length > 0 ? (
+								<div className="space-y-3">
+									{withdrawals.map((w) => {
+										const cfg = WITHDRAWAL_STATUS_CONFIG[w.status];
+										return (
+											<div
+												key={w.id}
+												className="rounded-md border p-3 space-y-2"
+											>
+												<div className="flex items-center justify-between gap-2">
+													<span
+														className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cfg.className}`}
+													>
+														{cfg.label}
+													</span>
+													<span className="font-semibold tabular-nums">
+														{w.amount ? formatCurrency(w.amount) : "—"}
+													</span>
+												</div>
+												<p className="text-sm text-muted-foreground">
+													{w.bank_name} · ****
+													{w.bank_account_number.slice(-4)} ·{" "}
+													{w.bank_account_name}
+												</p>
+												<p className="text-xs text-muted-foreground">
+													{new Date(w.created_at).toLocaleDateString("en-NG", {
+														dateStyle: "medium",
+													})}
+												</p>
+												{w.status === "REJECTED" && w.admin_note && (
+													<p className="text-sm text-destructive">
+														Note: {w.admin_note}
+													</p>
+												)}
+											</div>
+										);
+									})}
+								</div>
+							) : (
+								<div className="text-center text-muted-foreground py-8">
+									<ArrowDownToLine className="mx-auto h-12 w-12 text-gray-400" />
+									<p className="mt-4">No withdrawal requests yet.</p>
+								</div>
+							)}
 						</CardContent>
 					</Card>
 				</div>
 
-				{/* Right side */}
+				{/* Right column: bank accounts */}
 				<div className="flex flex-col gap-8 w-full min-w-0 lg:flex-1">
 					<Card>
 						<CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
 							<div>
-								<CardTitle>Payout Destinations</CardTitle>
+								<CardTitle>Bank Accounts</CardTitle>
 								<CardDescription>Your saved bank accounts.</CardDescription>
 							</div>
 							<Dialog
@@ -404,7 +507,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 								</DialogTrigger>
 								<DialogContent>
 									<DialogHeader>
-										<DialogTitle>Add Payout Destination</DialogTitle>
+										<DialogTitle>Add Bank Account</DialogTitle>
 										<DialogDescription>
 											Enter your bank account details below.
 										</DialogDescription>
@@ -421,7 +524,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 												name="bank_code"
 												render={({ field }) => (
 													<FormItem>
-														<FormLabel>Bank Name</FormLabel>
+														<FormLabel>Bank</FormLabel>
 														<Select
 															onValueChange={field.onChange}
 															defaultValue={field.value}
@@ -432,7 +535,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 																</SelectTrigger>
 															</FormControl>
 															<SelectContent>
-																{nigerianBanks.map((bank) => (
+																{banks.map((bank) => (
 																	<SelectItem
 																		key={bank.code}
 																		value={bank.code}
@@ -453,10 +556,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 													<FormItem>
 														<FormLabel>Account Number</FormLabel>
 														<FormControl>
-															<Input
-																placeholder="0123456789"
-																{...field}
-															/>
+															<Input placeholder="0123456789" {...field} />
 														</FormControl>
 														<FormMessage />
 													</FormItem>
@@ -498,11 +598,11 @@ const PayoutManagement = forwardRef((props, ref) => {
 										<Skeleton key={i} className="h-16 w-full" />
 									))}
 								</div>
-							) : recipients && recipients.length > 0 ? (
+							) : recipients.length > 0 ? (
 								<div className="space-y-4">
 									{recipients.map((r) => (
 										<div
-											key={r.recipient_code}
+											key={r.id}
 											className="flex items-center gap-3 p-3 rounded-md border"
 										>
 											<div className="p-2 bg-muted rounded-full shrink-0">
@@ -513,8 +613,7 @@ const PayoutManagement = forwardRef((props, ref) => {
 													{getBankName(r.bank_code)}
 												</p>
 												<p className="text-sm text-muted-foreground truncate">
-													{r.name} - ****
-													{r.account_number.slice(-4)}
+													{r.name} — ****{r.account_number.slice(-4)}
 												</p>
 											</div>
 											<Button
@@ -531,10 +630,8 @@ const PayoutManagement = forwardRef((props, ref) => {
 							) : (
 								<div className="text-center text-muted-foreground py-8">
 									<Banknote className="mx-auto h-12 w-12 text-gray-400" />
-									<p className="mt-4">No payout destinations saved.</p>
-									<p className="text-xs">
-										Add a bank account to get started.
-									</p>
+									<p className="mt-4">No bank accounts saved.</p>
+									<p className="text-xs">Add a bank account to get started.</p>
 								</div>
 							)}
 						</CardContent>
