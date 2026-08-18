@@ -1,6 +1,7 @@
 
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,15 +10,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Star, LocateFixed, Search, PlusCircle, Bell } from "lucide-react";
+import { Edit, Star, LocateFixed, PlusCircle, Bell } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { getRestaurantProfile, updateRestaurantProfile, uploadRestaurantProfileImage } from "@/lib/api";
 import { VendorProfile, VendorProfileUpdatePayload } from "@/lib/types";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLoadScript } from "@react-google-maps/api";
-import usePlacesAutocomplete, { getGeocode, getLatLng } from "use-places-autocomplete";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { GooglePlacesAutocomplete } from "@/components/vendor/google-places-autocomplete";
+import { useAddressForm } from "@/components/vendor/use-address-form";
 import { usePushStore, usePushManager } from "@/hooks/use-push-manager";
 
 const libraries: ("places")[] = ['places'];
@@ -37,82 +39,8 @@ const StarRating = ({ rating }: { rating: number }) => {
     );
 };
 
-type VendorPlaceResult = { street_name: string; latitude: number; longitude: number };
-
-const GooglePlacesAutocomplete = ({
-    onPlaceSelect,
-    onClearSelection,
-    initialValue = "",
-}: {
-    onPlaceSelect: (place: VendorPlaceResult) => void;
-    onClearSelection?: () => void;
-    initialValue?: string;
-}) => {
-    const {
-        ready,
-        value,
-        suggestions: { status, data },
-        setValue,
-        clearSuggestions,
-    } = usePlacesAutocomplete({
-        requestOptions: {},
-        debounce: 300,
-        defaultValue: initialValue,
-    });
-    const { toast } = useToast();
-
-    const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setValue(e.target.value);
-        onClearSelection?.();
-    };
-
-    const handleSelect = (suggestion: { description: string }) => () => {
-        setValue(suggestion.description, false);
-        clearSuggestions();
-
-        getGeocode({ address: suggestion.description })
-            .then((results) => {
-                const { lat, lng } = getLatLng(results[0]);
-                onPlaceSelect({
-                    street_name: suggestion.description,
-                    latitude: lat,
-                    longitude: lng,
-                });
-            })
-            .catch(() => {
-                toast({ title: "Location Error", description: "Could not get coordinates for this address. Please try another.", variant: "destructive" });
-            });
-    };
-
-    return (
-        <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-                value={value}
-                onChange={handleInput}
-                disabled={!ready}
-                placeholder="Search for an address..."
-                className="pl-10"
-            />
-            {status === "OK" && (
-                <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg">
-                    <ScrollArea className="h-auto max-h-60">
-                        {data.map((suggestion) => (
-                            <div key={suggestion.place_id} onClick={handleSelect(suggestion)} className="p-3 hover:bg-muted cursor-pointer text-sm">
-                                <strong>{suggestion.structured_formatting.main_text}</strong> <small>{suggestion.structured_formatting.secondary_text}</small>
-                            </div>
-                        ))}
-                    </ScrollArea>
-                </div>
-            )}
-        </div>
-    );
-};
-
-
 function VendorProfilePage() {
-    const [profile, setProfile] = useState<VendorProfile | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const queryClient = useQueryClient();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // State for modals
@@ -122,9 +50,13 @@ function VendorProfilePage() {
     // State for forms
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const [addressState, setAddressState] = useState<{ street_name: string | null; latitude: number; longitude: number; }>({ street_name: null, latitude: 0, longitude: 0 });
-    const [isGpsLocated, setIsGpsLocated] = useState(false);
-    const [addressLabelError, setAddressLabelError] = useState(false);
+    const {
+        addressState, setAddressState,
+        isGpsLocated, setIsGpsLocated,
+        addressLabelError, setAddressLabelError,
+        handlePlaceSelect, handleClearAddressSelection,
+        handleUseCurrentLocation, validateAddress,
+    } = useAddressForm();
 
     // State for image upload
     const profileImageInputRef = useRef<HTMLInputElement>(null);
@@ -138,27 +70,19 @@ function VendorProfilePage() {
 
     const { toast } = useToast();
 
-    const fetchProfile = useCallback(async () => {
-        try {
-            const data = await getRestaurantProfile();
-            setProfile(data);
-            setName(data.name);
-            setDescription(data.description || "");
-            setAddressState(data.address || { street_name: "", latitude: 0, longitude: 0 });
-        } catch (error) {
-            toast({
-                title: "Failed to fetch profile",
-                description: "Could not load your restaurant profile data.",
-                variant: "destructive",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [toast]);
+    const { data: profile, isLoading } = useQuery({
+        queryKey: QUERY_KEYS.vendorProfile,
+        queryFn: getRestaurantProfile,
+    });
 
+    // Sync form state when profile loads
     useEffect(() => {
-        fetchProfile();
-    }, [fetchProfile]);
+        if (profile) {
+            setName(profile.name);
+            setDescription(profile.description || "");
+            setAddressState(profile.address || { street_name: "", latitude: 0, longitude: 0 });
+        }
+    }, [profile]);
 
     const openInfoModal = () => {
         if (!profile) return;
@@ -184,8 +108,8 @@ function VendorProfilePage() {
             if (description !== profile.description) payload.description = description;
 
             await updateRestaurantProfile(payload);
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorProfile });
             toast({ title: "Success", description: "Restaurant information updated." });
-            await fetchProfile();
             setInfoModalOpen(false);
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
@@ -198,60 +122,19 @@ function VendorProfilePage() {
     const handleAddressSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!profile) return;
-        if (addressState.latitude === 0 && addressState.longitude === 0) {
-            toast({
-                title: "Address not located",
-                description: "Please select an address from the suggestions or use the GPS button.",
-                variant: "destructive",
-            });
-            return;
-        }
-        if (isGpsLocated && !addressState.street_name?.trim()) {
-            setAddressLabelError(true);
-            return;
-        }
+        if (!validateAddress()) return;
         setIsSubmitting(true);
         try {
             const payload: VendorProfileUpdatePayload = { address: addressState };
             await updateRestaurantProfile(payload);
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorProfile });
             toast({ title: "Success", description: "Address updated." });
-            await fetchProfile();
             setAddressModalOpen(false);
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unexpected error occurred.";
             toast({ title: "Update Failed", description: message, variant: "destructive" });
         } finally {
             setIsSubmitting(false);
-        }
-    };
-
-    const handlePlaceSelect = (place: VendorPlaceResult) => {
-        setAddressState({
-            street_name: place.street_name,
-            latitude: Number(place.latitude.toFixed(6)),
-            longitude: Number(place.longitude.toFixed(6)),
-        });
-        setIsGpsLocated(false);
-    };
-
-    const handleClearAddressSelection = () => {
-        setAddressState(prev => ({ ...prev, latitude: 0, longitude: 0 }));
-        setIsGpsLocated(false);
-    };
-
-    const handleUseCurrentLocation = () => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                setAddressState({
-                    street_name: "",
-                    latitude: Number(position.coords.latitude.toFixed(6)),
-                    longitude: Number(position.coords.longitude.toFixed(6)),
-                });
-                setIsGpsLocated(true);
-                toast({ title: "Location captured", description: "Enter an address label below to identify this location." });
-            }, () => {
-                toast({ title: "Geolocation Error", description: "Unable to retrieve your location.", variant: "destructive" });
-            });
         }
     };
 
@@ -281,8 +164,8 @@ function VendorProfilePage() {
         if (!selectedProfileImage) return;
         setIsUploading(true);
         try {
-            const updatedProfile = await uploadRestaurantProfileImage(selectedProfileImage);
-            setProfile(prevProfile => ({ ...prevProfile!, ...updatedProfile }));
+            await uploadRestaurantProfileImage(selectedProfileImage);
+            queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorProfile });
             toast({ title: "Success", description: "Profile image updated successfully." });
             setPreviewProfileImage(null);
             setSelectedProfileImage(null);
@@ -594,6 +477,7 @@ function VendorProfilePage() {
 
 export default function VendorProfilePageWrapper() {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const { toast } = useToast();
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: apiKey || "",
@@ -601,7 +485,11 @@ export default function VendorProfilePageWrapper() {
     });
 
     if (!apiKey) {
-        console.error("Google Maps API key is missing. Address search will not work.");
+        toast({
+            title: "Configuration Error",
+            description: "Google Maps API key is not configured. Address search will be unavailable.",
+            variant: "destructive",
+        });
         return <VendorProfilePage />;
     }
 

@@ -5,9 +5,9 @@ test.describe("Routing", () => {
   test("unknown route renders the 404 page", async ({ page }) => {
     await goto(page, "/this/route/does/not/exist");
     await expect(
-      page.getByRole("heading", { name: /404 .* Page not found/i }),
+      page.getByRole("heading", { name: "Page lost in delivery" }),
     ).toBeVisible();
-    await page.getByRole("link", { name: "Go home" }).click();
+    await page.getByRole("link", { name: "Back to home" }).click();
     await expect(page).toHaveURL(/\/$/);
   });
 

@@ -82,7 +82,7 @@ export default function PartnerLoginForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="space-y-5">
         <FormField
           control={form.control}
           name="email"
@@ -90,7 +90,7 @@ export default function PartnerLoginForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="you@example.com" {...field} />
+                <Input className="h-11" placeholder="you@example.com" type="email" autoComplete="email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -103,13 +103,13 @@ export default function PartnerLoginForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input className="h-11" type="password" placeholder="Enter your password" autoComplete="current-password" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isSubmitting} className="w-full">
+        <Button type="submit" disabled={isSubmitting} className="h-12 w-full text-base">
           {isSubmitting ? "Logging in..." : "Login"}
         </Button>
       </form>

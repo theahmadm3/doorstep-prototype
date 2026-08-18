@@ -20,9 +20,11 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LogoutButton from "@/components/auth/logout-button";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User as UserType } from "@/lib/types";
 import { getRestaurantProfile } from "@/lib/api";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import VendorAddressModal from "@/components/vendor/vendor-address-modal";
 import BottomNavigation from "@/components/layout/bottom-navigation";
 import { useNotificationListener } from "@/hooks/use-notification-listener";
@@ -41,22 +43,8 @@ const vendorNavLinks = [
 
 export default function VendorLayout() {
 	useNotificationListener();
+	const queryClient = useQueryClient();
 	const [user, setUser] = useState<UserType | null>(null);
-	const [showAddressModal, setShowAddressModal] = useState(false);
-	const [restaurantImage, setRestaurantImage] = useState<string | null>(null);
-
-	const checkVendorAddress = useCallback(async () => {
-		try {
-			const profile = await getRestaurantProfile();
-			setRestaurantImage(profile.image_url);
-			if (!profile.address) {
-				setShowAddressModal(true);
-			}
-		} catch (error) {
-			console.error("Failed to fetch vendor profile:", error);
-			// Handle error, maybe show a toast
-		}
-	}, []);
 
 	useEffect(() => {
 		document.title = "Doorstep - Vendor";
@@ -67,16 +55,19 @@ export default function VendorLayout() {
 
 	useEffect(() => {
 		const storedUser = getStoredUser();
-		if (storedUser) {
-			setUser(storedUser);
-			if (storedUser.role === "restaurant") {
-				checkVendorAddress();
-			}
-		}
-	}, [checkVendorAddress]);
+		if (storedUser) setUser(storedUser);
+	}, []);
+
+	const { data: profile } = useQuery({
+		queryKey: QUERY_KEYS.vendorProfile,
+		queryFn: getRestaurantProfile,
+		enabled: !!user && user.role === "restaurant",
+	});
+
+	const showAddressModal = !!user && user.role === "restaurant" && !!profile && !profile.address;
 
 	const handleAddressSaved = () => {
-		setShowAddressModal(false);
+		queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorProfile });
 	};
 
 	return (
@@ -116,8 +107,8 @@ export default function VendorLayout() {
 								<Avatar>
 									<AvatarImage
 										src={
-											restaurantImage?.startsWith("http")
-												? restaurantImage
+											profile?.image_url?.startsWith("http")
+												? profile.image_url
 												: undefined
 										}
 										alt={user?.full_name || "Vendor"}

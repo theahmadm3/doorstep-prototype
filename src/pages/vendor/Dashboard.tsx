@@ -1,6 +1,6 @@
-
-
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { formatCurrency, formatOrderDate } from "@/lib/format";
 import {
 	Card,
 	CardContent,
@@ -26,11 +26,7 @@ import {
 	getRestaurantProfile,
 	toggleRestaurantOpenStatus,
 } from "@/lib/api";
-import {
-	VendorAnalyticsData,
-	VendorOrder,
-	VendorProfile,
-} from "@/lib/types";
+import { QUERY_KEYS } from "@/lib/query-keys";
 import { useToast } from "@/hooks/use-toast";
 import {
 	DollarSign,
@@ -52,78 +48,49 @@ const chartConfig = {
 };
 
 export default function VendorDashboardPage() {
-	const [analytics, setAnalytics] = useState<VendorAnalyticsData | null>(null);
-	const [recentOrders, setRecentOrders] = useState<VendorOrder[]>([]);
-	const [profile, setProfile] = useState<VendorProfile | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
-	const [isToggleUpdating, setToggleUpdating] = useState(false);
 	const { toast } = useToast();
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 
-	const fetchData = useCallback(async () => {
-		try {
-			const [analyticsData, ordersData, profileData] = await Promise.all([
-				getVendorAnalytics(),
-				getVendorOrders(),
-				getRestaurantProfile(),
-			]);
-			setAnalytics(analyticsData);
-			setRecentOrders(ordersData.slice(0, 5));
-			setProfile(profileData);
-		} catch (error) {
-			toast({
-				title: "Error fetching dashboard data",
-				description: "Could not retrieve the latest data. Please try again.",
-				variant: "destructive",
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	}, [toast]);
+	const { data: analytics, isLoading: isLoadingAnalytics } = useQuery({
+		queryKey: QUERY_KEYS.vendorAnalytics,
+		queryFn: getVendorAnalytics,
+		refetchInterval: 60000,
+	});
 
-	useEffect(() => {
-		fetchData();
-		const interval = setInterval(fetchData, 60000);
-		return () => clearInterval(interval);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	const { data: allOrders = [], isLoading: isLoadingOrders } = useQuery({
+		queryKey: QUERY_KEYS.vendorOrders,
+		queryFn: getVendorOrders,
+		refetchInterval: 60000,
+	});
 
-	const handleStatusToggle = async () => {
-		if (!profile) return;
+	const { data: profile, isLoading: isLoadingProfile } = useQuery({
+		queryKey: QUERY_KEYS.vendorProfile,
+		queryFn: getRestaurantProfile,
+		refetchInterval: 60000,
+	});
 
-		setToggleUpdating(true);
+	const isLoading = isLoadingAnalytics || isLoadingOrders || isLoadingProfile;
+	const recentOrders = allOrders.slice(0, 5);
 
-		const originalProfile = profile;
-		const newStatus = !profile.is_open;
-		setProfile({ ...profile, is_open: newStatus });
-
-		try {
-			const updatedProfile = await toggleRestaurantOpenStatus();
-			setProfile(updatedProfile);
+	const toggleMutation = useMutation({
+		mutationFn: toggleRestaurantOpenStatus,
+		onSuccess: (updatedProfile) => {
+			queryClient.setQueryData(QUERY_KEYS.vendorProfile, updatedProfile);
 			toast({
 				title: `Restaurant is now ${updatedProfile.is_open ? "Open" : "Closed"}`,
 				description: `You are now ${
 					updatedProfile.is_open ? "accepting" : "not accepting"
 				} new orders.`,
 			});
-		} catch (error) {
-			setProfile(originalProfile);
-			const message =
-				error instanceof Error ? error.message : "Failed to update status.";
-			toast({ title: "Update Failed", description: message, variant: "destructive" });
-		} finally {
-			setToggleUpdating(false);
-		}
-	};
+		},
+		onError: (error: Error) => {
+			toast({ title: "Update Failed", description: error.message, variant: "destructive" });
+		},
+	});
 
-	const formatCurrency = (value: string | number | undefined) => {
-		if (value === undefined || value === null) return "₦0.00";
-		const num = parseFloat(String(value));
-		if (isNaN(num)) return "₦0.00";
-		return `₦${num.toLocaleString("en-NG", {
-			minimumFractionDigits: 2,
-			maximumFractionDigits: 2,
-		})}`;
+	const handleStatusToggle = () => {
+		toggleMutation.mutate();
 	};
 
 	const handleGoToOrders = () => {
@@ -182,7 +149,7 @@ export default function VendorDashboardPage() {
 								id="restaurant-status"
 								checked={profile.is_open}
 								onCheckedChange={handleStatusToggle}
-								disabled={isToggleUpdating}
+								disabled={toggleMutation.isPending}
 							/>
 						</>
 					)}
@@ -216,7 +183,7 @@ export default function VendorDashboardPage() {
 							<Skeleton className="h-8 w-1/2" />
 						) : (
 							<div className="text-2xl font-bold">
-								{analytics?.total_orders?.toLocaleString() ?? '—'}
+								{analytics?.total_orders?.toLocaleString() ?? "—"}
 							</div>
 						)}
 					</CardContent>
@@ -225,6 +192,9 @@ export default function VendorDashboardPage() {
 				<Card
 					className="transition-all hover:shadow-md cursor-pointer"
 					onClick={handleGoToOrders}
+					role="button"
+					tabIndex={0}
+					onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") handleGoToOrders(); }}
 				>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">Active Orders</CardTitle>
@@ -235,7 +205,7 @@ export default function VendorDashboardPage() {
 							<Skeleton className="h-8 w-1/2" />
 						) : (
 							<div className="text-2xl font-bold">
-								{analytics?.active_orders?.toLocaleString() ?? '—'}
+								{analytics?.active_orders?.toLocaleString() ?? "—"}
 							</div>
 						)}
 						<p className="text-xs text-muted-foreground">
@@ -256,7 +226,7 @@ export default function VendorDashboardPage() {
 							<Skeleton className="h-8 w-1/2" />
 						) : (
 							<div className="text-2xl font-bold">
-								{analytics?.delivered_orders?.toLocaleString() ?? '—'}
+								{analytics?.delivered_orders?.toLocaleString() ?? "—"}
 							</div>
 						)}
 					</CardContent>
@@ -398,7 +368,8 @@ export default function VendorDashboardPage() {
 							<TableBody>
 								{recentOrders.map((order) => {
 									const visibleItems = order.items?.slice(0, 2) ?? [];
-									const hiddenCount = (order.items?.length ?? 0) - visibleItems.length;
+									const hiddenCount =
+										(order.items?.length ?? 0) - visibleItems.length;
 									return (
 										<TableRow key={order.id}>
 											<TableCell className="font-medium">
@@ -425,11 +396,13 @@ export default function VendorDashboardPage() {
 													<span className="text-muted-foreground">—</span>
 												)}
 											</TableCell>
-											<TableCell>{formatCurrency(order.total_amount)}</TableCell>
+											<TableCell>
+												{formatCurrency(order.total_amount)}
+											</TableCell>
 											<TableCell>
 												<Badge variant="secondary">{order.status}</Badge>
 											</TableCell>
-											<TableCell>{order.created_at}</TableCell>
+											<TableCell>{formatOrderDate(order.created_at)}</TableCell>
 										</TableRow>
 									);
 								})}

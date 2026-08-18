@@ -295,9 +295,9 @@ export default function CategoryManagement() {
 							Group your menu items into categories.
 						</CardDescription>
 					</div>
-					<Button onClick={() => setAddDialogOpen(true)}>
-						<PlusCircle className="mr-2 h-4 w-4" /> Add Category
-					</Button>
+				<Button onClick={() => setAddDialogOpen(true)} data-testid="add-category-button">
+					<PlusCircle className="mr-2 h-4 w-4" /> Add Category
+				</Button>
 				</CardHeader>
 				<CardContent>
 					{isLoading ? (

@@ -1,7 +1,7 @@
 
 
 import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -46,6 +46,8 @@ import {
 	Edit,
 	Trash2,
 	UploadCloud,
+	LayoutGrid,
+	List,
 } from "lucide-react";
 import {
 	DropdownMenu,
@@ -56,7 +58,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { MenuItem, MenuItemPayload, MenuCategory } from "@/lib/types";
+import { MenuItem, MenuItemPayload, MenuCategory, MenuByCategoryGroup, MenuCategoryItem } from "@/lib/types";
 import {
 	createVendorMenuItem,
 	getVendorMenuItems,
@@ -65,10 +67,10 @@ import {
 	deleteVendorMenuItem,
 	uploadMenuItemImage,
 	getMenuCategories,
+	getMenuByCategory,
 } from "@/lib/api";
 import { QUERY_KEYS } from "@/lib/query-keys";
 import { Skeleton } from "../ui/skeleton";
-import { format } from "date-fns";
 import {
 	Select,
 	SelectContent,
@@ -76,14 +78,33 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "../ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 
 type ItemUpdateStatus = "idle" | "updating" | "success" | "error";
+type ViewMode = "grouped" | "all";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
+function mapToMenuItem(item: MenuCategoryItem, categoryId: string, categories: MenuCategory[]): MenuItem {
+	return {
+		id: item.id,
+		restaurant: "",
+		name: item.name,
+		description: item.description,
+		price: item.price,
+		image_url: item.image_url,
+		is_available: item.is_available,
+		category: categories.find((c) => c.id === categoryId) || null,
+		options: {},
+		item_type: item.item_type,
+		active_discounts: [],
+		created_at: "",
+		updated_at: "",
+	};
+}
+
 export default function VendorItemManagement() {
-	const [items, setItems] = useState<MenuItem[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const [viewMode, setViewMode] = useState<ViewMode>("grouped");
 	const [isDialogOpen, setDialogOpen] = useState(false);
 	const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 	const { toast } = useToast();
@@ -94,6 +115,7 @@ export default function VendorItemManagement() {
 	const [isSaving, setIsSaving] = useState(false);
 	const [savingStep, setSavingStep] = useState("");
 	const [selectedImage, setSelectedImage] = useState<File | null>(null);
+	const [isAvailable, setIsAvailable] = useState(true);
 	const [previewImage, setPreviewImage] = useState<string | null>(null);
 	const [imageError, setImageError] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -106,36 +128,36 @@ export default function VendorItemManagement() {
 		queryFn: getMenuCategories,
 	});
 
-	const fetchItems = async () => {
-		setIsLoading(true);
-		try {
-			const fetchedItems = await getVendorMenuItems();
-			setItems(fetchedItems);
-		} catch (error) {
-			toast({
-				title: "Error fetching menu",
-				description:
-					"Could not retrieve your menu items. Please try again later.",
-				variant: "destructive",
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
+	const { data: items = [], isLoading: isLoadingAll } = useQuery<MenuItem[]>({
+		queryKey: QUERY_KEYS.vendorMenuItems,
+		queryFn: getVendorMenuItems,
+		enabled: viewMode === "all",
+	});
 
-	useEffect(() => {
-		fetchItems();
-	}, []);
+	const { data: categoryGroups = [], isLoading: isLoadingGrouped } = useQuery<
+		MenuByCategoryGroup[]
+	>({
+		queryKey: QUERY_KEYS.vendorMenuByCategory,
+		queryFn: getMenuByCategory,
+		enabled: viewMode === "grouped",
+	});
+
+	const isLoading = viewMode === "grouped" ? isLoadingGrouped : isLoadingAll;
 
 	useEffect(() => {
 		if (!isDialogOpen) {
-			// Reset state when modal is closed
 			setEditingItem(null);
 			setSelectedImage(null);
 			setPreviewImage(null);
 			setImageError(null);
+			setIsAvailable(true);
 		}
 	}, [isDialogOpen]);
+
+	const invalidateAllMenuQueries = () => {
+		queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorMenuItems });
+		queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorMenuByCategory });
+	};
 
 	const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
@@ -176,7 +198,7 @@ export default function VendorItemManagement() {
 			name: formData.get("name") as string,
 			description: formData.get("description") as string,
 			price: String(parseFloat(formData.get("price") as string)),
-			is_available: formData.get("is_available") === "on",
+			is_available: isAvailable,
 			category_id: formData.get("category_id") as string,
 			item_type: formData.get("item_type") as "single" | "combo",
 		};
@@ -225,10 +247,7 @@ export default function VendorItemManagement() {
 				});
 			}
 
-			// Invalidate the query to refetch in other components
-			await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorMenuItems });
-			// Refetch local state for this component
-			await fetchItems();
+			await invalidateAllMenuQueries();
 			setDialogOpen(false);
 		} catch (error) {
 			const message =
@@ -252,8 +271,7 @@ export default function VendorItemManagement() {
 
 		try {
 			await deleteVendorMenuItem(itemToDelete.id);
-			setItems(items.filter((item) => item.id !== itemToDelete.id));
-			queryClient.invalidateQueries({ queryKey: QUERY_KEYS.vendorMenuItems });
+			await invalidateAllMenuQueries();
 			toast({
 				title: "Item Deleted",
 				description: `${itemToDelete.name} has been removed from your menu.`,
@@ -276,11 +294,26 @@ export default function VendorItemManagement() {
 		available: boolean,
 	) => {
 		setUpdatingStatus((prev) => ({ ...prev, [itemId]: "updating" }));
-		const originalItems = [...items];
-		setItems((prevItems) =>
-			prevItems.map((item) =>
+
+		// Optimistic update on flat list
+		const previousItems = queryClient.getQueryData<MenuItem[]>(QUERY_KEYS.vendorMenuItems);
+		queryClient.setQueryData<MenuItem[]>(QUERY_KEYS.vendorMenuItems, (old) =>
+			old?.map((item) =>
 				item.id === itemId ? { ...item, is_available: available } : item,
 			),
+		);
+
+		// Optimistic update on grouped list
+		const previousGrouped = queryClient.getQueryData<MenuByCategoryGroup[]>(QUERY_KEYS.vendorMenuByCategory);
+		queryClient.setQueryData<MenuByCategoryGroup[]>(
+			QUERY_KEYS.vendorMenuByCategory,
+			(old) =>
+				old?.map((group) => ({
+					...group,
+					items: group.items.map((item) =>
+						item.id === itemId ? { ...item, is_available: available } : item,
+					),
+				})),
 		);
 
 		try {
@@ -291,7 +324,9 @@ export default function VendorItemManagement() {
 				description: `Item is now ${available ? "available" : "unavailable"}.`,
 			});
 		} catch (error) {
-			setItems(originalItems);
+			// Rollback
+			queryClient.setQueryData(QUERY_KEYS.vendorMenuItems, previousItems);
+			queryClient.setQueryData(QUERY_KEYS.vendorMenuByCategory, previousGrouped);
 			setUpdatingStatus((prev) => ({ ...prev, [itemId]: "error" }));
 			const message =
 				error instanceof Error
@@ -307,6 +342,83 @@ export default function VendorItemManagement() {
 				setUpdatingStatus((prev) => ({ ...prev, [itemId]: "idle" }));
 			}, 5000);
 		}
+	};
+
+	const openEditDialog = (item: MenuItem) => {
+		setEditingItem(item);
+		setIsAvailable(item.is_available);
+		setDialogOpen(true);
+	};
+
+	const openEditFromGrouped = (item: MenuCategoryItem, categoryId: string) => {
+		setEditingItem(mapToMenuItem(item, categoryId, categories));
+		setIsAvailable(item.is_available);
+		setDialogOpen(true);
+	};
+
+	const openDeleteFromGrouped = (item: MenuCategoryItem) => {
+		setItemToDelete(mapToMenuItem(item, "", categories));
+	};
+
+	const renderAvailabilityToggle = (itemId: string, isAvailable: boolean) => {
+		const status = updatingStatus[itemId] || "idle";
+		const isUpdating = status !== "idle";
+
+		return (
+			<div className="flex items-center space-x-2">
+				<Switch
+					id={`available-${itemId}`}
+					checked={isAvailable}
+					onCheckedChange={(checked) =>
+						handleToggleAvailability(itemId, checked)
+					}
+					disabled={isUpdating}
+				/>
+				{status === "updating" && (
+					<span className="text-xs text-muted-foreground animate-pulse">
+						Updating...
+					</span>
+				)}
+				{status === "success" && (
+					<span className="text-xs text-green-600">
+						Update applied.
+					</span>
+				)}
+				{status === "error" && (
+					<span className="text-xs text-red-600">
+						Update failed.
+					</span>
+				)}
+				{status === "idle" && (
+					<Badge
+						variant={
+							isAvailable ? "default" : "outline"
+						}
+						className={
+							isAvailable ? "bg-green-600" : ""
+						}
+					>
+						{isAvailable ? "On" : "Off"}
+					</Badge>
+				)}
+			</div>
+		);
+	};
+
+	const renderItemImage = (imageUrl: string | null, name: string) => {
+		const src =
+			imageUrl && imageUrl.startsWith("http")
+				? imageUrl
+				: "https://placehold.co/64x64.png";
+		return (
+			<img
+				src={src}
+				alt={name}
+				width={64}
+				height={64}
+				className="rounded-md object-cover"
+			/>
+		);
 	};
 
 	return (
@@ -335,21 +447,92 @@ export default function VendorItemManagement() {
 			</AlertDialog>
 
 			<Card>
-				<CardHeader className="flex flex-row items-center justify-between">
+				<CardHeader className="flex flex-row items-center justify-between gap-4">
 					<div>
 						<CardTitle>Your Menu Items</CardTitle>
 						<CardDescription>
 							Add, edit, or remove items from your menu.
 						</CardDescription>
 					</div>
-					<DialogTrigger asChild>
-						<Button>
-							<PlusCircle className="mr-2 h-4 w-4" /> Add Item
-						</Button>
-					</DialogTrigger>
+					<div className="flex items-center gap-2">
+						<div className="flex items-center rounded-md border p-1">
+							<button
+								onClick={() => setViewMode("grouped")}
+								className={`flex items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-sm font-medium transition-colors ${
+									viewMode === "grouped"
+										? "bg-primary text-primary-foreground"
+										: "text-muted-foreground hover:text-foreground"
+								}`}
+								data-testid="view-grouped"
+							>
+								<LayoutGrid className="h-4 w-4" />
+								<span className="hidden sm:inline">Grouped</span>
+							</button>
+							<button
+								onClick={() => setViewMode("all")}
+								className={`flex items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-sm font-medium transition-colors ${
+									viewMode === "all"
+										? "bg-primary text-primary-foreground"
+										: "text-muted-foreground hover:text-foreground"
+								}`}
+								data-testid="view-all"
+							>
+								<List className="h-4 w-4" />
+								<span className="hidden sm:inline">All</span>
+							</button>
+						</div>
+						<DialogTrigger asChild>
+							<Button>
+								<PlusCircle className="mr-2 h-4 w-4" /> Add Item
+							</Button>
+						</DialogTrigger>
+					</div>
 				</CardHeader>
-				<CardContent>
-					{isLoading ? (
+			<CardContent>
+				{isLoading ? (
+					viewMode === "grouped" ? (
+						<div className="space-y-6">
+							{Array.from({ length: 2 }).map((_, gi) => (
+								<div key={`group-skeleton-${gi}`}>
+									<Skeleton className="h-6 w-32 mb-3" />
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead className="hidden w-[100px] sm:table-cell">
+													Image
+												</TableHead>
+												<TableHead>Name</TableHead>
+												<TableHead>Price</TableHead>
+												<TableHead>Availability</TableHead>
+												<TableHead>Actions</TableHead>
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{Array.from({ length: 3 }).map((_, i) => (
+												<TableRow key={`item-skeleton-${gi}-${i}`}>
+													<TableCell className="hidden sm:table-cell">
+														<Skeleton className="h-16 w-16 rounded-md" />
+													</TableCell>
+													<TableCell>
+														<Skeleton className="h-5 w-32" />
+													</TableCell>
+													<TableCell>
+														<Skeleton className="h-5 w-16" />
+													</TableCell>
+													<TableCell>
+														<Skeleton className="h-6 w-20" />
+													</TableCell>
+													<TableCell>
+														<Skeleton className="h-8 w-8" />
+													</TableCell>
+												</TableRow>
+											))}
+										</TableBody>
+									</Table>
+								</div>
+							))}
+						</div>
+					) : (
 						<Table>
 							<TableHeader>
 								<TableRow>
@@ -388,7 +571,9 @@ export default function VendorItemManagement() {
 								))}
 							</TableBody>
 						</Table>
-					) : items?.length === 0 ? (
+					)
+				) : viewMode === "grouped" ? (
+					categoryGroups.length === 0 ? (
 						<div className="text-center py-12">
 							<p className="text-muted-foreground mb-4">
 								No menu items available. Please add a new item.
@@ -400,121 +585,159 @@ export default function VendorItemManagement() {
 							</DialogTrigger>
 						</div>
 					) : (
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead className="hidden w-[100px] sm:table-cell">
-										Image
-									</TableHead>
-									<TableHead>Name</TableHead>
-									<TableHead>Price</TableHead>
-									<TableHead>Availability</TableHead>
-									<TableHead>Date Added</TableHead>
-									<TableHead>Actions</TableHead>
+						<Tabs defaultValue={categoryGroups[0]?.id}>
+							<TabsList className="mb-4">
+								{categoryGroups.map((group) => (
+									<TabsTrigger key={group.id} value={group.id}>
+										{group.name}
+									</TabsTrigger>
+								))}
+							</TabsList>
+							{categoryGroups.map((group) => (
+								<TabsContent key={group.id} value={group.id}>
+									{group.items.length === 0 ? (
+										<p className="text-sm text-muted-foreground py-4">
+											No items in this category.
+										</p>
+									) : (
+										<Table>
+											<TableHeader>
+												<TableRow>
+													<TableHead className="hidden w-[100px] sm:table-cell">
+														Image
+													</TableHead>
+													<TableHead>Name</TableHead>
+													<TableHead>Price</TableHead>
+													<TableHead>Availability</TableHead>
+													<TableHead>Actions</TableHead>
+												</TableRow>
+											</TableHeader>
+											<TableBody>
+												{group.items.map((item) => (
+													<TableRow key={item.id}>
+														<TableCell className="hidden sm:table-cell">
+															{renderItemImage(item.image_url, item.name)}
+														</TableCell>
+														<TableCell className="font-medium">
+															{item.name}
+														</TableCell>
+														<TableCell>
+															₦{parseFloat(item.price).toFixed(2)}
+														</TableCell>
+														<TableCell>
+															{renderAvailabilityToggle(item.id, item.is_available)}
+														</TableCell>
+														<TableCell>
+															<DropdownMenu>
+																<DropdownMenuTrigger asChild>
+																	<Button variant="ghost" className="h-8 w-8 p-0">
+																		<span className="sr-only">Open menu</span>
+																		<MoreHorizontal className="h-4 w-4" />
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent align="end">
+																	<DropdownMenuItem
+																		onClick={() =>
+																			openEditFromGrouped(item, group.id)
+																		}
+																	>
+																		<Edit className="mr-2 h-4 w-4" /> Edit
+																	</DropdownMenuItem>
+																	<DropdownMenuItem
+																		onClick={() => openDeleteFromGrouped(item)}
+																		className="text-red-600"
+																	>
+																		<Trash2 className="mr-2 h-4 w-4" /> Delete
+																	</DropdownMenuItem>
+																</DropdownMenuContent>
+															</DropdownMenu>
+														</TableCell>
+													</TableRow>
+												))}
+											</TableBody>
+										</Table>
+									)}
+								</TabsContent>
+							))}
+						</Tabs>
+					)
+				) : items?.length === 0 ? (
+					<div className="text-center py-12">
+						<p className="text-muted-foreground mb-4">
+							No menu items available. Please add a new item.
+						</p>
+						<DialogTrigger asChild>
+							<Button>
+								<PlusCircle className="mr-2 h-4 w-4" /> Add Your First Item
+							</Button>
+						</DialogTrigger>
+					</div>
+				) : (
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead className="hidden w-[100px] sm:table-cell">
+									Image
+								</TableHead>
+								<TableHead>Name</TableHead>
+								<TableHead>Price</TableHead>
+								<TableHead>Availability</TableHead>
+								<TableHead>Date Added</TableHead>
+								<TableHead>Actions</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{items?.map((item) => (
+								<TableRow key={item.id}>
+									<TableCell className="hidden sm:table-cell">
+										{renderItemImage(item.image_url, item.name)}
+									</TableCell>
+									<TableCell className="font-medium">{item.name}</TableCell>
+									<TableCell>
+										₦{parseFloat(item.price).toFixed(2)}
+									</TableCell>
+									<TableCell>
+										{renderAvailabilityToggle(item.id, item.is_available)}
+									</TableCell>
+									<TableCell>
+										{item.created_at &&
+										!isNaN(new Date(item.created_at).getTime())
+											? new Date(item.created_at).toLocaleDateString("en-GB", {
+													day: "2-digit",
+													month: "short",
+													year: "numeric",
+											  })
+											: "—"}
+									</TableCell>
+									<TableCell>
+										<DropdownMenu>
+											<DropdownMenuTrigger asChild>
+												<Button variant="ghost" className="h-8 w-8 p-0">
+													<span className="sr-only">Open menu</span>
+													<MoreHorizontal className="h-4 w-4" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent align="end">
+												<DropdownMenuItem
+													onClick={() => openEditDialog(item)}
+												>
+													<Edit className="mr-2 h-4 w-4" /> Edit
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onClick={() => setItemToDelete(item)}
+													className="text-red-600"
+												>
+													<Trash2 className="mr-2 h-4 w-4" /> Delete
+												</DropdownMenuItem>
+											</DropdownMenuContent>
+										</DropdownMenu>
+									</TableCell>
 								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{items?.map((item) => {
-									const status = updatingStatus[item.id] || "idle";
-									const isUpdating = status !== "idle";
-									const imageUrl =
-										item.image_url && item.image_url.startsWith("http")
-											? item.image_url
-											: "https://placehold.co/64x64.png";
-
-									return (
-										<TableRow key={item.id}>
-											<TableCell className="hidden sm:table-cell">
-												<img
-													src={imageUrl}
-													alt={item.name}
-													width={64}
-													height={64}
-													className="rounded-md object-cover"
-												/>
-											</TableCell>
-											<TableCell className="font-medium">{item.name}</TableCell>
-											<TableCell>
-												₦{parseFloat(item.price).toFixed(2)}
-											</TableCell>
-											<TableCell>
-												<div className="flex items-center space-x-2">
-													<Switch
-														id={`available-${item.id}`}
-														checked={item.is_available}
-														onCheckedChange={(checked) =>
-															handleToggleAvailability(item.id, checked)
-														}
-														disabled={isUpdating}
-													/>
-													{status === "updating" && (
-														<span className="text-xs text-muted-foreground animate-pulse">
-															Updating...
-														</span>
-													)}
-													{status === "success" && (
-														<span className="text-xs text-green-600">
-															Update applied.
-														</span>
-													)}
-													{status === "error" && (
-														<span className="text-xs text-red-600">
-															Update failed.
-														</span>
-													)}
-													{status === "idle" && (
-														<Badge
-															variant={
-																item.is_available ? "default" : "outline"
-															}
-															className={
-																item.is_available ? "bg-green-600" : ""
-															}
-														>
-															{item.is_available ? "On" : "Off"}
-														</Badge>
-													)}
-												</div>
-											</TableCell>
-											<TableCell>
-												{item.created_at &&
-												!isNaN(new Date(item.created_at).getTime())
-													? format(new Date(item.created_at), "dd MMM yyyy")
-													: "—"}
-											</TableCell>
-											<TableCell>
-												<DropdownMenu>
-													<DropdownMenuTrigger asChild>
-														<Button variant="ghost" className="h-8 w-8 p-0">
-															<span className="sr-only">Open menu</span>
-															<MoreHorizontal className="h-4 w-4" />
-														</Button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent align="end">
-														<DropdownMenuItem
-															onClick={() => {
-																setEditingItem(item);
-																setDialogOpen(true);
-															}}
-														>
-															<Edit className="mr-2 h-4 w-4" /> Edit
-														</DropdownMenuItem>
-														<DropdownMenuItem
-															onClick={() => setItemToDelete(item)}
-															className="text-red-600"
-														>
-															<Trash2 className="mr-2 h-4 w-4" /> Delete
-														</DropdownMenuItem>
-													</DropdownMenuContent>
-												</DropdownMenu>
-											</TableCell>
-										</TableRow>
-									);
-								})}
-							</TableBody>
-						</Table>
-					)}
-				</CardContent>
+							))}
+						</TableBody>
+					</Table>
+				)}
+			</CardContent>
 			</Card>
 
 			<DialogContent className="sm:max-w-[500px]">
@@ -645,8 +868,8 @@ export default function VendorItemManagement() {
 								<div className="flex items-center space-x-2">
 									<Switch
 										id="is_available"
-										name="is_available"
-										defaultChecked={editingItem?.is_available ?? true}
+										checked={isAvailable}
+										onCheckedChange={setIsAvailable}
 									/>
 									<Label htmlFor="is_available">Available for purchase</Label>
 								</div>

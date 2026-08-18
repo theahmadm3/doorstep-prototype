@@ -86,7 +86,7 @@ export default function SignupForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="full_name"
@@ -94,7 +94,7 @@ export default function SignupForm() {
             <FormItem>
               <FormLabel>Full Name</FormLabel>
               <FormControl>
-                <Input placeholder="John Doe" {...field} />
+                <Input className="h-11" placeholder="John Doe" autoComplete="name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -107,7 +107,7 @@ export default function SignupForm() {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="you@example.com" {...field} />
+                <Input className="h-11" placeholder="you@example.com" type="email" autoComplete="email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -120,7 +120,7 @@ export default function SignupForm() {
             <FormItem>
               <FormLabel>Phone Number</FormLabel>
               <FormControl>
-                <Input placeholder="08012345678" {...field} />
+                <Input className="h-11" placeholder="08012345678" inputMode="tel" autoComplete="tel" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -138,7 +138,7 @@ export default function SignupForm() {
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-full pl-3 text-left font-normal",
+                        "h-11 w-full pl-3 text-left font-normal",
                         !field.value && "text-muted-foreground"
                       )}
                     >
@@ -174,15 +174,15 @@ export default function SignupForm() {
             <FormItem>
               <FormLabel>Referral Code (Optional)</FormLabel>
               <FormControl>
-                <Input placeholder="E.g. JDOE123" {...field} />
+                <Input className="h-11" placeholder="E.g. JDOE123" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
        
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Creating account..." : "Sign Up"}
+        <Button type="submit" className="mt-2 h-12 w-full text-base" disabled={isSubmitting}>
+          {isSubmitting ? "Creating account..." : "Create account"}
         </Button>
         {errorMessage && (
           <p className="text-center text-sm text-red-500">{errorMessage}</p>

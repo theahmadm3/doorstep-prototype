@@ -31,6 +31,7 @@ import {
 	Bank,
 	Withdrawal,
 	MenuCategory,
+	MenuByCategoryGroup,
 	CategoryPayload,
 	OptionChoice,
 	OptionPayload,
@@ -336,6 +337,13 @@ export async function getAdminOrders(): Promise<AdminOrder[]> {
 }
 
 // Vendor API Calls
+export async function getMenuByCategory(): Promise<MenuByCategoryGroup[]> {
+	const data = await fetcher<PaginatedResponse<MenuByCategoryGroup>>(
+		"/restaurants/menu-by-category/",
+	);
+	return data.results;
+}
+
 export async function getVendorMenuItems(): Promise<MenuItem[]> {
 	const data = await fetcher<PaginatedResponse<MenuItem>>(
 		"/restaurants/me/menu/",
@@ -395,10 +403,7 @@ export async function getVendorOrders(): Promise<VendorOrder[]> {
 	const data = await fetcher<PaginatedResponse<VendorOrder>>(
 		"/restaurants/me/orders/",
 	);
-	return data.results.map((order) => ({
-		...order,
-		created_at: format(new Date(order.created_at), "dd MMM yyyy, hh:mm a"),
-	}));
+	return data.results;
 }
 
 export async function updateVendorOrderStatus(
@@ -456,10 +461,6 @@ export async function createMenuCategory(
 		method: "POST",
 		body: JSON.stringify(payload),
 	});
-}
-
-export async function getMenuCategory(id: string): Promise<MenuCategory> {
-	return fetcher<MenuCategory>(`/restaurants/me/menu/categories/${id}/`);
 }
 
 export async function updateMenuCategory(
@@ -595,7 +596,7 @@ export async function getRiderOrders(): Promise<RiderOrder[]> {
 
 export async function performRiderAction(
 	orderId: string,
-	action: string,
+	action: "assign" | "pickup" | "deliver" | "accept" | "reject" | "arrived_restaurant" | "pickedup" | "arrived_destination",
 	payload?: object,
 ): Promise<RiderOrder> {
 	const response = await fetcher<{ data: RiderOrder }>(
@@ -629,12 +630,6 @@ export async function initializePayment(
 	return fetcher<InitializePaymentResponse>("/initialize/", {
 		method: "POST",
 		body: JSON.stringify(payload),
-	});
-}
-
-export async function cancelOrder(orderId: string): Promise<void> {
-	await fetcher<void>(`/customer/me/orders/${orderId}/cancel/`, {
-		method: "POST",
 	});
 }
 

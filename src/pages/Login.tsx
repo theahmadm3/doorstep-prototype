@@ -16,9 +16,10 @@ import {
 	FormControl,
 	FormField,
 	FormItem,
+	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, Pencil, ShieldCheck, Smartphone } from "lucide-react";
 
 const ROLE_ROUTES: Record<string, string> = {
 	customer: "/customer/dashboard",
@@ -230,14 +231,14 @@ export default function LoginPage() {
 	}
 
 	return (
-		<div className="flex min-h-screen">
+		<div className="min-h-screen bg-muted/40 lg:flex">
 			{/* ── Brand panel (desktop only) ── */}
-			<div className="hidden lg:flex lg:w-[45%] bg-primary flex-col justify-between p-14 text-primary-foreground">
+			<div className="hidden lg:flex lg:w-[44%] bg-primary flex-col justify-between p-14 text-primary-foreground">
 				<div>
 					<img
 						src="/doorstep-logo.png"
 						alt="Doorstep"
-						className="h-9 w-auto brightness-0 invert"
+						className="w-1/2 brightness-0 invert"
 					/>
 				</div>
 
@@ -259,9 +260,13 @@ export default function LoginPage() {
 							))}
 						</motion.h1>
 					</AnimatePresence>
-					<p className="text-primary-foreground/70 text-lg max-w-xs">
+					<p className="max-w-xs text-lg text-primary-foreground/70">
 						Log in to track your orders and discover restaurants near you.
 					</p>
+					<div className="flex items-center gap-2 pt-5 text-sm text-primary-foreground/70">
+						<span className="flex size-6 items-center justify-center rounded-full bg-primary-foreground/15"><Check className="size-3.5" /></span>
+						Secure, password-free sign in
+					</div>
 				</div>
 
 				<p className="text-primary-foreground/40 text-sm">
@@ -270,30 +275,34 @@ export default function LoginPage() {
 			</div>
 
 			{/* ── Form panel ── */}
-			<div className="flex-1 flex flex-col bg-background">
+			<div className="flex min-h-screen flex-1 flex-col bg-background">
 				{/* Mobile brand strip */}
-				<div className="lg:hidden bg-primary px-6 pt-10 pb-8 text-primary-foreground">
-					<div className="mb-3">
+				<div className="lg:hidden bg-primary px-6 pb-7 pt-8 text-primary-foreground">
+					<div className="mb-5 flex items-center justify-between">
 						<img
 							src="/doorstep-logo.png"
 							alt="Doorstep"
 							className="h-8 w-auto brightness-0 invert"
 						/>
+						<span className="text-xs font-medium text-primary-foreground/70">Customer sign in</span>
 					</div>
-					<p className="text-primary-foreground/70 text-sm">
-						Log in to your account
+					<p className="max-w-xs text-sm leading-6 text-primary-foreground/70">
+						Your next meal is only a few taps away.
 					</p>
 				</div>
 
-				<div className="flex-1 flex items-center justify-center px-6 py-12">
-					<div className="w-full max-w-sm">
+				<div className="flex flex-1 items-center justify-center px-5 py-8 sm:px-8 sm:py-12">
+					<div className="w-full max-w-md rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
 						{step === "phone" ? (
 							<div>
-								<h2 className="text-2xl font-bold text-foreground mb-1">
+								<div className="mb-6 flex size-11 items-center justify-center rounded-xl bg-accent text-primary">
+									<Smartphone className="size-5" />
+								</div>
+								<h2 className="mb-2 text-2xl font-bold text-foreground">
 									Welcome back
 								</h2>
-								<p className="text-muted-foreground mb-8 text-sm">
-									Enter your phone number to get a login code.
+								<p className="mb-7 text-sm leading-6 text-muted-foreground">
+									Enter the number connected to your Doorstep account. We’ll send a one-time code.
 								</p>
 
 								<Form {...phoneForm}>
@@ -306,13 +315,14 @@ export default function LoginPage() {
 											name="phone_number"
 											render={({ field }) => (
 												<FormItem>
+													<FormLabel>Phone number</FormLabel>
 													<div className="flex">
-														<div className="flex items-center gap-1.5 px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm font-medium select-none shrink-0">
-															🇳🇬 +234
+														<div className="flex h-12 items-center gap-1.5 rounded-l-md border border-r-0 bg-muted px-3 text-sm font-medium text-muted-foreground select-none shrink-0">
+															+234
 														</div>
 														<FormControl>
 															<Input
-																className="rounded-l-none focus-visible:ring-primary"
+																className="h-12 rounded-l-none text-base focus-visible:ring-primary"
 																placeholder="08012345678"
 																inputMode="tel"
 																autoFocus
@@ -325,14 +335,14 @@ export default function LoginPage() {
 											)}
 										/>
 
-										<Button
-											type="submit"
-											className="w-full"
+												<Button
+													type="submit"
+													className="h-12 w-full text-base"
 											disabled={phoneForm.formState.isSubmitting}
 										>
 											{phoneForm.formState.isSubmitting
 												? "Sending…"
-												: "Get login code"}
+														: "Continue with phone"}
 										</Button>
 									</form>
 								</Form>
@@ -341,24 +351,31 @@ export default function LoginPage() {
 							<div>
 								<button
 									onClick={handleChangeNumber}
-									className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+									className="mb-6 flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
 								>
 									<ArrowLeft className="h-3.5 w-3.5" />
 									Change number
 								</button>
 
-								<h2 className="text-2xl font-bold text-foreground mb-1">
+								<div className="mb-6 flex size-11 items-center justify-center rounded-xl bg-accent text-primary">
+									<ShieldCheck className="size-5" />
+								</div>
+								<h2 className="mb-2 text-2xl font-bold text-foreground">
 									Check your phone
 								</h2>
-								<p className="text-muted-foreground text-sm mb-1">
-									We sent a 6-digit code to
-								</p>
-								<p className="font-semibold text-foreground mb-8">
-									+{formattedPhone}
-								</p>
+								<p className="mb-5 text-sm leading-6 text-muted-foreground">Enter the six-digit code we sent to your number.</p>
+								<div className="mb-7 flex items-center justify-between rounded-xl border bg-muted/50 px-4 py-3">
+									<div>
+										<p className="text-xs font-medium text-muted-foreground">Code sent to</p>
+										<p className="mt-0.5 font-semibold text-foreground">+{formattedPhone}</p>
+									</div>
+									<button onClick={handleChangeNumber} className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+										<Pencil className="size-3.5" /> Edit
+									</button>
+								</div>
 
 								{/* OTP boxes */}
-								<div className="flex gap-2.5 mb-6">
+								<div className="mb-6 flex justify-between gap-2 sm:gap-2.5">
 									{otp.map((digit, i) => (
 										<input
 											key={i}
@@ -374,8 +391,8 @@ export default function LoginPage() {
 											onPaste={handleOtpPaste}
 											disabled={isVerifying}
 											className={[
-												"w-11 h-13 text-center text-xl font-bold border-2 rounded-lg",
-												"focus:outline-none transition-colors bg-background text-foreground",
+												"h-13 w-11 rounded-lg border-2 bg-background text-center text-xl font-bold text-foreground sm:w-12",
+												"transition-colors focus:outline-none",
 												"disabled:opacity-50",
 												digit
 													? "border-primary"
@@ -387,7 +404,7 @@ export default function LoginPage() {
 								</div>
 
 								<Button
-									className="w-full mb-4"
+									className="mb-4 h-12 w-full text-base"
 									onClick={() => handleVerifyOtp(otp.join(""))}
 									disabled={isVerifying || otp.some((d) => !d)}
 								>
@@ -411,7 +428,7 @@ export default function LoginPage() {
 							</div>
 						)}
 
-						<div className="mt-10 pt-6 border-t space-y-2 text-center text-sm text-muted-foreground">
+						<div className="mt-8 space-y-2 border-t pt-6 text-center text-sm text-muted-foreground">
 							<p>
 								Don't have an account?{" "}
 								<Link
@@ -424,7 +441,7 @@ export default function LoginPage() {
 							<p>
 								Are you a partner?{" "}
 								<Link
-									to="/secret/non-accessible/to/customers/login"
+									to="/partner-login"
 									className="font-medium text-primary hover:underline"
 								>
 									Partner login

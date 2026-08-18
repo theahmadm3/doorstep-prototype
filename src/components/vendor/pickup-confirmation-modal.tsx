@@ -1,6 +1,5 @@
 
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -58,7 +57,7 @@ export default function PickupConfirmationModal({ isOpen, onClose, orderId, onSu
       });
       onSuccess();
       onClose();
-    } catch (error) {
+    } catch {
       const message = "Unable to confirm pickup. Please check the OTP and try again.";
       toast({
         title: "Confirmation Failed",
@@ -88,6 +87,9 @@ export default function PickupConfirmationModal({ isOpen, onClose, orderId, onSu
                   <FormControl>
                     <Input 
                       placeholder="123456" 
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
                       {...field}
                       onChange={(e) => {
                         const numericValue = e.target.value.replace(/\D/g, '');

@@ -18,7 +18,7 @@ export default function RiderOrderActions({ order, onSuccess }: RiderOrderAction
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const handleAction = async (action: string, otp?: string) => {
+  const handleAction = async (action: "assign" | "pickup" | "deliver" | "accept" | "reject" | "arrived_restaurant" | "pickedup" | "arrived_destination", otp?: string) => {
     setIsLoading(true);
     try {
       const payload = otp ? { otp } : undefined;

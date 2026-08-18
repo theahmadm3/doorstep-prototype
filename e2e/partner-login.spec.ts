@@ -5,7 +5,7 @@ test.describe("Partner login (secret route)", () => {
   test("renders the partner login form", async ({ page }) => {
     await goto(page, SECRET_LOGIN_PATH);
     await expect(
-      page.getByRole("heading", { name: "Partner Login" }),
+      page.getByRole("heading", { name: "Welcome back" }),
     ).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.getByLabel("Password")).toBeVisible();
@@ -22,7 +22,7 @@ test.describe("Partner login (secret route)", () => {
 
   test("'Back to Home' returns to /", async ({ page }) => {
     await goto(page, SECRET_LOGIN_PATH);
-    await page.getByRole("link", { name: /Back to Home/i }).click();
+    await page.getByRole("link", { name: "Customer login" }).click();
     await expect(page).toHaveURL(/\/$/);
   });
 });

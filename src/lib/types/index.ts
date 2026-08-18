@@ -80,12 +80,6 @@ export const signupSchema = z
 		path: ["confirmPassword"],
 	});
 
-export type SignupPayload = Omit<
-	z.infer<typeof signupSchema>,
-	"confirmPassword"
->;
-export type SignupCredentials = z.infer<typeof signupSchema>;
-
 export interface User {
 	id: string;
 	full_name: string;
@@ -147,6 +141,23 @@ export interface ActiveDiscount {
 	value: string;
 	scope: "item" | "category" | "order" | "delivery" | "service_fee";
 	description: string;
+}
+
+export interface MenuCategoryItem {
+	id: string;
+	name: string;
+	description: string | null;
+	price: string;
+	item_type: "single" | "combo";
+	image_url: string | null;
+	is_available: boolean;
+}
+
+export interface MenuByCategoryGroup {
+	id: string;
+	name: string;
+	order_index: number;
+	items: MenuCategoryItem[];
 }
 
 export interface MenuItem {
@@ -263,11 +274,6 @@ export interface Order {
 	customerId?: string;
 	distance?: number;
 	deliveryFee?: number;
-}
-
-export interface GuestCart {
-	restaurantId: string | null;
-	items: OrderItem[];
 }
 
 export interface OrderItemPayload {
@@ -406,6 +412,7 @@ export interface PickupConfirmationPayload {
 export interface Rider {
 	name: string;
 	phone: string;
+	email: string;
 }
 
 export interface RiderListResponse {
@@ -417,6 +424,7 @@ export const riderSchema = z.object({
 	phone: z
 		.string()
 		.regex(nigerianPhoneRegex, "Please enter a valid Nigerian phone number."),
+	email: z.string().email("Please enter a valid email address."),
 });
 
 export type RiderPayload = z.infer<typeof riderSchema>;
@@ -435,12 +443,6 @@ export const profileSchema = z.object({
 	),
 });
 export type ProfileFormData = z.infer<typeof profileSchema>;
-
-export const passwordSchema = z.object({
-	currentPassword: z.string().min(1, "Current password is required."),
-	newPassword: z.string().min(8, "New password must be at least 8 characters."),
-});
-export type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export interface ProfileUpdatePayload {
 	full_name: string;
@@ -525,11 +527,7 @@ export interface VendorProfile {
 export interface VendorProfileUpdatePayload {
 	name?: string;
 	description?: string;
-	address?: {
-		street_name: string | null;
-		latitude: number;
-		longitude: number;
-	};
+	address?: VendorProfileAddress;
 }
 
 // Rider Module
@@ -738,11 +736,6 @@ export interface DashboardData {
 	pagination: DashboardPagination;
 }
 
-export interface DashboardResponse {
-	success: boolean;
-	data: DashboardData;
-}
-
 // Search
 export interface SearchResultMenuItem {
 	id: string;
@@ -764,7 +757,7 @@ export interface SearchResultMenuItem {
 			is_available: boolean;
 		}>;
 	};
-	active_discounts: unknown[];
+	active_discounts: ActiveDiscount[];
 	created_at: string;
 	updated_at: string;
 }
@@ -825,7 +818,7 @@ export interface VendorDiscount {
 	updated_at: string;
 }
 
-const RESTAURANT_SCOPES: DiscountScopeType[] = ["item", "category", "all_menu_items"];
+export const RESTAURANT_SCOPES: DiscountScopeType[] = ["item", "category", "all_menu_items"];
 const DOORSTEP_SCOPES: DiscountScopeType[] = ["order", "delivery", "service_fee"];
 
 export const vendorDiscountSchema = z
